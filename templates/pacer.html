@@ -1,0 +1,26 @@
+<html>
+<head>
+<link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+
+<h1>Live Pi Status</h1>
+<p id="time">Loading...</p>
+<p id="lap">Loading...</p>
+<p id="pace">Loading...</p>
+
+<script>
+async function updateStatus() {
+    const res = await fetch('/api/status');
+    const data = await res.json();
+    document.getElementById('time').textContent = "Time: " + data.time;
+    document.getElementById('lap').textContent = "Lap Count: " + data.lap_count;
+    document.getElementById('pace').textContent = "Pace: " + data.pace_state;
+}
+
+updateStatus();
+setInterval(updateStatus, 1000);
+</script>
+    
+</body>
+</html>

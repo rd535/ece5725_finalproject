@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Pacer Control</title>
+</head>
+<body>
+    <h1>Pacer Control Panel</h1>
+
+    <h2>Send data to Pi</h2>
+    <label>Target Pace:
+        <input id="target_pace" type="number" value="60">
+    </label>
+    <br><br>
+    <label>Rep Distance:
+        <input id="rep_distance" type="number" value="400">
+    </label>
+    <br><br>
+    <button onclick="sendSettings()">Send to Pi</button>
+    <button onclick="setRunning()">Start</button>
+    <button onclick="setIdle()">Stop</button>
+
+    <h2>Read data from Pi</h2>
+    <p id="status">Loading...</p>
+    <p id="last_update">Loading...</p>
+    <p id="current_split">Loading...</p>
+
+    <script>
+        async function sendSettings() {
+            const targetPace = Number(document.getElementById("target_pace").value);
+            const repDistance = Number(document.getElementById("rep_distance").value);
+
+            const response = await fetch("/api/control", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    target_pace: targetPace,
+                    rep_distance: repDistance
+                })
+            });
+
+            const data = await response.json();
+            console.log("Sent to Pi:", data);
+            updateStatus();
+        }
+
+        async function setRunning() {
+            await fetch("/api/control", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    status: "running"
+                })
+            });
+
+            updateStatus();
+        }
+
+        async function setIdle() {
+            await fetch("/api/control", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    status: "idle",
+                })
+            });
+
+            updateStatus();
+        }
+
+        async function updateStatus() {
+            const response = await fetch("/api/status");
+            const data = await response.json();
+
+            document.getElementById("status").textContent =
+                "Status: " + data.status;
+
+            document.getElementById("last_update").textContent =
+                "Last update: " + data.last_update;
+
+            document.getElementById("current_split").textContent =
+                "Current split: " + data.current_split.toFixed(2);
+        }
+
+        updateStatus();
+        setInterval(updateStatus, 1000);
+    </script>
+</body>
+</html>
