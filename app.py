@@ -67,14 +67,14 @@ def index():
 def hello(name):
     return render_template('page.html', name=name)
 
-# Testing color from the web interface
-from color_test import set_color_all
-@app.route('/set_color', methods=['POST'])
-def set_color():
-    data = request.json
-    r, g, b = data['r'], data['g'], data['b']
-    set_color_all(r, g, b)
-    return "OK"
+# # Testing color from the web interface
+# from color_test import set_color_all
+# @app.route('/set_color', methods=['POST'])
+# def set_color():
+#     data = request.json
+#     r, g, b = data['r'], data['g'], data['b']
+#     set_color_all(r, g, b)
+#     return "OK"
 
 # For single pace testing
 from pacer.state import manager
@@ -83,11 +83,9 @@ from pacer.controller import start_pacer, stop_pacer
 @app.route('/start', methods=['POST'])
 def start():
     start_pacer()
-    return "OK"
 
 def stop():
     stop_pacer()
-    return "OK"
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
