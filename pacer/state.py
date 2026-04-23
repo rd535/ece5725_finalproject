@@ -1,15 +1,19 @@
 # state.py
 # Management for pacer
 from models import Pacer
+from pacer_patterns import GreenPacer
 
 class PacerManager:
     def __init__(self):
-        self.pacers = []
+        # ALWAYS keep the LED pacer as the active pacer
+        self.pacers = [GreenPacer()]
 
     def create_single_pacer(self, pace, color):
-        self.pacers = []  # wipe any old ones
-        p = Pacer(pace, color)
-        self.pacers.append(p)
+        # This should NOT replace the LED pacer
+        # Instead, update its parameters
+        p = self.pacers[0]   # keep the same LED pacer object
+        p.pace = pace
+        p.color = color
         return p
 
     def update(self, dt):
@@ -19,5 +23,5 @@ class PacerManager:
 
 manager = PacerManager()
 
-# Instantiate your ONE pacer for now
+# Update the existing LED pacer instead of replacing it
 current_pacer = manager.create_single_pacer(pace=60, color=(0,255,0))
