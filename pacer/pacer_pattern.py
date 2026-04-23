@@ -47,7 +47,7 @@ class GreenPacer:
 
             self.strip.show()
             pos = (pos + SPEED) % self.num_leds
-            time.sleep(0.02)
+            time.sleep(1)
 
         for i in range(self.num_leds):
             self.strip.setPixelColor(i, Color(0,0,0))
