@@ -22,3 +22,6 @@ run: sudo python strandtest.py -c
 IR SENSOR:
 
 
+NOTE (4/22): 
+From Rhea- I have pushed and changed around code in the pacer folder (to almost all the files), however they are untested because of the hardware issue we were having. Once I can run it on the pi, I can test it. Thanks!
+
