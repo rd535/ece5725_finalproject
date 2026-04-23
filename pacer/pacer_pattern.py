@@ -34,7 +34,7 @@ class GreenPacer:
 
     def run(self):
         SEGMENT_LENGTH = 3
-        SPEED = 1.0
+        SPEED = 2.0
         pos = 0.0
 
         while self.active:
