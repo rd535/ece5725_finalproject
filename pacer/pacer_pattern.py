@@ -5,7 +5,7 @@ import time
 from rpi_ws281x import PixelStrip, Color, ws
 
 class GreenPacer:
-    def __init__(self, num_leds=60, pin=18):
+    def __init__(self, num_leds=420, pin=18):
         self.num_leds = num_leds
         self.pin = pin
         self.active = False
@@ -34,7 +34,7 @@ class GreenPacer:
 
     def run(self):
         SEGMENT_LENGTH = 3
-        SPEED = 8.0
+        SPEED = 4.0
         pos = 0.0
 
         while self.active:
