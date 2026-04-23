@@ -1,5 +1,8 @@
 from flask import Flask, render_template, jsonify, request
 import time
+import json
+import csv
+import io
 
 app = Flask(__name__)
 
@@ -9,7 +12,8 @@ pi_state = {
     "rep_distance": 400,
     "status" : "idle",
     "last_update": time.strftime("%H:%M:%S"),
-    "current_split" : 0.0
+    "current_split" : 0.0,
+    "mode": "pacer"
     }
 
 # Browser reads current Pi data
@@ -26,39 +30,118 @@ def status():
 @app.route("/api/control", methods=["POST"])
 def control():
     data = request.get_json()
-    
+
     if not data:
         return jsonify({"ok": False, "error": "No JSON recieved"}), 400
-    
+
     if "target_pace" in data:
         pi_state["target_pace"] = data["target_pace"]
-        
+
     if "rep_distance" in data:
         pi_state["rep_distance"] = data["rep_distance"]
-        
+
     if "status" in data:
         pi_state["status"] = data["status"]
-    
+
+    if "mode" in data:
+        pi_state["mode"] = data["mode"]
+
     pi_state["last_update"] = time.strftime("%H:%M:%S")
-    
+
     return jsonify({"ok": True, "state" : pi_state})
-    
+
     # can trigger pi from here
     # start_led_controller(pi_state["target_pace"])
-    
+
+# File upload endpoint for JSON and CSV files
+@app.route("/api/upload", methods=["POST"])
+def upload_file():
+    try:
+        if 'file' not in request.files:
+            return jsonify({"ok": False, "error": "No file provided"}), 400
+
+        file = request.files['file']
+
+        if file.filename == '':
+            return jsonify({"ok": False, "error": "No file selected"}), 400
+
+        # Check file extension
+        filename = file.filename.lower()
+        if not (filename.endswith('.json') or filename.endswith('.csv')):
+            return jsonify({"ok": False, "error": "Invalid file type. Only JSON and CSV are supported"}), 400
+
+        # Read file content
+        content = file.read().decode('utf-8')
+
+        # Parse based on file type
+        if filename.endswith('.json'):
+            data = json.loads(content)
+        else:  # CSV
+            lines = content.strip().split('\n')
+            if len(lines) < 2:
+                return jsonify({"ok": False, "error": "CSV file must have headers and at least one data row"}), 400
+
+            # Parse CSV
+            reader = csv.DictReader(io.StringIO(content))
+            data = next(reader)
+            # Convert numeric strings to numbers where applicable
+            if 'target_pace' in data:
+                data['target_pace'] = float(data['target_pace'])
+            if 'rep_distance' in data:
+                data['rep_distance'] = float(data['rep_distance'])
+
+        # Update pi_state with values from file
+        if "target_pace" in data:
+            pi_state["target_pace"] = float(data["target_pace"])
+
+        if "rep_distance" in data:
+            pi_state["rep_distance"] = float(data["rep_distance"])
+
+        pi_state["last_update"] = time.strftime("%H:%M:%S")
+
+        return jsonify({
+            "ok": True,
+            "message": f"File {file.filename} uploaded and parsed successfully",
+            "state": pi_state
+        })
+
+    except json.JSONDecodeError as e:
+        return jsonify({"ok": False, "error": f"Invalid JSON format: {str(e)}"}), 400
+    except Exception as e:
+        return jsonify({"ok": False, "error": f"Error processing file: {str(e)}"}), 500
+
+# Mode selection endpoint
+@app.route("/api/mode", methods=["POST"])
+def set_mode():
+    data = request.get_json()
+
+    if not data or "mode" not in data:
+        return jsonify({"ok": False, "error": "Mode not specified"}), 400
+
+    valid_modes = ["pacer", "music", "lighting"]
+    mode = data["mode"]
+
+    if mode not in valid_modes:
+        return jsonify({"ok": False, "error": f"Invalid mode. Must be one of: {', '.join(valid_modes)}"}), 400
+
+    pi_state["mode"] = mode
+    pi_state["last_update"] = time.strftime("%H:%M:%S")
+
+    return jsonify({"ok": True, "mode": mode, "state": pi_state})
+
 # HTML front end
 @app.route('/')
 def index():
     #return 'Hello world'
     #return render_template('index.html')
-    
+
     ## BASIC, REQUIRES REFRESH
     # current_time = time.strftime("%H:%M:%S")
     # lap_count = 7
     # return render_template('pacer_basic.html', current_time=current_time, lap_count=lap_count)
-    
-    ## ADVANCED, SCRIPTED REFRESH
-    return render_template('pacer_v2.html')
+
+    ## ADVANCED, SCRIPTED REFRESH - UPGRADED VERSION
+    return render_template('pacer_v3.html')
 
 
 

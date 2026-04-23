@@ -489,6 +489,21 @@
 
             // Activate selected button
             event.target.classList.add('active');
+
+            // Notify server of mode change
+            fetch('/api/mode', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ mode: mode })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Mode changed to:', data.mode);
+                updateStatus();
+            })
+            .catch(error => console.error('Mode change error:', error));
         }
 
         // File upload handling
@@ -536,8 +551,29 @@
                 const content = e.target.result;
                 displayFileData(content, file.name);
                 parseFileData(content, fileExtension);
+                uploadFileToServer(file);
             };
             reader.readAsText(file);
+        }
+
+        function uploadFileToServer(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            fetch('/api/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.ok) {
+                    console.log('File uploaded to server:', data);
+                    updateStatus();
+                } else {
+                    console.error('Server error:', data.error);
+                }
+            })
+            .catch(error => console.error('Upload error:', error));
         }
 
         function displayFileData(content, filename) {
