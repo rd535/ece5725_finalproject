@@ -67,7 +67,13 @@ class ConstantPacerWithPacer:
             last_time = current_time
 
             # current pos + LED/s * dt w/ overflow reset
-            pos = (pos + SPEED * dt) % self.num_leds
+            old_pos = pos
+            pos = pos + SPEED * dt
+
+            if pos >= self.num_leds:
+                self.lap_count += 1
+
+            pos = pos % self.num_leds
 
             # clear strip
             for i in range(self.num_leds):
@@ -82,8 +88,8 @@ class ConstantPacerWithPacer:
             for j in range(SEGMENT_LENGTH):
                 idx_init = pos - j
                 # dont overflow on first time
-                if idx_init < 0 and self.lap_count == 0:
-                    idx_init = 0
+                if self.lap_count == 0 and idx_init < 0:
+                    continue
                 idx = int((idx_init) % self.num_leds)
                 self.strip.setPixelColor(idx, Color(0,255,0))
 
