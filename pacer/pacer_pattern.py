@@ -52,10 +52,7 @@ class PacerWithPacer:
         conv_pace = scale_pace(self.pace, self.rep_distance)
         SPEED = pace_to_speed(conv_pace, self.rep_distance)
 
-        pacer_pace = conv_pace - 0.5 # make pacer slightly faster than target pace
-        PACER_SPEED = pace_to_speed(pacer_pace, self.rep_distance)
-
-        UPDATE_INTERVAL = 0.1 # can be faster/slower depending on pace
+        # UPDATE_INTERVAL = 0.1 # can be faster/slower depending on pace, time.sleep(UPDATE_INTERVAL) 
 
         pos = 0.0 
         pacer_pos = 0.0
@@ -71,20 +68,13 @@ class PacerWithPacer:
             # current pos + LED/s * dt w/ overflow reset
             pos = (pos + SPEED * dt) % self.num_leds
 
-            pacer_pos = (pacer_pos + PACER_SPEED * dt) % self.num_leds
-
             # clear strip
             for i in range(self.num_leds):
                 self.strip.setPixelColor(i, Color(0,0,0))
 
             # do first so can overwrite with real pace color if they overlap
             for k in range(PACER_SEG_LENGTH):
-                pacer_idx_init = pacer_pos - k
-                # dont overflow on first time
-                if pacer_idx_init < 0 and first_time:
-                    pacer_idx_init = 0
-                    first_time = False
-                pacer_idx = int((pacer_idx_init) % self.num_leds)
+                pacer_idx = int((pos + k) % self.num_leds)
                 self.strip.setPixelColor(pacer_idx, Color(255,0,0))
 
             # draw moving segment
