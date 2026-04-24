@@ -119,16 +119,19 @@ class PacerWithPacer:
 
             for idx in affected:
                 self.strip.setPixelColor(idx, OFF)
+                self.strip.show()
 
             # Draw actual pace first
             for idx in actual_indices:
                 self.strip.setPixelColor(idx, Color(0,255,0))
+                self.strip.show()
 
             # Draw pacer second so it overwrites overlap
             for idx in pacer_indices:
                 self.strip.setPixelColor(idx, Color(255,0,0))
+                self.strip.show()
 
-            self.strip.show()
+            
 
             prev_actual = actual_indices
             prev_pacer = pacer_indices
@@ -138,8 +141,8 @@ class PacerWithPacer:
         # clean shutdown
         for idx in prev_actual | prev_pacer:
             self.strip.setPixelColor(idx, OFF)
+            self.strip.show()
 
-        self.strip.show()
 
 # can enter an array of paces and execute each per lap
 class DynamicPacer:
