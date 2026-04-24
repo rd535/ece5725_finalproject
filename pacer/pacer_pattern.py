@@ -61,6 +61,8 @@ class PacerWithPacer:
         pacer_pos = 0.0
         last_time = time.time()
 
+        first_time = True
+
         while self.active:
             current_time = time.time()
             dt = current_time - last_time
@@ -75,14 +77,24 @@ class PacerWithPacer:
             for i in range(self.num_leds):
                 self.strip.setPixelColor(i, Color(0,0,0))
 
-            # do second so can overwrite with pacer color if they overlap
+            # do first so can overwrite with real pace color if they overlap
             for k in range(PACER_SEG_LENGTH):
-                pacer_idx = int((pacer_pos + k) % self.num_leds)
+                pacer_idx_init = pacer_pos - k
+                # dont overflow on first time
+                if pacer_idx_init < 0 and first_time:
+                    pacer_idx_init = 0
+                    first_time = False
+                pacer_idx = int((pacer_idx_init) % self.num_leds)
                 self.strip.setPixelColor(pacer_idx, Color(255,0,0))
 
             # draw moving segment
             for j in range(SEGMENT_LENGTH):
-                idx = int((pos + j) % self.num_leds)
+                idx_init = pos + j
+                # dont overflow on first time
+                if idx_init < 0 and first_time:
+                    idx_init = 0
+                    first_time = False
+                idx = int((idx_init) % self.num_leds)
                 self.strip.setPixelColor(idx, Color(0,255,0))
                 
             self.strip.show()
