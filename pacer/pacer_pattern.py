@@ -49,8 +49,9 @@ class ConstantPacerWithPacer:
         PACER_SEG_LENGTH = 3
 
         # convert pace to 5m for LED strip
-        conv_pace = scale_pace(self.pace, self.rep_distance)
-        SPEED = pace_to_speed(conv_pace, self.rep_distance)
+        # conv_pace = scale_pace(self.pace, self.rep_distance)
+        # SPEED = pace_to_speed(conv_pace, self.rep_distance)
+        SPEED = 300 / self.pace 
 
         # UPDATE_INTERVAL = 0.1 # can be faster/slower depending on pace, time.sleep(UPDATE_INTERVAL) 
 
@@ -100,7 +101,7 @@ class DynamicPacer:
     Pacer pattern with a dynamic pace that changes over time.
     Pace = index of pace array, which corresponds to lap number. ex. pace[0] is pace for first lap, pace[1] is pace for second lap, etc.
     """
-    def __init__(self, num_leds=300, pin=12, pace=[8, 6, 4, 2], rep_distance=400):
+    def __init__(self, num_leds=300, pin=12, pace=[20, 15, 10, 5], rep_distance=400):
         self.num_leds = num_leds
         self.pin = pin
         self.pace = pace
