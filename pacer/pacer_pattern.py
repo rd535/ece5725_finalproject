@@ -100,7 +100,7 @@ class DynamicPacer:
     Pacer pattern with a dynamic pace that changes over time.
     Pace = index of pace array, which corresponds to lap number. ex. pace[0] is pace for first lap, pace[1] is pace for second lap, etc.
     """
-    def __init__(self, num_leds=300, pin=12, pace=[20, 15, 10, 5], rep_distance=400):
+    def __init__(self, num_leds=300, pin=12, pace=[8, 6, 4, 2], rep_distance=400):
         self.num_leds = num_leds
         self.pin = pin
         self.pace = pace
