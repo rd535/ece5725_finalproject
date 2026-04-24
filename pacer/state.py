@@ -1,7 +1,7 @@
 # state.py
 # Management for pacer
 # from models import Pacer
-from pacer.pacer_patterns import GreenPacer
+from pacer.pacer_pattern import GreenPacer
 
 class PacerManager:
     def __init__(self):
