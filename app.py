@@ -177,7 +177,7 @@ def start():
             rep_distance=pi_state["rep_distance"]
         )
         pacer.start()
-
+    print("started pacer with pace:", pi_state["target_pace"], "and rep distance:", pi_state["rep_distance"])
     return jsonify({"ok": True, "status": "started"})
 
     # start_pacer()
