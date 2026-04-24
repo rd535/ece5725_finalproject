@@ -146,11 +146,9 @@ class DynamicPacer:
 
         first_time = True
         lap_count = len(self.pace)
-        if lap_count == 0:
-            self.active = False
 
         while self.active:
-            SPEED = speed_index[lap_count]
+            SPEED = speed_index[lap_count - 1] if lap_count > 0 else 0
             lap_count -= 1
 
             current_time = time.time()
@@ -182,7 +180,7 @@ class DynamicPacer:
                 
             self.strip.show()
 
-            if lap_count == 0:
+            if lap_count <= 0:
                 self.active = False
 
         # turn off strip when stopping
