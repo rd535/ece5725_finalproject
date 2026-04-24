@@ -89,7 +89,7 @@ class PacerWithPacer:
 
             # draw moving segment
             for j in range(SEGMENT_LENGTH):
-                idx_init = pos + j
+                idx_init = pos - j
                 # dont overflow on first time
                 if idx_init < 0 and first_time:
                     idx_init = 0
