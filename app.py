@@ -168,6 +168,7 @@ from pacer.pacer_pattern import ConstantPacerWithPacer, DynamicPacer
 
 @app.route('/start', methods=['POST'])
 def start():
+    print("Received start command")
     # basic testing, no manager
     global pacer 
 
@@ -177,8 +178,8 @@ def start():
             rep_distance=pi_state["rep_distance"]
         )
         pacer.start()
-    print("started pacer with pace:", pi_state["target_pace"], "and rep distance:", pi_state["rep_distance"])
-    return jsonify({"ok": True, "status": "started"})
+    print("Finished start command")
+    return jsonify({"ok": True, "status": "running"})
 
     # start_pacer()
 

@@ -307,6 +307,11 @@
                 })
             });
 
+            await fetch("/start", {
+                method: "POST"
+            });
+            showSuccessMessage('Start command sent to Pi!');
+            
             updateStatus();
         }
 
