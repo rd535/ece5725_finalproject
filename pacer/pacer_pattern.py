@@ -74,21 +74,18 @@ class PacerWithPacer:
             # clear strip
             for i in range(self.num_leds):
                 self.strip.setPixelColor(i, Color(0,0,0))
-                self.strip.show()
 
             # do second so can overwrite with pacer color if they overlap
             for k in range(PACER_SEG_LENGTH):
                 pacer_idx = int((pacer_pos + k) % self.num_leds)
                 self.strip.setPixelColor(pacer_idx, Color(255,0,0))
-                self.strip.show()
 
             # draw moving segment
             for j in range(SEGMENT_LENGTH):
                 idx = int((pos + j) % self.num_leds)
                 self.strip.setPixelColor(idx, Color(0,255,0))
-                self.strip.show()
-
-            time.sleep(UPDATE_INTERVAL)
+                
+            self.strip.show()
 
         # turn off strip when stopping
         for i in range(self.num_leds):
