@@ -4,7 +4,7 @@ import threading
 import time
 from tkinter import OFF
 from rpi_ws281x import PixelStrip, Color, ws
-from pace_calculator import pace_to_speed, scale_pace
+from pacer.pace_calculator import pace_to_speed, scale_pace
 
 class ConstantPacerWithPacer:
     """
