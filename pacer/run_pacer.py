@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 
 import time
-from pacer_pattern import GreenPacer, PacerWithPacer
+from pacer_pattern import GreenPacer, ConstantPacerWithPacer, DynamicPacer
 
 # Create the pacer object
 # pacer = GreenPacer()
-pacer = PacerWithPacer()
+# pacer = ConstantPacerWithPacer()
+pacer = DynamicPacer()
 
-print("Starting green pacer…  Press CTRL+C to stop.")
+print("Starting dynamic pacer…  Press CTRL+C to stop.")
 
 try:
     pacer.active = True
