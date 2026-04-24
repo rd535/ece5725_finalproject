@@ -9,22 +9,22 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>⚡ Control Center</h1>
-            <p>Monitor and control your performance system</p>
+            <h1>5725 Wavelight Control Center</h1>
+            <p>Monitor and control your wavelight system</p>
         </div>
 
         <!-- Mode Selection -->
         <div class="mode-nav">
-            <button class="mode-btn active" onclick="switchMode('pacer')">🏃 Pacer</button>
-            <button class="mode-btn" onclick="switchMode('music')">🎵 Music</button>
-            <button class="mode-btn" onclick="switchMode('lighting')">💡 Lighting</button>
+            <button class="mode-btn active" onclick="switchMode('pacer')">Pacer</button>
+            <button class="mode-btn" onclick="switchMode('music')">Music</button>
+            <button class="mode-btn" onclick="switchMode('lighting')">Lighting</button>
         </div>
 
         <!-- Pacer Mode -->
         <div id="pacer" class="tab active">
             <div class="content-area">
                 <div class="card">
-                    <h2>📊 Configuration</h2>
+                    <h2>Pace Configuration</h2>
                     <div class="form-row">
                         <div class="form-group">
                             <label for="target_pace">Target Pace (BPM)</label>
@@ -36,9 +36,9 @@
                         </div>
                     </div>
                     <div class="button-group">
-                        <button class="btn-primary" onclick="sendSettings()">📤 Send Settings</button>
-                        <button class="btn-success" onclick="setRunning()">▶️ Start</button>
-                        <button class="btn-danger" onclick="setIdle()">⏹️ Stop</button>
+                        <button class="btn-primary" onclick="sendSettings()">Send Settings to Pi</button>
+                        <button class="btn-success" onclick="setRunning()">Start</button>
+                        <button class="btn-danger" onclick="setIdle()">Stop</button>
                     </div>
                 </div>
 
@@ -46,8 +46,8 @@
 
                 <!-- File Upload -->
                 <div class="card">
-                    <h2>📁 Import Data</h2>
-                    <p style="margin-bottom: 15px; color: #666;">Upload JSON or CSV files to configure your settings</p>
+                    <h2>Import Data</h2>
+                    <p style="margin-bottom: 15px; color: #666;">Upload JSON or CSV files to supply pace data</p>
                     <div class="file-upload-area" id="fileUploadArea">
                         <div class="file-upload-icon">📂</div>
                         <p><strong>Drag & drop files here</strong></p>
@@ -59,7 +59,7 @@
 
                 <!-- Status Display -->
                 <div class="card">
-                    <h2>📈 Live Status</h2>
+                    <h2>Live Status</h2>
                     <div class="status-grid">
                         <div class="status-card">
                             <div class="status-label">System Status</div>

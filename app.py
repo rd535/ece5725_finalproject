@@ -6,6 +6,8 @@ import io
 
 app = Flask(__name__)
 
+pacer = None
+
 # Shared State for down and upload
 pi_state = {
     "target_pace": 60,
@@ -162,13 +164,23 @@ def hello(name):
 # For single pace testing
 from pacer.state import manager
 from pacer.controller import start_pacer, stop_pacer
+from pacer.pacer_pattern import ConstantPacerWithPacer, DynamicPacer
 
 @app.route('/start', methods=['POST'])
 def start():
-    start_pacer()
+    # basic testing, no manager
+    pacer = ConstantPacerWithPacer(pace=pi_state["target_pace"], rep_distance=pi_state["rep_distance"])
+    pacer.active = True
+    pacer.start()
 
+    # start_pacer()
+
+@app.route('/stop', methods=['POST'])
 def stop():
-    stop_pacer()
+    # basic testing, no manager
+    pacer.active = False
+
+    # stop_pacer()
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
