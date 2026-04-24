@@ -61,87 +61,87 @@ class PacerWithPacer:
         pacer_pos = 0.0
         last_time = time.time()
 
-        # while self.active:
-        #     current_time = time.time()
-        #     dt = current_time - last_time
-        #     last_time = current_time
-
-        #     # current pos + LED/s * dt w/ overflow reset
-        #     pos = (pos + SPEED * dt) % self.num_leds
-
-        #     pacer_pos = (pacer_pos + PACER_SPEED * dt) % self.num_leds
-
-        #     # clear strip
-        #     for i in range(self.num_leds):
-        #         self.strip.setPixelColor(i, Color(0,0,0))
-
-        #     # draw moving segment
-        #     for j in range(SEGMENT_LENGTH):
-        #         idx = int((pos + j) % self.num_leds)
-        #         self.strip.setPixelColor(idx, Color(0,255,0))
-
-        #     # do second so can overwrite with pacer color if they overlap
-        #     for k in range(PACER_SEG_LENGTH):
-        #         pacer_idx = int((pacer_pos + k) % self.num_leds)
-        #         self.strip.setPixelColor(pacer_idx, Color(255,0,0))
-
-        #     self.strip.show()
-        #     time.sleep(UPDATE_INTERVAL)
-
-        #     # turn off strip when stopping
-        #     for i in range(self.num_leds):
-        #         self.strip.setPixelColor(i, Color(0,0,0))
-        #     self.strip.show()
-
         while self.active:
-            now = time.monotonic()
-            dt = now - last_time
-            last_time = now
+            current_time = time.time()
+            dt = current_time - last_time
+            last_time = current_time
 
+            # current pos + LED/s * dt w/ overflow reset
             pos = (pos + SPEED * dt) % self.num_leds
+
             pacer_pos = (pacer_pos + PACER_SPEED * dt) % self.num_leds
 
-            actual_start = int(pos)
-            pacer_start = int(pacer_pos)
+            # clear strip
+            for i in range(self.num_leds):
+                self.strip.setPixelColor(i, Color(0,0,0))
 
-            actual_indices = {
-                (actual_start + j) % self.num_leds
-                for j in range(SEGMENT_LENGTH)
-            }
-
-            pacer_indices = {
-                (pacer_start + k) % self.num_leds
-                for k in range(PACER_SEG_LENGTH)
-            }
-
-            # Only clear LEDs touched last frame or this frame
-            affected = prev_actual | prev_pacer | actual_indices | pacer_indices
-
-            for idx in affected:
-                self.strip.setPixelColor(idx, OFF)
-                self.strip.show()
-
-            # Draw actual pace first
-            for idx in actual_indices:
+            # draw moving segment
+            for j in range(SEGMENT_LENGTH):
+                idx = int((pos + j) % self.num_leds)
                 self.strip.setPixelColor(idx, Color(0,255,0))
-                self.strip.show()
 
-            # Draw pacer second so it overwrites overlap
-            for idx in pacer_indices:
-                self.strip.setPixelColor(idx, Color(255,0,0))
-                self.strip.show()
+            # do second so can overwrite with pacer color if they overlap
+            for k in range(PACER_SEG_LENGTH):
+                pacer_idx = int((pacer_pos + k) % self.num_leds)
+                self.strip.setPixelColor(pacer_idx, Color(255,0,0))
+
+            self.strip.show()
+            time.sleep(UPDATE_INTERVAL)
+
+        # turn off strip when stopping
+        for i in range(self.num_leds):
+            self.strip.setPixelColor(i, Color(0,0,0))
+        self.strip.show()
+
+        # while self.active:
+        #     now = time.monotonic()
+        #     dt = now - last_time
+        #     last_time = now
+
+        #     pos = (pos + SPEED * dt) % self.num_leds
+        #     pacer_pos = (pacer_pos + PACER_SPEED * dt) % self.num_leds
+
+        #     actual_start = int(pos)
+        #     pacer_start = int(pacer_pos)
+
+        #     actual_indices = {
+        #         (actual_start + j) % self.num_leds
+        #         for j in range(SEGMENT_LENGTH)
+        #     }
+
+        #     pacer_indices = {
+        #         (pacer_start + k) % self.num_leds
+        #         for k in range(PACER_SEG_LENGTH)
+        #     }
+
+        #     # Only clear LEDs touched last frame or this frame
+        #     affected = prev_actual | prev_pacer | actual_indices | pacer_indices
+
+        #     for idx in affected:
+        #         self.strip.setPixelColor(idx, OFF)
+        #         self.strip.show()
+
+        #     # Draw actual pace first
+        #     for idx in actual_indices:
+        #         self.strip.setPixelColor(idx, Color(0,255,0))
+        #         self.strip.show()
+
+        #     # Draw pacer second so it overwrites overlap
+        #     for idx in pacer_indices:
+        #         self.strip.setPixelColor(idx, Color(255,0,0))
+        #         self.strip.show()
 
             
 
-            prev_actual = actual_indices
-            prev_pacer = pacer_indices
+        #     prev_actual = actual_indices
+        #     prev_pacer = pacer_indices
 
-            time.sleep(UPDATE_INTERVAL)
+        #     time.sleep(UPDATE_INTERVAL)
 
-        # clean shutdown
-        for idx in prev_actual | prev_pacer:
-            self.strip.setPixelColor(idx, OFF)
-            self.strip.show()
+        # # clean shutdown
+        # for idx in prev_actual | prev_pacer:
+        #     self.strip.setPixelColor(idx, OFF)
+        #     self.strip.show()
 
 
 # can enter an array of paces and execute each per lap
