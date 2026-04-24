@@ -169,16 +169,28 @@ from pacer.pacer_pattern import ConstantPacerWithPacer, DynamicPacer
 @app.route('/start', methods=['POST'])
 def start():
     # basic testing, no manager
-    pacer = ConstantPacerWithPacer(pace=pi_state["target_pace"], rep_distance=pi_state["rep_distance"])
-    pacer.active = True
-    pacer.start()
+    global pacer 
+
+    if pacer is None or not pacer.active:
+        pacer = ConstantPacerWithPacer(
+            pace=pi_state["target_pace"],
+            rep_distance=pi_state["rep_distance"]
+        )
+        pacer.start()
+
+    return jsonify({"ok": True, "status": "started"})
 
     # start_pacer()
 
 @app.route('/stop', methods=['POST'])
 def stop():
     # basic testing, no manager
-    pacer.active = False
+    global pacer
+
+    if pacer is not None:
+        pacer.active = False
+
+    return jsonify({"ok": True, "status": "stopped"})
 
     # stop_pacer()
 
