@@ -92,8 +92,6 @@ class ConstantPacerWithPacer:
                     continue
                 idx = int((idx_init) % self.num_leds)
                 self.strip.setPixelColor(idx, Color(0,255,0))
-
-            self.lap_count += 1
                 
             self.strip.show()
 
