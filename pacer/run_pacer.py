@@ -6,7 +6,7 @@ from pacer_pattern import GreenPacer, ConstantPacerWithPacer, DynamicPacer
 # Create the pacer object
 # pacer = GreenPacer()
 # pacer = ConstantPacerWithPacer()
-pacer = DynamicPacer()
+pacer = DynamicPacer(pace=[8,6,4,2])
 
 print("Starting dynamic pacer…  Press CTRL+C to stop.")
 
