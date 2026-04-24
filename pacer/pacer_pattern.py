@@ -107,6 +107,7 @@ class DynamicPacer:
         self.rep_distance = rep_distance
         self.active = False
         self.thread = None
+        self.lap_count = 0
 
         self.strip = PixelStrip(
             self.num_leds,
@@ -132,9 +133,6 @@ class DynamicPacer:
     def run(self):
         SEGMENT_LENGTH = 8
 
-        # shorter segment as for just one dude 
-        PACER_SEG_LENGTH = 3
-
         # convert pace to 5m for LED strip
         conv_pace = [scale_pace(p, self.rep_distance) for p in self.pace]
         speed_index = [pace_to_speed(p, self.rep_distance) for p in conv_pace]
@@ -144,44 +142,44 @@ class DynamicPacer:
         pos = 0.0 
         last_time = time.time()
 
-        first_time = True
-        lap_count = len(self.pace)
+        pace_index = 0
 
         while self.active:
-            SPEED = speed_index[lap_count - 1] if lap_count > 0 else 0
-            lap_count -= 1
-
             current_time = time.time()
             dt = current_time - last_time
             last_time = current_time
 
+            SPEED = speed_index[pace_index]
+
             # current pos + LED/s * dt w/ overflow reset
+            prev_pos = pos
             pos = (pos + SPEED * dt) % self.num_leds
+
+            # detect lap completion by checking wraparound  
+            if pos < prev_pos:
+                self.lap_count += 1
+                pace_index += 1
+
+                # break if all laps done
+                if pace_index >= len(speed_index):
+                    self.active = False
+                    break
 
             # clear strip
             for i in range(self.num_leds):
                 self.strip.setPixelColor(i, Color(0,0,0))
 
-            # do first so can overwrite with real pace color if they overlap
-            for k in range(PACER_SEG_LENGTH):
-                pacer_idx = int((pos + k) % self.num_leds)
-                self.strip.setPixelColor(pacer_idx, Color(255,0,0))
-
             # draw moving segment
             for j in range(SEGMENT_LENGTH):
                 idx_init = pos - j
                 # dont overflow on first time
-                if idx_init < 0 and first_time:
+                if idx_init < 0 and self.lap_count == 0:
                     idx_init = 0
                 idx = int((idx_init) % self.num_leds)
                 self.strip.setPixelColor(idx, Color(0,255,0))
-
-            first_time = False
-                
+        
             self.strip.show()
 
-            if lap_count <= 0:
-                self.active = False
 
         # turn off strip when stopping
         for i in range(self.num_leds):
