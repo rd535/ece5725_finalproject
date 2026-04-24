@@ -7,7 +7,14 @@ from pacer_pattern import GreenPacer, ConstantPacerWithPacer, DynamicPacer
 # pacer = GreenPacer()
 # pacer = ConstantPacerWithPacer()
 pace_input = input("Enter pace (comma-separated values): ")
-pacer = DynamicPacer(pace=[int(x) for x in pace_input.split(",")])
+pacer_type = input("Enter pacer type (constant/dynamic): ")
+if pacer_type == "constant":
+    pace = 0
+    for x in pace_input.split(","):
+        pace += int(x)
+    pacer = ConstantPacerWithPacer(pace=pace)
+else:
+    pacer = DynamicPacer(pace=[int(x) for x in pace_input.split(",")])
 
 print("Starting dynamic pacer…  Press CTRL+C to stop.")
 
