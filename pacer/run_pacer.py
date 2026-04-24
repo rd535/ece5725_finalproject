@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
 import time
-from pacer_pattern import GreenPacer
+from pacer_pattern import GreenPacer, PacerWithPacer
 
 # Create the pacer object
-pacer = GreenPacer()
+# pacer = GreenPacer()
+pacer = PacerWithPacer()
 
 print("Starting green pacer…  Press CTRL+C to stop.")
 
