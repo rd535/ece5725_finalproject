@@ -134,8 +134,9 @@ class DynamicPacer:
         SEGMENT_LENGTH = 8
 
         # convert pace to 5m for LED strip
-        conv_pace = [scale_pace(p, self.rep_distance) for p in self.pace]
-        speed_index = [pace_to_speed(p, self.rep_distance) for p in conv_pace]
+        # conv_pace = [scale_pace(p, self.rep_distance) for p in self.pace]
+        # speed_index = [pace_to_speed(p, self.rep_distance) for p in conv_pace]
+        speed_index = [300 / s for s in speed_index] # convert to LED/s
 
         # UPDATE_INTERVAL = 0.1 # can be faster/slower depending on pace, time.sleep(UPDATE_INTERVAL) 
 
