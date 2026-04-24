@@ -20,6 +20,7 @@ class ConstantPacerWithPacer:
         self.rep_distance = rep_distance
         self.active = False
         self.thread = None
+        self.lap_count = 0
 
         self.strip = PixelStrip(
             self.num_leds,
@@ -58,7 +59,7 @@ class ConstantPacerWithPacer:
         pos = 0.0 
         last_time = time.time()
 
-        first_time = True
+        self.lap_count = 0
 
         while self.active:
             current_time = time.time()
@@ -81,12 +82,12 @@ class ConstantPacerWithPacer:
             for j in range(SEGMENT_LENGTH):
                 idx_init = pos - j
                 # dont overflow on first time
-                if idx_init < 0 and first_time:
+                if idx_init < 0 and self.lap_count == 0:
                     idx_init = 0
                 idx = int((idx_init) % self.num_leds)
                 self.strip.setPixelColor(idx, Color(0,255,0))
 
-            first_time = False
+            self.lap_count += 1
                 
             self.strip.show()
 
