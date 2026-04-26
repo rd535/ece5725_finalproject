@@ -185,7 +185,7 @@ def submit_pacers():
         if pacer_type in ["constant", "constant_with_pacer"] and (not paces or len(paces) == 0):
             return jsonify({"ok": False, "error": f"Row {i + 1}: {pacer_type} pacer requires a pace value"}), 400
 
-    # All validation passed, store pacers in pi_state
+    # All validation passed, store pacers in pi_state, clear old dict
     pi_state["pacers"] = {}
 
     for row in pacers:
@@ -247,15 +247,17 @@ def pacer_start(pacer_name):
     pacer_type = pacer_config.get("pacer_type", "constant")
     pace = pacer_config["paces"][0] if pacer_config["paces"] else 60
     distance = pacer_config.get("rep_distance", 400)
+    lap_count = pacer_config.get("lap_count", 4)
 
-    print(f"Starting {pacer_type} pacer: {pacer_name} at {pace} BPM, distance: {distance}m")
+    print(f"Starting {pacer_type} pacer: {pacer_name} at {pace} s/lap, distance: {distance}m")
 
     try:
         # Create and start pacer instance based on type
         if pacer_type == "constant_with_pacer":
             pacer_instances[pacer_name] = ConstantPacerWithPacer(
                 pace=pace,
-                rep_distance=distance
+                rep_distance=distance,
+                lap_count=lap_count
             )
         elif pacer_type == "dynamic":
             pacer_instances[pacer_name] = DynamicPacer(
@@ -265,7 +267,8 @@ def pacer_start(pacer_name):
         else:  # constant
             pacer_instances[pacer_name] = ConstantPacerWithPacer(
                 pace=pace,
-                rep_distance=distance
+                rep_distance=distance,
+                lap_count=lap_count
             )
 
         pacer_instances[pacer_name].start()

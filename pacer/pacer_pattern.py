@@ -13,14 +13,15 @@ class ConstantPacerWithPacer:
     This is "race mode". since people follow pacer and want the people to hit pace so set pacer pace faster
     Pace = seconds
     """
-    def __init__(self, num_leds=300, pin=12, pace=60, rep_distance=400):
+    def __init__(self, num_leds=300, pin=12, pace=[60], rep_distance=400, lap_count=4):
         self.num_leds = num_leds
         self.pin = pin
         self.pace = pace
         self.rep_distance = rep_distance
         self.active = False
         self.thread = None
-        self.lap_count = 0
+        self.curr_lap = 0
+        self.lap_count = lap_count
 
         self.strip = PixelStrip(
             self.num_leds,
@@ -52,14 +53,14 @@ class ConstantPacerWithPacer:
         # convert pace to 5m for LED strip
         # conv_pace = scale_pace(self.pace, self.rep_distance)
         # SPEED = pace_to_speed(conv_pace, self.rep_distance)
-        SPEED = 300 / self.pace 
+        SPEED = 300 / self.pace[0] # convert to LED/s
 
         # UPDATE_INTERVAL = 0.1 # can be faster/slower depending on pace, time.sleep(UPDATE_INTERVAL) 
 
         pos = 0.0 
         last_time = time.time()
 
-        self.lap_count = 0
+        self.curr_lap = 0
 
         while self.active:
             current_time = time.time()
@@ -71,7 +72,11 @@ class ConstantPacerWithPacer:
             pos = pos + SPEED * dt
 
             if pos >= self.num_leds:
-                self.lap_count += 1
+                self.curr_lap += 1
+            
+            if self.curr_lap >= self.lap_count:
+                self.active = False
+                break
 
             pos = pos % self.num_leds
 
@@ -113,7 +118,7 @@ class DynamicPacer:
         self.rep_distance = rep_distance
         self.active = False
         self.thread = None
-        self.lap_count = 0
+        self.curr_lap = 0
 
         self.strip = PixelStrip(
             self.num_leds,
@@ -150,6 +155,7 @@ class DynamicPacer:
         last_time = time.time()
 
         pace_index = 0
+        self.curr_lap = 0
 
         while self.active:
             current_time = time.time()
@@ -164,7 +170,7 @@ class DynamicPacer:
 
             # detect lap completion by checking wraparound  
             if pos < prev_pos:
-                self.lap_count += 1
+                self.curr_lap += 1
                 pace_index += 1
 
                 # break if all laps done
@@ -193,7 +199,7 @@ class DynamicPacer:
             self.strip.setPixelColor(i, Color(0,0,0))
         self.strip.show()
 
-class GreenPacer:
+class ConstantPacer:
     def __init__(self, num_leds=300, pin=12):
         self.num_leds = num_leds
         self.pin = pin
