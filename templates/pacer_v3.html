@@ -70,7 +70,12 @@
                             <tbody id="tableBody">
                                 <tr>
                                     <td><input type="text" class="pacerName" value="Pacer 1" readonly></td>
-                                    <td><input type="number" class="pace" placeholder="Pace"></td>
+                                    <td>
+                                        <div class="paceList">
+                                            <input type="number" class="lapPace" placeholder="Lap 1 pace">
+                                        </div>
+                                        <button type="button" onclick="addLapPace(this)">Add Lap Pace</button>
+                                    </td>
                                     <td><input type="number" class="distance" placeholder="Distance"></td>
                                 </tr>
                             </tbody>
@@ -416,17 +421,27 @@
 
         function addRow() {
             const rowNum = tableBody.rows.length + 1;
-            const isAutoFill = autoNameToggle.checked;
+            const isAuto = autoNameToggle.checked;
 
             const newRow = document.createElement("tr");
 
-            // If auto-fill is enabled, set the name and make it readonly. Otherwise, leave it blank and editable.
             newRow.innerHTML = `
-                <td><input type="text" class="pacerName"
-                    value="${isAutoFill ? `Pacer ${rowNum}` : ''}"
-                    ${isAutoFill ? 'readonly' : ''}></td>
-                <td><input type="number" class="pace" placeholder="Pace"></td>
+                <td>
+                    <input type="text" class="pacerName"
+                        value="${isAuto ? `Pacer ${rowNum}` : ''}"
+                        ${isAuto ? 'readonly' : ''}>
+                </td>
+
+                <td>
+                    <div class="paceList">
+                        <input type="number" class="lapPace" placeholder="Lap 1 pace">
+                    </div>
+                    <button type="button" onclick="addLapPace(this)">Add Lap Pace</button>
+                </td>
+
                 <td><input type="number" class="distance" placeholder="Distance"></td>
+
+                <td><button type="button" onclick="removeRow(this)">Delete</button></td>
             `;
 
             tableBody.appendChild(newRow);
@@ -444,6 +459,21 @@
 
         autoNameToggle.addEventListener("change", updateAutoNames);
 
+        function addLapPace(button) {
+            const row = button.closest("tr");
+            const paceList = row.querySelector(".paceList");
+
+            const lapNum = paceList.querySelectorAll(".lapPace").length + 1;
+
+            const input = document.createElement("input");
+            input.type = "number";
+            input.className = "lapPace";
+            input.placeholder = `Lap ${lapNum} pace`;
+
+            paceList.appendChild(document.createElement("br"));
+            paceList.appendChild(input);
+        }
+
         async function submitTable() {
             errorMessage.textContent = "";
 
@@ -452,18 +482,31 @@
 
             for (let i = 0; i < rows.length; i++) {
                 const name = rows[i].querySelector(".pacerName").value.trim();
-                const pace = rows[i].querySelector(".pace").value.trim();
                 const distance = rows[i].querySelector(".distance").value.trim();
 
-                if (!name || !pace || !distance) {
+                const paceInputs = rows[i].querySelectorAll(".lapPace");
+                const paces = [];
+
+                for (let j = 0; j < paceInputs.length; j++) {
+                    const pace = paceInputs[j].value.trim();
+
+                    if (!pace) {
+                        errorMessage.textContent = `Error: Row ${i + 1}, Lap ${j + 1} pace is incomplete.`;
+                        return;
+                    }
+
+                    paces.push(Number(pace));
+                }
+
+                if (!name || !distance || paces.length === 0) {
                     errorMessage.textContent = `Error: Row ${i + 1} is incomplete.`;
                     return;
                 }
 
                 data.push({
                     pacer_name: name,
-                    pace: Number(pace),
-                    distance: Number(distance)
+                    distance: Number(distance),
+                    paces: paces
                 });
             }
 
@@ -476,13 +519,25 @@
             });
 
             const result = await response.json();
+            console.log(result);
+        }
 
-            if (!response.ok) {
-                errorMessage.textContent = result.error || "Server error.";
-            } else {
-                alert("Data sent successfully!");
-                console.log(result);
-            }
+        const response = await fetch("/submit_pacers", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ pacers: data })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            errorMessage.textContent = result.error || "Server error.";
+        } else {
+            alert("Data sent successfully!");
+            console.log(result);
+        }
         }
     </script>
 </body>
