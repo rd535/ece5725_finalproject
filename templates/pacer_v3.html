@@ -78,6 +78,7 @@
                     </div>
                     <div class="button-group">
                         <button onclick="addRow()">Add Row</button>
+                        <button onclick="removeLastRow()">Remove Last Row</button>
                         <button onclick="submitTable()">Submit</button>
                         <p id="errorMessage" style="color: red;"></p>
                     </div>
@@ -418,7 +419,7 @@
             const isAutoFill = autoNameToggle.checked;
 
             const newRow = document.createElement("tr");
-            
+
             // If auto-fill is enabled, set the name and make it readonly. Otherwise, leave it blank and editable.
             newRow.innerHTML = `
                 <td><input type="text" class="pacerName"
@@ -430,6 +431,15 @@
 
             tableBody.appendChild(newRow);
             updateAutoNames();
+        }
+
+        function removeLastRow() {
+            if (tableBody.rows.length > 1) {
+                tableBody.deleteRow(-1);
+                updateAutoNames();
+            } else {
+                errorMessage.textContent = "Must have at least one row.";
+            }
         }
 
         autoNameToggle.addEventListener("change", updateAutoNames);
