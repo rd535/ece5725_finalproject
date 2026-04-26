@@ -75,6 +75,11 @@ X?
 Bugs:
 - might need to change to fully using arrays for pacing? idk we will see if can handle both array and const inputs
 
+huge claude update, need to examine deeper what changes were made but works!!
+Bug - constant = constant_with_pacer
+!! change log print statements with BPM for starting pacer
+- pacer status not updating after first send
+- still can't handle dynamic paces
 
 Step 2: get manager working 
 Step 3: get full table upload working for multiple paces
