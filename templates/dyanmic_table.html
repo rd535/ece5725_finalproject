@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Pacer Table</title>
+</head>
+<body>
+    <h1>Pacer Setup</h1>
+
+    <label>
+        <input type="checkbox" id="autoNameToggle" checked>
+        Auto-fill Column 1 as "Pacer [row_num]"
+    </label>
+
+    <br><br>
+
+    <table border="1" id="pacerTable">
+        <thead>
+            <tr>
+                <th>Pacer Name</th>
+                <th>Pace</th>
+                <th>Distance</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody">
+            <tr>
+                <td><input type="text" class="pacerName" value="Pacer 1" readonly></td>
+                <td><input type="number" class="pace" placeholder="Pace"></td>
+                <td><input type="number" class="distance" placeholder="Distance"></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <br>
+
+    <button onclick="addRow()">Add Row</button>
+    <button onclick="submitTable()">Submit</button>
+
+    <p id="errorMessage" style="color: red;"></p>
+
+    <script>
+        const tableBody = document.getElementById("tableBody");
+        const autoNameToggle = document.getElementById("autoNameToggle");
+        const errorMessage = document.getElementById("errorMessage");
+
+        function updateAutoNames() {
+            const rows = tableBody.querySelectorAll("tr");
+
+            rows.forEach((row, index) => {
+                const nameInput = row.querySelector(".pacerName");
+
+                if (autoNameToggle.checked) {
+                    nameInput.value = `Pacer ${index + 1}`;
+                    nameInput.readOnly = true;
+                } else {
+                    nameInput.readOnly = false;
+                }
+            });
+        }
+
+        function addRow() {
+            const rowNum = tableBody.rows.length + 1;
+
+            const newRow = document.createElement("tr");
+
+            newRow.innerHTML = `
+                <td><input type="text" class="pacerName" value="Pacer ${rowNum}" readonly></td>
+                <td><input type="number" class="pace" placeholder="Pace"></td>
+                <td><input type="number" class="distance" placeholder="Distance"></td>
+            `;
+
+            tableBody.appendChild(newRow);
+            updateAutoNames();
+        }
+
+        autoNameToggle.addEventListener("change", updateAutoNames);
+
+        async function submitTable() {
+            errorMessage.textContent = "";
+
+            const rows = tableBody.querySelectorAll("tr");
+            const data = [];
+
+            for (let i = 0; i < rows.length; i++) {
+                const name = rows[i].querySelector(".pacerName").value.trim();
+                const pace = rows[i].querySelector(".pace").value.trim();
+                const distance = rows[i].querySelector(".distance").value.trim();
+
+                if (!name || !pace || !distance) {
+                    errorMessage.textContent = `Error: Row ${i + 1} is incomplete.`;
+                    return;
+                }
+
+                data.push({
+                    pacer_name: name,
+                    pace: Number(pace),
+                    distance: Number(distance)
+                });
+            }
+
+            const response = await fetch("/submit_pacers", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ pacers: data })
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                errorMessage.textContent = result.error || "Server error.";
+            } else {
+                alert("Data sent successfully!");
+                console.log(result);
+            }
+        }
+    </script>
+</body>
+</html>

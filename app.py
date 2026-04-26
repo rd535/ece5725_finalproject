@@ -145,12 +145,27 @@ def index():
     ## ADVANCED, SCRIPTED REFRESH - UPGRADED VERSION
     return render_template('pacer_v3.html')
 
+@app.route("/submit_pacers", methods=["POST"])
+def submit_pacers():
+    data = request.get_json()
+
+    pacers = data.get("pacers", [])
+
+    for i, row in enumerate(pacers):
+        if not row.get("pacer_name") or row.get("pace") is None or row.get("distance") is None:
+            return jsonify({"error": f"Row {i + 1} is incomplete"}), 400
+
+    print(pacers)
+
+    return jsonify({
+        "message": "Pacers received",
+        "pacers": pacers
+    })
 
 
-
-@app.route('/hello/<name>')
-def hello(name):
-    return render_template('page.html', name=name)
+# @app.route('/hello/<name>')
+# def hello(name):
+#     return render_template('page.html', name=name)
 
 # # Testing color from the web interface
 # from color_test import set_color_all

@@ -35,3 +35,16 @@ Interesting note: Data is daisy chained togther
 LED1 stores first 32 bits and then passes rest
 to send stuff to LED50 have to send 49 32 bit packets first and then hold data line low
 Hardware shift register chain with memory
+
+(4/24):
+Future Me: Change UI colors to be Cornell Colors!!
+
+(4/26):
+Tasks:
+Figure out how to deal with user entering dynamic paces
+Make UI have live updates for every single pace thats entered
+[PACE NAME (changeable)], [PACER TYPE], Current Pace, Color, Time, Status, LapCount
+
+Future:
+Set pace to start/end at arbitrary points ex. 200m start/end (like for 1k)
+
