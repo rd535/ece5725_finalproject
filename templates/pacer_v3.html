@@ -63,22 +63,32 @@
                             <thead>
                                 <tr>
                                     <th>Pacer Name</th>
+                                    <th>Pacer Type</th>
                                     <th>Pace</th>
                                     <th>Distance</th>
+                                    <th>Action</th>
                                 </tr>
                             </thead>
                             <tbody id="tableBody">
                                 <tr>
                                     <td><input type="text" class="pacerName" value="Pacer 1" readonly></td>
                                     <td>
+                                        <select class="pacerType">
+                                            <option value="constant">Constant</option>
+                                            <option value="constant_with_pacer">Constant w/ Pacer</option>
+                                            <option value="dynamic" selected>Dynamic</option>
+                                        </select>
+                                    </td>
+                                    <td>
                                         <div class="paceList">
                                             <input type="number" class="lapPace" placeholder="Lap 1 pace" min="1"
                                                 max="300">
-                                            <button type="button" onclick="addLapPace(this)">Add Lap Pace</button>
+                                            <button type="button" class="addLapBtn" onclick="addLapPace(this)">Add Lap Pace</button>
                                         </div>
                                     </td>
                                     <td><input type="number" class="distance" placeholder="Distance" min="1"
                                             max="10000"></td>
+                                    <td><button type="button" class="delBtn" onclick="removeRow(this)">Delete</button></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -109,21 +119,27 @@
 
                 <!-- Status Display -->
                 <div class="card">
-                    <h2>Live Status</h2>
-                    <div class="status-grid">
-                        <div class="status-card">
-                            <div class="status-label">System Status</div>
-                            <div class="status-value" id="status">—</div>
-                        </div>
-                        <div class="status-card">
-                            <div class="status-label">Last Update</div>
-                            <div class="status-value" id="last_update" style="font-size: 1.3em;">—</div>
-                        </div>
-                        <div class="status-card">
-                            <div class="status-label">Current Split</div>
-                            <div class="status-value" id="current_split" style="font-size: 1.3em;">—</div>
-                        </div>
-                    </div>
+                    <h2>Pacer Status</h2>
+                    <table border="1" id="statusTable" style="width: 100%; text-align: center;">
+                        <thead>
+                            <tr>
+                                <th>Pacer Name</th>
+                                <th>Type</th>
+                                <th>Pace</th>
+                                <th>Lap Count</th>
+                                <th>Status</th>
+                                <th>Time Running</th>
+                                <th>Controls</th>
+                            </tr>
+                        </thead>
+                        <tbody id="statusTableBody">
+                            <!-- Populated by JavaScript -->
+                        </tbody>
+                    </table>
+                    <p style="margin-top: 15px; color: #666; font-size: 0.9em;">
+                        <strong>System Status:</strong> <span id="systemStatus">—</span> |
+                        <strong>Last Update:</strong> <span id="lastUpdateTime">—</span>
+                    </p>
                 </div>
             </div>
         </div>
@@ -157,6 +173,10 @@
     </div>
 
     <script>
+        // Global state for pacers
+        const pacerState = {};
+        let pacerStartTimes = {};
+
         // Mode switching
         function switchMode(mode) {
             // Hide all tabs
@@ -389,17 +409,28 @@
                 const response = await fetch("/api/status");
                 const data = await response.json();
 
-                document.getElementById("status").textContent = data.status || "—";
-                document.getElementById("last_update").textContent = data.last_update || "—";
-                document.getElementById("current_split").textContent =
-                    (typeof data.current_split === 'number' ? data.current_split.toFixed(2) : "—");
+                document.getElementById("systemStatus").textContent = data.status || "—";
+                document.getElementById("lastUpdateTime").textContent = data.last_update || "—";
             } catch (error) {
                 console.error('Error updating status:', error);
             }
         }
 
-        updateStatus();
-        setInterval(updateStatus, 1000);
+        // Update time display for running pacers
+        function updateRunningTimes() {
+            Object.keys(pacerStartTimes).forEach(pacerName => {
+                const startTime = pacerStartTimes[pacerName];
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                const minutes = Math.floor(elapsed / 60);
+                const seconds = elapsed % 60;
+                const timeStr = `${minutes}m ${seconds}s`;
+
+                const timeCell = document.querySelector(`[data-pacer-time="${pacerName}"]`);
+                if (timeCell) {
+                    timeCell.textContent = timeStr;
+                }
+            });
+        }
 
         // Pacer table functions
         const tableBody = document.getElementById("tableBody");
@@ -421,6 +452,21 @@
             });
         }
 
+        function updateAddLapButtons() {
+            const rows = tableBody.querySelectorAll("tr");
+            rows.forEach(row => {
+                const typeSelect = row.querySelector(".pacerType");
+                const addLapBtn = row.querySelector(".addLapBtn");
+                const isDynamic = typeSelect && typeSelect.value === "dynamic";
+
+                if (addLapBtn) {
+                    addLapBtn.disabled = !isDynamic;
+                    addLapBtn.style.opacity = isDynamic ? "1" : "0.5";
+                    addLapBtn.style.cursor = isDynamic ? "pointer" : "not-allowed";
+                }
+            });
+        }
+
         function addRow() {
             const rowNum = tableBody.rows.length + 1;
             const isAuto = autoNameToggle.checked;
@@ -435,25 +481,51 @@
                 </td>
 
                 <td>
-                    <div class="paceList">
-                        <input type="number" class="lapPace" placeholder="Lap 1 pace">
-                    </div>
-                    <button type="button" onclick="addLapPace(this)">Add Lap Pace</button>
+                    <select class="pacerType">
+                        <option value="constant">Constant</option>
+                        <option value="constant_with_pacer">Constant w/ Pacer</option>
+                        <option value="dynamic" selected>Dynamic</option>
+                    </select>
                 </td>
 
-                <td><input type="number" class="distance" placeholder="Distance"></td>
+                <td>
+                    <div class="paceList">
+                        <input type="number" class="lapPace" placeholder="Lap 1 pace" min="1" max="300">
+                    </div>
+                    <button type="button" class="addLapBtn" onclick="addLapPace(this)">Add Lap Pace</button>
+                </td>
 
-                <td><button type="button" onclick="removeRow(this)">Delete</button></td>
+                <td><input type="number" class="distance" placeholder="Distance" min="1" max="10000"></td>
+
+                <td><button type="button" class="delBtn" onclick="removeRow(this)">Delete</button></td>
             `;
 
             tableBody.appendChild(newRow);
+
+            // Add event listener for the type select
+            const typeSelect = newRow.querySelector(".pacerType");
+            typeSelect.addEventListener("change", updateAddLapButtons);
+
             updateAutoNames();
+            updateAddLapButtons();
         }
 
         function removeLastRow() {
             if (tableBody.rows.length > 1) {
                 tableBody.deleteRow(-1);
                 updateAutoNames();
+                updateAddLapButtons();
+            } else {
+                errorMessage.textContent = "Must have at least one row.";
+            }
+        }
+
+        function removeRow(button) {
+            const row = button.closest("tr");
+            if (tableBody.rows.length > 1) {
+                row.remove();
+                updateAutoNames();
+                updateAddLapButtons();
             } else {
                 errorMessage.textContent = "Must have at least one row.";
             }
@@ -463,8 +535,13 @@
 
         function addLapPace(button) {
             const row = button.closest("tr");
-            const paceList = row.querySelector(".paceList");
+            const typeSelect = row.querySelector(".pacerType");
 
+            if (typeSelect.value !== "dynamic") {
+                return;
+            }
+
+            const paceList = row.querySelector(".paceList");
             const lapNum = paceList.querySelectorAll(".lapPace").length + 1;
 
             const input = document.createElement("input");
@@ -474,13 +551,7 @@
             input.min = "1";
             input.max = "300";
 
-            const last = paceList.lastElementChild;
-
-            if (last) {
-                paceList.insertBefore(input, last);
-            } else {
-                paceList.appendChild(input);
-            }
+            paceList.insertBefore(input, button);
         }
 
         async function submitTable() {
@@ -491,6 +562,7 @@
 
             for (let i = 0; i < rows.length; i++) {
                 const name = rows[i].querySelector(".pacerName").value.trim();
+                const pacerType = rows[i].querySelector(".pacerType").value;
                 const distance = rows[i].querySelector(".distance").value.trim();
 
                 const paceInputs = rows[i].querySelectorAll(".lapPace");
@@ -507,16 +579,32 @@
                     paces.push(Number(pace));
                 }
 
-                if (!name || !distance || paces.length === 0) {
+                if (!name || !distance) {
                     errorMessage.textContent = `Error: Row ${i + 1} is incomplete.`;
+                    return;
+                }
+
+                if (pacerType === "dynamic" && paces.length === 0) {
+                    errorMessage.textContent = `Error: Row ${i + 1} (Dynamic) requires at least one pace.`;
                     return;
                 }
 
                 data.push({
                     pacer_name: name,
+                    pacer_type: pacerType,
                     distance: Number(distance),
-                    paces: paces
+                    paces: paces.length > 0 ? paces : [Number(paces[0]) || 0]
                 });
+
+                // Initialize pacer state
+                if (!pacerState[name]) {
+                    pacerState[name] = {
+                        type: pacerType,
+                        pace: paces.length > 0 ? paces[0] : 0,
+                        lapCount: paces.length,
+                        status: "idle"
+                    };
+                }
             }
 
             const response = await fetch("/submit_pacers", {
@@ -528,25 +616,74 @@
             });
 
             const result = await response.json();
-            console.log(result);
+            if (!response.ok) {
+                errorMessage.textContent = result.error || "Server error.";
+            } else {
+                showSuccessMessage("Pacer configuration submitted successfully!");
+                updateStatusTable();
+                console.log(result);
+            }
         }
 
-        const response = await fetch("/submit_pacers", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ pacers: data })
-        });
+        function updateStatusTable() {
+            const statusTableBody = document.getElementById("statusTableBody");
+            statusTableBody.innerHTML = "";
 
-        const result = await response.json();
+            Object.keys(pacerState).forEach(pacerName => {
+                const pacer = pacerState[pacerName];
+                const isRunning = pacerStartTimes[pacerName] !== undefined;
+                const timeRunning = isRunning
+                    ? (() => {
+                        const elapsed = Math.floor((Date.now() - pacerStartTimes[pacerName]) / 1000);
+                        const minutes = Math.floor(elapsed / 60);
+                        const seconds = elapsed % 60;
+                        return `${minutes}m ${seconds}s`;
+                    })()
+                    : "—";
 
-        if (!response.ok) {
-            errorMessage.textContent = result.error || "Server error.";
-        } else {
-            alert("Data sent successfully!");
-            console.log(result);
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${pacerName}</td>
+                    <td>${pacer.type.replace(/_/g, ' ').charAt(0).toUpperCase() + pacer.type.replace(/_/g, ' ').slice(1)}</td>
+                    <td>${pacer.pace} BPM</td>
+                    <td>${pacer.lapCount}</td>
+                    <td><strong>${pacer.status}</strong></td>
+                    <td data-pacer-time="${pacerName}">${timeRunning}</td>
+                    <td>
+                        ${!isRunning
+                            ? `<button class="btn-success" onclick="startPacer('${pacerName}')">Start</button>`
+                            : `<button class="btn-danger" onclick="stopPacer('${pacerName}')">Stop</button>`
+                        }
+                    </td>
+                `;
+                statusTableBody.appendChild(row);
+            });
         }
+
+        function startPacer(pacerName) {
+            if (pacerState[pacerName]) {
+                pacerState[pacerName].status = "running";
+                pacerStartTimes[pacerName] = Date.now();
+                updateStatusTable();
+                showSuccessMessage(`${pacerName} started!`);
+            }
+        }
+
+        function stopPacer(pacerName) {
+            if (pacerState[pacerName]) {
+                pacerState[pacerName].status = "stopped";
+                delete pacerStartTimes[pacerName];
+                updateStatusTable();
+                showSuccessMessage(`${pacerName} stopped!`);
+            }
+        }
+
+        updateStatus();
+        setInterval(updateStatus, 1000);
+        setInterval(updateRunningTimes, 250);
+
+        // Initialize add lap button states
+        updateAddLapButtons();
     </script>
 </body>
 

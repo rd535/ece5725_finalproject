@@ -152,13 +152,26 @@ def submit_pacers():
     pacers = data.get("pacers", [])
 
     for i, row in enumerate(pacers):
-        if not row.get("pacer_name") or row.get("pace") is None or row.get("distance") is None:
-            return jsonify({"error": f"Row {i + 1} is incomplete"}), 400
+        pacer_name = row.get("pacer_name")
+        pacer_type = row.get("pacer_type", "dynamic")
+        distance = row.get("distance")
+        paces = row.get("paces", [])
 
-    print(pacers)
+        # Validation
+        if not pacer_name or distance is None:
+            return jsonify({"error": f"Row {i + 1}: Missing pacer name or distance"}), 400
+
+        if pacer_type == "dynamic" and (not paces or len(paces) == 0):
+            return jsonify({"error": f"Row {i + 1}: Dynamic pacer requires at least one pace"}), 400
+
+        if pacer_type in ["constant", "constant_with_pacer"] and (not paces or len(paces) == 0):
+            return jsonify({"error": f"Row {i + 1}: {pacer_type} pacer requires a pace value"}), 400
+
+    print(f"Received pacer configuration: {pacers}")
 
     return jsonify({
-        "message": "Pacers received",
+        "ok": True,
+        "message": "Pacers received successfully",
         "pacers": pacers
     })
 

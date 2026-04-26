@@ -365,3 +365,143 @@ button {
 .success-message.show {
     display: block;
 }
+
+/* Table Styling */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 15px 0;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+table thead {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-weight: 600;
+}
+
+table th {
+    padding: 15px;
+    text-align: left;
+    border: 1px solid #ddd;
+}
+
+table td {
+    padding: 12px 15px;
+    border: 1px solid #e0e0e0;
+}
+
+table tbody tr {
+    transition: background-color 0.2s ease;
+}
+
+table tbody tr:hover {
+    background-color: #f5f7fa;
+}
+
+table tbody tr:nth-child(even) {
+    background-color: #fafafa;
+}
+
+/* Table Input Styles */
+table input[type="text"],
+table input[type="number"],
+table select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 0.95em;
+    background: white;
+    transition: all 0.2s ease;
+}
+
+table input[type="text"]:focus,
+table input[type="number"]:focus,
+table select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+table select {
+    cursor: pointer;
+    padding: 8px 12px;
+}
+
+/* Pace List Container */
+.paceList {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.paceList input {
+    width: 100%;
+}
+
+/* Small buttons in tables */
+table button {
+    padding: 8px 16px;
+    font-size: 0.85em;
+    border-radius: 6px;
+    margin: 0;
+}
+
+.addLapBtn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    font-size: 0.8em;
+    padding: 6px 12px;
+    margin-top: 8px;
+}
+
+.addLapBtn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);
+}
+
+.addLapBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.delBtn {
+    background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(245, 87, 108, 0.3);
+    font-size: 0.8em;
+    padding: 6px 12px;
+}
+
+.delBtn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(245, 87, 108, 0.5);
+}
+
+/* Status Table Specific */
+#statusTable {
+    overflow-x: auto;
+}
+
+#statusTable th,
+#statusTable td {
+    min-width: 100px;
+    text-align: center;
+}
+
+#statusTable button {
+    padding: 8px 16px;
+    font-size: 0.85em;
+    min-width: 90px;
+}
+
+/* Read-only input styling */
+input[readonly] {
+    background-color: #f0f0f0;
+    color: #666;
+    cursor: not-allowed;
+}
