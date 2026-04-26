@@ -88,8 +88,8 @@
                                     </td>
                                     <td><input type="number" class="distance" placeholder="400" min="1" max="10000">
                                     </td>
-                                    <td><input type="number" class="lapCount" value="1" min="1" max="9" 
-                                        oninput="updateLapPaceFromLapNum(this)"></td>
+                                    <td><input type="number" class="lapCount" value="1" min="1" max="9"
+                                            oninput="updateLapPaceFromLapNum(this)"></td>
                                     <td><button type="button" class="delBtn" onclick="removeRow(this)">Delete</button>
                                     </td>
                                 </tr>
@@ -575,20 +575,25 @@
         // LapNum change input handler, both input and select elements are linked to this function
         function updateLapPaceFromLapNum(el) {
             const row = el.closest("tr");
+
             const typeSelect = row.querySelector(".pacerType");
-
-            const lapCount = Number(el.value);
+            const lapCountInput = row.querySelector(".lapCount");
             const paceList = row.querySelector(".paceList");
-            const currentPaces = paceList.querySelectorAll(".lapPace").length;
+            const addLapBtn = paceList.querySelector(".addLapBtn");
 
+            const lapCount = Number(lapCountInput.value);
+            let paceInputs = paceList.querySelectorAll(".lapPace");
+            let currentPaces = paceInputs.length;
+
+            // If not dynamic, keep only one pace input
             if (typeSelect.value !== "dynamic") {
-                for (let i = currentPaces; i >= 1; i--) {
-                    if (paceInputs[i]) {
-                        paceInputs[i].remove();
-                    }
+                for (let i = currentPaces - 1; i >= 1; i--) {
+                    paceInputs[i].remove();
                 }
+                return;
             }
 
+            // If dynamic, match number of pace inputs to lap count
             if (lapCount > currentPaces) {
                 for (let i = currentPaces + 1; i <= lapCount; i++) {
                     const paceInput = document.createElement("input");
@@ -597,14 +602,14 @@
                     paceInput.placeholder = `Lap ${i} pace`;
                     paceInput.min = "1";
                     paceInput.max = "300";
-                    paceList.insertBefore(paceInput, paceList.querySelector(".addLapBtn"));
+
+                    paceList.insertBefore(paceInput, addLapBtn);
                 }
             } else if (lapCount < currentPaces) {
-                const paceInputs = paceList.querySelectorAll(".lapPace");
+                paceInputs = paceList.querySelectorAll(".lapPace");
+
                 for (let i = currentPaces - 1; i >= lapCount; i--) {
-                    if (paceInputs[i]) {
-                        paceInputs[i].remove();
-                    }
+                    paceInputs[i].remove();
                 }
             }
         }
