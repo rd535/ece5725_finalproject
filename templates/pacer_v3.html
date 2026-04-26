@@ -74,7 +74,7 @@
                                 <tr>
                                     <td><input type="text" class="pacerName" value="Pacer 1" readonly></td>
                                     <td>
-                                        <select class="pacerType">
+                                        <select class="pacerType" onchange="updateLapPaceFromLapNum(this)">
                                             <option value="constant" selected>Constant</option>
                                             <option value="constant_with_pacer">Constant w/ Pacer</option>
                                             <option value="dynamic">Dynamic</option>
@@ -484,7 +484,7 @@
                 </td>
 
                 <td>
-                    <select class="pacerType">
+                    <select class="pacerType" onchange="updateLapPaceFromLapNum(this)">
                         <option value="constant" selected>Constant</option>
                         <option value="constant_with_pacer">Constant w/ Pacer</option>
                         <option value="dynamic">Dynamic</option>
@@ -572,12 +572,12 @@
             lapCountInput.value = numPaces;
         }
 
-        // LapNum change input handler
-        function updateLapPaceFromLapNum(input) {
-            const row = input.closest("tr");
+        // LapNum change input handler, both input and select elements are linked to this function
+        function updateLapPaceFromLapNum(el) {
+            const row = el.closest("tr");
             const typeSelect = row.querySelector(".pacerType");
 
-            const lapCount = Number(input.value);
+            const lapCount = Number(el.value);
             const paceList = row.querySelector(".paceList");
             const currentPaces = paceList.querySelectorAll(".lapPace").length;
 
