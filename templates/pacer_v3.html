@@ -455,21 +455,6 @@
             });
         }
 
-        function updateAddLapButtons() {
-            const rows = tableBody.querySelectorAll("tr");
-            rows.forEach(row => {
-                const typeSelect = row.querySelector(".pacerType");
-                const addLapBtn = row.querySelector(".addLapBtn");
-                const isDynamic = typeSelect && typeSelect.value === "dynamic";
-
-                if (addLapBtn) {
-                    addLapBtn.disabled = !isDynamic;
-                    addLapBtn.style.opacity = isDynamic ? "1" : "0.5";
-                    addLapBtn.style.cursor = isDynamic ? "pointer" : "not-allowed";
-                }
-            });
-        }
-
         function addRow() {
             const rowNum = tableBody.rows.length + 1;
             const isAuto = autoNameToggle.checked;
