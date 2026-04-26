@@ -71,11 +71,8 @@
                                 <tr>
                                     <td><input type="text" class="pacerName" value="Pacer 1" readonly></td>
                                     <td>
-                                        <div
-                                            style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
-                                            <div class="paceList">
-                                                <input type="number" class="lapPace" placeholder="Lap 1 pace" min="1" max = "300">
-                                            </div>
+                                        <div class="paceList">
+                                            <input type="number" class="lapPace" placeholder="Lap 1 pace" min="1" max = "300">
                                             <button type="button" onclick="addLapPace(this)">Add Lap Pace</button>
                                         </div>
                                     </td>
@@ -475,10 +472,7 @@
             input.min = "1";
             input.max = "300";
 
-            const wrapper = document.createElement("div");
-
-            wrapper.appendChild(input);
-            paceList.appendChild(wrapper);
+            paceList.insertBefore(input, paceList.lastElementChild);
         }
 
         async function submitTable() {
