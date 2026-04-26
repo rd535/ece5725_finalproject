@@ -43,7 +43,14 @@ Future Me: Change UI colors to be Cornell Colors!!
 Tasks:
 Figure out how to deal with user entering dynamic paces
 Make UI have live updates for every single pace thats entered
-[PACE NAME (changeable)], [PACER TYPE], Current Pace, Color, Time, Status, LapCount
+[PACE NAME (changeable)], [PACER TYPE], Current Pace, Color, Time, Status, LapCount, start/stop?
+
+Currently:
+- fix add lap pace button if not dynamic
+also add way to specify total lap count for constant pacer
+dynamic is just added each time "add lap pace" button is clicked
+
+- change to make it so increasing lap number controls number of lap pace options available for dynamic!
 
 Future:
 Set pace to start/end at arbitrary points ex. 200m start/end (like for 1k)

@@ -65,7 +65,8 @@
                                     <th>Pacer Name</th>
                                     <th>Pacer Type</th>
                                     <th>Pace</th>
-                                    <th>Distance</th>
+                                    <th>Interval (m)</th>
+                                    <th>Lap Count</th>
                                     <th>Action</th>
                                 </tr>
                             </thead>
@@ -83,12 +84,14 @@
                                         <div class="paceList">
                                             <input type="number" class="lapPace" placeholder="Lap 1 pace" min="1"
                                                 max="300">
-                                            <button type="button" class="addLapBtn" onclick="addLapPace(this)">Add Lap Pace</button>
                                         </div>
                                     </td>
-                                    <td><input type="number" class="distance" placeholder="Distance" min="1"
-                                            max="10000"></td>
-                                    <td><button type="button" class="delBtn" onclick="removeRow(this)">Delete</button></td>
+                                    <td><input type="number" class="distance" placeholder="400" min="1" max="10000">
+                                    </td>
+                                    <td><input type="number" class="lapCount" value="1" min="1" max="9" 
+                                        oninput="updateLapPaceFromLapNum(this)"></td>
+                                    <td><button type="button" class="delBtn" onclick="removeRow(this)">Delete</button>
+                                    </td>
                                 </tr>
                             </tbody>
                         </table>
@@ -533,6 +536,7 @@
 
         autoNameToggle.addEventListener("change", updateAutoNames);
 
+        //Outdated !!
         function addLapPace(button) {
             const row = button.closest("tr");
             const typeSelect = row.querySelector(".pacerType");
@@ -552,6 +556,50 @@
             input.max = "300";
 
             paceList.insertBefore(input, button);
+
+            updateLapCountFromRow(row);
+        }
+
+        function updateLapCountFromRow(row) {
+            const paceType = row.querySelector(".pacerType");
+            const lapCountInput = row.querySelector(".lapCount");
+
+            if (paceType.value !== "dynamic") return;
+
+            const numPaces = row.querySelectorAll(".lapPace").length;
+            lapCountInput.value = numPaces;
+        }
+
+        // LapNum change input handler
+        function updateLapPaceFromLapNum(input) {
+            const row = input.closest("tr");
+            const typeSelect = row.querySelector(".pacerType");
+
+            if (typeSelect.value !== "dynamic") {
+                return;
+            }
+
+            const lapCount = Number(input.value);
+            const paceList = row.querySelector(".paceList");
+            const currentPaces = paceList.querySelectorAll(".lapPace").length;
+            if (lapCount > currentPaces) {
+                for (let i = currentPaces + 1; i <= lapCount; i++) {
+                    const paceInput = document.createElement("input");
+                    paceInput.type = "number";
+                    paceInput.className = "lapPace";
+                    paceInput.placeholder = `Lap ${i} pace`;
+                    paceInput.min = "1";
+                    paceInput.max = "300";
+                    paceList.insertBefore(paceInput, paceList.querySelector(".addLapBtn"));
+                }
+            } else if (lapCount < currentPaces) {
+                const paceInputs = paceList.querySelectorAll(".lapPace");
+                for (let i = currentPaces - 1; i >= lapCount; i--) {
+                    if (paceInputs[i]) {
+                        paceInputs[i].remove();
+                    }
+                }
+            }
         }
 
         async function submitTable() {
@@ -651,9 +699,9 @@
                     <td data-pacer-time="${pacerName}">${timeRunning}</td>
                     <td>
                         ${!isRunning
-                            ? `<button class="btn-success" onclick="startPacer('${pacerName}')">Start</button>`
-                            : `<button class="btn-danger" onclick="stopPacer('${pacerName}')">Stop</button>`
-                        }
+                        ? `<button class="btn-success" onclick="startPacer('${pacerName}')">Start</button>`
+                        : `<button class="btn-danger" onclick="stopPacer('${pacerName}')">Stop</button>`
+                    }
                     </td>
                 `;
                 statusTableBody.appendChild(row);
