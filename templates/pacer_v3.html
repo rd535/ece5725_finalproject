@@ -538,40 +538,6 @@
 
         autoNameToggle.addEventListener("change", updateAutoNames);
 
-        //Outdated !!
-        function addLapPace(button) {
-            const row = button.closest("tr");
-            const typeSelect = row.querySelector(".pacerType");
-
-            if (typeSelect.value !== "dynamic") {
-                return;
-            }
-
-            const paceList = row.querySelector(".paceList");
-            const lapNum = paceList.querySelectorAll(".lapPace").length + 1;
-
-            const input = document.createElement("input");
-            input.type = "number";
-            input.className = "lapPace";
-            input.placeholder = `Lap ${lapNum} pace`;
-            input.min = "1";
-            input.max = "300";
-
-            paceList.insertBefore(input, button);
-
-            updateLapCountFromRow(row);
-        }
-
-        function updateLapCountFromRow(row) {
-            const paceType = row.querySelector(".pacerType");
-            const lapCountInput = row.querySelector(".lapCount");
-
-            if (paceType.value !== "dynamic") return;
-
-            const numPaces = row.querySelectorAll(".lapPace").length;
-            lapCountInput.value = numPaces;
-        }
-
         // LapNum change input handler, both input and select elements are linked to this function
         function updateLapPaceFromLapNum(el) {
             const row = el.closest("tr");
