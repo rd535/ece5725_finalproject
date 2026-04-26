@@ -493,14 +493,11 @@
             typeSelect.addEventListener("change", updateAddLapButtons);
 
             updateAutoNames();
-            updateAddLapButtons();
         }
 
         function removeLastRow() {
             if (tableBody.rows.length > 1) {
                 tableBody.deleteRow(-1);
-                updateAutoNames();
-                updateAddLapButtons();
             } else {
                 errorMessage.textContent = "Must have at least one row.";
             }
@@ -510,8 +507,6 @@
             const row = button.closest("tr");
             if (tableBody.rows.length > 1) {
                 row.remove();
-                updateAutoNames();
-                updateAddLapButtons();
             } else {
                 errorMessage.textContent = "Must have at least one row.";
             }
