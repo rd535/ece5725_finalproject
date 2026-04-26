@@ -52,6 +52,13 @@ dynamic is just added each time "add lap pace" button is clicked
 
 - change to make it so increasing lap number controls number of lap pace options available for dynamic!
 
+Steps: Remove button
+- make .lapPace col dep on lapNum
+- Make sure submit table reflects this change
+
+Bug list:
+- on change of input, if not dynamic, change .paceList to just one input
+
 Future:
 Set pace to start/end at arbitrary points ex. 200m start/end (like for 1k)
 

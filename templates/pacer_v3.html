@@ -75,9 +75,9 @@
                                     <td><input type="text" class="pacerName" value="Pacer 1" readonly></td>
                                     <td>
                                         <select class="pacerType">
-                                            <option value="constant">Constant</option>
+                                            <option value="constant" selected>Constant</option>
                                             <option value="constant_with_pacer">Constant w/ Pacer</option>
-                                            <option value="dynamic" selected>Dynamic</option>
+                                            <option value="dynamic">Dynamic</option>
                                         </select>
                                     </td>
                                     <td>
@@ -485,9 +485,9 @@
 
                 <td>
                     <select class="pacerType">
-                        <option value="constant">Constant</option>
+                        <option value="constant" selected>Constant</option>
                         <option value="constant_with_pacer">Constant w/ Pacer</option>
-                        <option value="dynamic" selected>Dynamic</option>
+                        <option value="dynamic">Dynamic</option>
                     </select>
                 </td>
 
@@ -495,10 +495,12 @@
                     <div class="paceList">
                         <input type="number" class="lapPace" placeholder="Lap 1 pace" min="1" max="300">
                     </div>
-                    <button type="button" class="addLapBtn" onclick="addLapPace(this)">Add Lap Pace</button>
                 </td>
 
-                <td><input type="number" class="distance" placeholder="Distance" min="1" max="10000"></td>
+                <td><input type="number" class="distance" placeholder="400" min="1" max="10000"></td>
+                
+                <td><input type="number" class="lapCount" value="1" min="1" max="9" 
+                                        oninput="updateLapPaceFromLapNum(this)"></td>
 
                 <td><button type="button" class="delBtn" onclick="removeRow(this)">Delete</button></td>
             `;
@@ -575,13 +577,18 @@
             const row = input.closest("tr");
             const typeSelect = row.querySelector(".pacerType");
 
-            if (typeSelect.value !== "dynamic") {
-                return;
-            }
-
             const lapCount = Number(input.value);
             const paceList = row.querySelector(".paceList");
             const currentPaces = paceList.querySelectorAll(".lapPace").length;
+
+            if (typeSelect.value !== "dynamic") {
+                for (let i = currentPaces; i >= 1; i--) {
+                    if (paceInputs[i]) {
+                        paceInputs[i].remove();
+                    }
+                }
+            }
+
             if (lapCount > currentPaces) {
                 for (let i = currentPaces + 1; i <= lapCount; i++) {
                     const paceInput = document.createElement("input");
