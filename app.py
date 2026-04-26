@@ -9,23 +9,37 @@ app = Flask(__name__)
 pacer = None
 
 # Shared State for down and upload
+# New structure with per-pacer configurations
 pi_state = {
+    "mode": "pacer",
+    "status": "idle",
+    "last_update": time.strftime("%H:%M:%S"),
+    "pacers": {},  # Format: { "Pacer Name": { "pacer_type", "rep_distance", "lap_count", "paces", "current_split", "running" } }
+    }
+
+# Legacy fields for backward compatibility (will be removed)
+legacy_state = {
     "target_pace": 60,
     "rep_distance": 400,
-    "status" : "idle",
-    "last_update": time.strftime("%H:%M:%S"),
-    "current_split" : 0.0,
-    "mode": "pacer"
-    }
+}
 
 # Browser reads current Pi data
 @app.route("/api/status")
 def status():
-    if pi_state["status"] == "running":
-        pi_state["current_split"] += 0.25
-    else:
-        pi_state["current_split"] = 0.0
+    # Update timestamp
     pi_state["last_update"] = time.strftime("%H:%M:%S")
+
+    # Update current_split for running pacers (legacy behavior)
+    if pi_state["status"] == "running" and pi_state["pacers"]:
+        for pacer_name in pi_state["pacers"]:
+            if pi_state["pacers"][pacer_name].get("running"):
+                current = pi_state["pacers"][pacer_name].get("current_split", 0)
+                pi_state["pacers"][pacer_name]["current_split"] = current + 0.25
+    else:
+        # Reset splits when not running
+        for pacer_name in pi_state["pacers"]:
+            pi_state["pacers"][pacer_name]["current_split"] = 0.0
+
     return jsonify(pi_state)
 
 # Browser sends data to the Pi
@@ -36,24 +50,27 @@ def control():
     if not data:
         return jsonify({"ok": False, "error": "No JSON recieved"}), 400
 
-    if "target_pace" in data:
-        pi_state["target_pace"] = data["target_pace"]
-
-    if "rep_distance" in data:
-        pi_state["rep_distance"] = data["rep_distance"]
-
+    # Update global status
     if "status" in data:
         pi_state["status"] = data["status"]
 
     if "mode" in data:
         pi_state["mode"] = data["mode"]
 
+    # Legacy support: target_pace and rep_distance (updates first pacer if it exists)
+    if "target_pace" in data and pi_state["pacers"]:
+        first_pacer = list(pi_state["pacers"].keys())[0]
+        if first_pacer in pi_state["pacers"]:
+            pi_state["pacers"][first_pacer]["paces"] = [data["target_pace"]]
+
+    if "rep_distance" in data and pi_state["pacers"]:
+        first_pacer = list(pi_state["pacers"].keys())[0]
+        if first_pacer in pi_state["pacers"]:
+            pi_state["pacers"][first_pacer]["rep_distance"] = data["rep_distance"]
+
     pi_state["last_update"] = time.strftime("%H:%M:%S")
 
     return jsonify({"ok": True, "state" : pi_state})
-
-    # can trigger pi from here
-    # start_led_controller(pi_state["target_pace"])
 
 # File upload endpoint for JSON and CSV files
 @app.route("/api/upload", methods=["POST"])
@@ -148,31 +165,54 @@ def index():
 @app.route("/submit_pacers", methods=["POST"])
 def submit_pacers():
     data = request.get_json()
-
     pacers = data.get("pacers", [])
 
+    # Validate all pacers first
     for i, row in enumerate(pacers):
         pacer_name = row.get("pacer_name")
-        pacer_type = row.get("pacer_type", "dynamic")
-        distance = row.get("distance")
+        pacer_type = row.get("pacer_type", "constant")
+        distance = row.get("rep_distance")
+        lap_count = row.get("lap_count")
         paces = row.get("paces", [])
 
         # Validation
-        if not pacer_name or distance is None:
-            return jsonify({"error": f"Row {i + 1}: Missing pacer name or distance"}), 400
+        if not pacer_name or distance is None or lap_count is None:
+            return jsonify({"ok": False, "error": f"Row {i + 1}: Missing required fields"}), 400
 
         if pacer_type == "dynamic" and (not paces or len(paces) == 0):
-            return jsonify({"error": f"Row {i + 1}: Dynamic pacer requires at least one pace"}), 400
+            return jsonify({"ok": False, "error": f"Row {i + 1}: Dynamic pacer requires at least one pace"}), 400
 
         if pacer_type in ["constant", "constant_with_pacer"] and (not paces or len(paces) == 0):
-            return jsonify({"error": f"Row {i + 1}: {pacer_type} pacer requires a pace value"}), 400
+            return jsonify({"ok": False, "error": f"Row {i + 1}: {pacer_type} pacer requires a pace value"}), 400
 
+    # All validation passed, store pacers in pi_state
+    pi_state["pacers"] = {}
+
+    for row in pacers:
+        pacer_name = row.get("pacer_name")
+        pacer_type = row.get("pacer_type", "constant")
+        distance = row.get("rep_distance")
+        lap_count = row.get("lap_count")
+        paces = row.get("paces", [])
+
+        # Store pacer configuration
+        pi_state["pacers"][pacer_name] = {
+            "pacer_type": pacer_type,
+            "rep_distance": distance,
+            "lap_count": lap_count,
+            "paces": paces,
+            "current_split": 0.0,
+            "running": False
+        }
+
+    pi_state["last_update"] = time.strftime("%H:%M:%S")
     print(f"Received pacer configuration: {pacers}")
 
     return jsonify({
         "ok": True,
         "message": "Pacers received successfully",
-        "pacers": pacers
+        "pacers": pacers,
+        "state": pi_state
     })
 
 
@@ -194,34 +234,104 @@ from pacer.state import manager
 from pacer.controller import start_pacer, stop_pacer
 from pacer.pacer_pattern import ConstantPacerWithPacer, DynamicPacer
 
+# New pacer control endpoints for individual pacers
+pacer_instances = {}  # Dict to store pacer instances by name: {"Pacer 1": <pacer_object>, ...}
+
+@app.route('/api/pacer/start/<pacer_name>', methods=['POST'])
+def pacer_start(pacer_name):
+    """Start a specific pacer by name"""
+    if pacer_name not in pi_state["pacers"]:
+        return jsonify({"ok": False, "error": f"Pacer '{pacer_name}' not found"}), 404
+
+    pacer_config = pi_state["pacers"][pacer_name]
+    pacer_type = pacer_config.get("pacer_type", "constant")
+    pace = pacer_config["paces"][0] if pacer_config["paces"] else 60
+    distance = pacer_config.get("rep_distance", 400)
+
+    print(f"Starting {pacer_type} pacer: {pacer_name} at {pace} BPM, distance: {distance}m")
+
+    try:
+        # Create and start pacer instance based on type
+        if pacer_type == "constant_with_pacer":
+            pacer_instances[pacer_name] = ConstantPacerWithPacer(
+                pace=pace,
+                rep_distance=distance
+            )
+        elif pacer_type == "dynamic":
+            pacer_instances[pacer_name] = DynamicPacer(
+                paces=pacer_config["paces"],
+                rep_distance=distance
+            )
+        else:  # constant
+            pacer_instances[pacer_name] = ConstantPacerWithPacer(
+                pace=pace,
+                rep_distance=distance
+            )
+
+        pacer_instances[pacer_name].start()
+        pi_state["pacers"][pacer_name]["running"] = True
+        pi_state["status"] = "running"
+        pi_state["last_update"] = time.strftime("%H:%M:%S")
+
+        return jsonify({
+            "ok": True,
+            "message": f"Pacer '{pacer_name}' started",
+            "pacer_name": pacer_name,
+            "pacer_type": pacer_type
+        })
+
+    except Exception as e:
+        return jsonify({
+            "ok": False,
+            "error": f"Failed to start pacer: {str(e)}"
+        }), 500
+
+@app.route('/api/pacer/stop/<pacer_name>', methods=['POST'])
+def pacer_stop(pacer_name):
+    """Stop a specific pacer by name"""
+    if pacer_name not in pi_state["pacers"]:
+        return jsonify({"ok": False, "error": f"Pacer '{pacer_name}' not found"}), 404
+
+    if pacer_name in pacer_instances and pacer_instances[pacer_name]:
+        pacer_instances[pacer_name].active = False
+        del pacer_instances[pacer_name]
+
+    pi_state["pacers"][pacer_name]["running"] = False
+    pi_state["pacers"][pacer_name]["current_split"] = 0.0
+
+    # Check if any pacer is still running
+    any_running = any(p.get("running", False) for p in pi_state["pacers"].values())
+    if not any_running:
+        pi_state["status"] = "idle"
+
+    pi_state["last_update"] = time.strftime("%H:%M:%S")
+
+    return jsonify({
+        "ok": True,
+        "message": f"Pacer '{pacer_name}' stopped",
+        "pacer_name": pacer_name
+    })
+
+# Legacy endpoints for backward compatibility
 @app.route('/start', methods=['POST'])
 def start():
-    print("Received start command")
-    # basic testing, no manager
-    global pacer 
+    """Legacy endpoint - starts the first pacer"""
+    print("Received legacy start command")
+    if not pi_state["pacers"]:
+        return jsonify({"ok": False, "error": "No pacers configured"}), 400
 
-    if pacer is None or not pacer.active:
-        pacer = ConstantPacerWithPacer(
-            pace=pi_state["target_pace"],
-            rep_distance=pi_state["rep_distance"]
-        )
-        pacer.start()
-    print("Finished start command")
-    return jsonify({"ok": True, "status": "running"})
-
-    # start_pacer()
+    first_pacer_name = list(pi_state["pacers"].keys())[0]
+    return pacer_start(first_pacer_name)
 
 @app.route('/stop', methods=['POST'])
 def stop():
-    # basic testing, no manager
-    global pacer
+    """Legacy endpoint - stops the first pacer"""
+    print("Received legacy stop command")
+    if not pi_state["pacers"]:
+        return jsonify({"ok": False, "error": "No pacers configured"}), 400
 
-    if pacer is not None:
-        pacer.active = False
-
-    return jsonify({"ok": True, "status": "stopped"})
-
-    # stop_pacer()
+    first_pacer_name = list(pi_state["pacers"].keys())[0]
+    return pacer_stop(first_pacer_name)
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

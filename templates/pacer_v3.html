@@ -99,7 +99,7 @@
                     <div class="button-group">
                         <button onclick="addRow()">Add Row</button>
                         <button onclick="removeLastRow()">Remove Last Row</button>
-                        <button onclick="submitTable()">Submit</button>
+                        <button onclick="submitTable()">Submit Table To Pi</button>
                         <p id="errorMessage" style="color: red;"></p>
                     </div>
                 </div>
@@ -566,6 +566,7 @@
                 const name = rows[i].querySelector(".pacerName").value.trim();
                 const pacerType = rows[i].querySelector(".pacerType").value;
                 const distance = rows[i].querySelector(".distance").value.trim();
+                const lapCount = rows[i].querySelector(".lapCount").value.trim();
 
                 const paceInputs = rows[i].querySelectorAll(".lapPace");
                 const paces = [];
@@ -581,7 +582,13 @@
                     paces.push(Number(pace));
                 }
 
-                if (!name || !distance) {
+                if (pacerType === "dynamic" && paces.length !== Number(lapCount)) {
+                    errorMessage.textContent =
+                        `Error: Row ${i + 1} needs ${lapCount} pace values.`;
+                    return;
+                }
+
+                if (!name || !distance || !lapCount) {
                     errorMessage.textContent = `Error: Row ${i + 1} is incomplete.`;
                     return;
                 }
@@ -591,11 +598,13 @@
                     return;
                 }
 
+                // paces: paces.length > 0 ? paces : [Number(paces[0]) || 0]
                 data.push({
                     pacer_name: name,
                     pacer_type: pacerType,
-                    distance: Number(distance),
-                    paces: paces.length > 0 ? paces : [Number(paces[0]) || 0]
+                    rep_distance: Number(distance),
+                    lap_count: Number(lapCount),
+                    paces: paces
                 });
 
                 // Initialize pacer state
@@ -663,21 +672,66 @@
         }
 
         function startPacer(pacerName) {
-            if (pacerState[pacerName]) {
-                pacerState[pacerName].status = "running";
-                pacerStartTimes[pacerName] = Date.now();
-                updateStatusTable();
-                showSuccessMessage(`${pacerName} started!`);
-            }
+            fetch(`/api/pacer/start/${encodeURIComponent(pacerName)}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.ok) {
+                    if (pacerState[pacerName]) {
+                        pacerState[pacerName].status = "running";
+                        pacerStartTimes[pacerName] = Date.now();
+                        updateStatusTable();
+                    }
+                    showSuccessMessage(`${pacerName} started!`);
+                } else {
+                    showErrorMessage(data.error || "Failed to start pacer");
+                }
+            })
+            .catch(error => {
+                console.error('Error starting pacer:', error);
+                showErrorMessage("Error starting pacer");
+            });
         }
 
         function stopPacer(pacerName) {
-            if (pacerState[pacerName]) {
-                pacerState[pacerName].status = "stopped";
-                delete pacerStartTimes[pacerName];
-                updateStatusTable();
-                showSuccessMessage(`${pacerName} stopped!`);
-            }
+            fetch(`/api/pacer/stop/${encodeURIComponent(pacerName)}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.ok) {
+                    if (pacerState[pacerName]) {
+                        pacerState[pacerName].status = "stopped";
+                        delete pacerStartTimes[pacerName];
+                        updateStatusTable();
+                    }
+                    showSuccessMessage(`${pacerName} stopped!`);
+                } else {
+                    showErrorMessage(data.error || "Failed to stop pacer");
+                }
+            })
+            .catch(error => {
+                console.error('Error stopping pacer:', error);
+                showErrorMessage("Error stopping pacer");
+            });
+        }
+
+        function showErrorMessage(message) {
+            const msg = document.createElement('div');
+            msg.className = 'success-message show';
+            msg.style.background = 'linear-gradient(135deg, #f5576c 0%, #f093fb 100%)';
+            msg.textContent = '✗ ' + message;
+            document.querySelectorAll('.card')[0].parentElement.insertBefore(msg, document.querySelectorAll('.card')[0]);
+            setTimeout(() => {
+                msg.remove();
+            }, 3000);
         }
 
         updateStatus();

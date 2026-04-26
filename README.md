@@ -62,10 +62,25 @@ X on change of input, if not dynamic, change .paceList to just one input
 X change "addRow" logic to reflect additions
 X change default pacer to constant
 X when option is selected, trigger updateLapPace from LapNum
-
-Bug:
-_ Change so auto fill only works for new rows, user can change name of any created row 
+X Change so auto fill only works for new rows, user can change name of any created row 
 regardless of checked
+
+Next Feature:
+- get pace configuration working similar to pace config v1
+Step 1: get working with single pace
+- update submitTable to reflect all changes with the dynamic table rows in JS
+X?
+- update Flask to reflect JS function changes!
+
+Bugs:
+- might need to change to fully using arrays for pacing? idk we will see if can handle both array and const inputs
+
+
+Step 2: get manager working 
+Step 3: get full table upload working for multiple paces
+Step 4: get pacer status at bottom working 
+- move pacer status to top of page 
+
 
 
 Future:
