@@ -373,7 +373,7 @@ button {
 
 /* Table Styling */
 table {
-    width: max-content;
+    width: 100%;
     border-collapse: separate;
     min-width: 100%;
     border-spacing: 0;
@@ -393,11 +393,13 @@ table th {
     padding: 15px;
     text-align: left;
     border: 1px solid #ddd;
+    white-space: nowrap;
 }
 
 table td {
     padding: 12px 15px;
     border: 1px solid #e0e0e0;
+    vertical-align: top;
 }
 
 table tbody tr {
@@ -417,6 +419,8 @@ table input[type="text"],
 table input[type="number"],
 table select {
     width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
     padding: 8px 12px;
     border: 1px solid #ddd;
     border-radius: 6px;
@@ -442,11 +446,51 @@ table select {
 .paceList {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 10px;
 }
 
 .paceList input {
     width: 100%;
+}
+
+/* Pacer entry table needs wider cells because rows can expand dynamically. */
+.pacer-table-wrap {
+    padding-bottom: 6px;
+}
+
+#pacerTable {
+    min-width: 1080px;
+    table-layout: fixed;
+}
+
+#pacerTable th:nth-child(1),
+#pacerTable td:nth-child(1) {
+    width: 180px;
+}
+
+#pacerTable th:nth-child(2),
+#pacerTable td:nth-child(2) {
+    width: 190px;
+}
+
+#pacerTable th:nth-child(3),
+#pacerTable td:nth-child(3) {
+    width: 260px;
+}
+
+#pacerTable th:nth-child(4),
+#pacerTable td:nth-child(4) {
+    width: 150px;
+}
+
+#pacerTable th:nth-child(5),
+#pacerTable td:nth-child(5) {
+    width: 130px;
+}
+
+#pacerTable th:nth-child(6),
+#pacerTable td:nth-child(6) {
+    width: 120px;
 }
 
 /* Small buttons in tables */
