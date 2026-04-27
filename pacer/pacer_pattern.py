@@ -13,10 +13,16 @@ class ConstantPacerWithPacer:
     This is "race mode". since people follow pacer and want the people to hit pace so set pacer pace faster
     Pace = seconds
     """
-    def __init__(self, num_leds=300, pin=12, pace=[60], rep_distance=400, lap_count=4):
+    def __init__(self, num_leds=300, pin=12, pace=60, rep_distance=400, lap_count=4):
         self.num_leds = num_leds
         self.pin = pin
-        self.pace = pace
+
+        # ensure pace is a list for consistency with dynamic pacer and flask dict handling
+        if type(pace) == int or type(pace) == float:
+            pace = [pace]
+        else:
+            self.pace = pace
+        
         self.rep_distance = rep_distance
         self.active = False
         self.thread = None
