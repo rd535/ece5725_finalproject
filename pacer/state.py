@@ -3,6 +3,12 @@
 # from models import Pacer
 from pacer.pacer_pattern import ConstantPacerWithPacer
 
+# this is very outdated
+# I think we need to change so this is only object sending data line to led strip
+# so needs to queue all pace updates from active pacers and determine which has priority
+# I was thinking have an array that gets updated by each pacer with last pacers having higher priority
+# and then this pacer manager just looks at the array and executes the highest priority pacer (probably just the last one in the array that is active)
+
 class PacerManager:
     def __init__(self):
         # ALWAYS keep the LED pacer as the active pacer

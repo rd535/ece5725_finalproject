@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pacer Control</title>
-    <link rel="stylesheet" href="/static/pacer_style.css">
+    <link rel="stylesheet" href="/static/pacer_style.css?v=2">
 </head>
 
 <body>
@@ -59,7 +59,15 @@
 
                     <!-- Dynamic Table for Pace Entry -->
                     <div class="form-row pacer-table-wrap">
-                        <table border="1" id="pacerTable">
+                        <table border="1" id="pacerTable" style="width: 100%; min-width: 1080px; table-layout: fixed;">
+                            <colgroup>
+                                <col style="width: 18%;">
+                                <col style="width: 20%;">
+                                <col style="width: 24%;">
+                                <col style="width: 15%;">
+                                <col style="width: 13%;">
+                                <col style="width: 10%;">
+                            </colgroup>
                             <thead>
                                 <tr>
                                     <th>Pacer Name</th>
