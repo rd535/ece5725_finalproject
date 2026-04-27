@@ -19,7 +19,7 @@ class ConstantPacerWithPacer:
 
         # ensure pace is a list for consistency with dynamic pacer and flask dict handling
         if type(pace) == int or type(pace) == float:
-            pace = [pace]
+            self.pace = [pace]
         else:
             self.pace = pace
         
