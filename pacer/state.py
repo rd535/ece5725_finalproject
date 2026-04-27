@@ -1,12 +1,12 @@
 # state.py
 # Management for pacer
 # from models import Pacer
-from pacer.pacer_pattern import GreenPacer
+from pacer.pacer_pattern import ConstantPacerWithPacer
 
 class PacerManager:
     def __init__(self):
         # ALWAYS keep the LED pacer as the active pacer
-        self.pacers = [GreenPacer()]
+        self.pacers = [ConstantPacerWithPacer()]
 
     def create_single_pacer(self, pace, color):
         # This should NOT replace the LED pacer
