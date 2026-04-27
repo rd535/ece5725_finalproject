@@ -28,7 +28,7 @@
                 <div class="card">
 
                     <!-- Pace Configuration -->
-                    <h2>Pace Configuration</h2>
+                    <h2>OUTDATED Pace Configuration</h2>
                     <div class="form-row">
                         <div class="form-group">
                             <label for="target_pace">Target Pace (BPM)</label>
@@ -44,6 +44,31 @@
                         <button class="btn-success" onclick="setRunning()">Start</button>
                         <button class="btn-danger" onclick="setIdle()">Stop</button>
                     </div>
+                </div>
+
+                <!-- Status Display -->
+                <div class="card">
+                    <h2>Pacer Status</h2>
+                    <table border="1" id="statusTable" style="width: 100%; text-align: center;">
+                        <thead>
+                            <tr>
+                                <th>Pacer Name</th>
+                                <th>Type</th>
+                                <th>Pace</th>
+                                <th>Lap Count</th>
+                                <th>Status</th>
+                                <th>Time Running</th>
+                                <th>Controls</th>
+                            </tr>
+                        </thead>
+                        <tbody id="statusTableBody">
+                            <!-- Populated by JavaScript -->
+                        </tbody>
+                    </table>
+                    <p style="margin-top: 15px; color: #666; font-size: 0.9em;">
+                        <strong>System Status:</strong> <span id="systemStatus">—</span> |
+                        <strong>Last Update:</strong> <span id="lastUpdateTime">—</span>
+                    </p>
                 </div>
 
                 <div class="card">
@@ -126,31 +151,6 @@
                             onchange="handleFileInput(event)">
                     </div>
                     <div id="fileDataDisplay" class="file-data-display" style="display: none;"></div>
-                </div>
-
-                <!-- Status Display -->
-                <div class="card">
-                    <h2>Pacer Status</h2>
-                    <table border="1" id="statusTable" style="width: 100%; text-align: center;">
-                        <thead>
-                            <tr>
-                                <th>Pacer Name</th>
-                                <th>Type</th>
-                                <th>Pace</th>
-                                <th>Lap Count</th>
-                                <th>Status</th>
-                                <th>Time Running</th>
-                                <th>Controls</th>
-                            </tr>
-                        </thead>
-                        <tbody id="statusTableBody">
-                            <!-- Populated by JavaScript -->
-                        </tbody>
-                    </table>
-                    <p style="margin-top: 15px; color: #666; font-size: 0.9em;">
-                        <strong>System Status:</strong> <span id="systemStatus">—</span> |
-                        <strong>Last Update:</strong> <span id="lastUpdateTime">—</span>
-                    </p>
                 </div>
             </div>
         </div>
