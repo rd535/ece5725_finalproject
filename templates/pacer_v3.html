@@ -422,8 +422,62 @@
 
                 document.getElementById("systemStatus").textContent = data.status || "—";
                 document.getElementById("lastUpdateTime").textContent = data.last_update || "—";
+                syncPacerStateFromPi(data);
             } catch (error) {
                 console.error('Error updating status:', error);
+            }
+        }
+
+        function syncPacerStateFromPi(data) {
+            if (!data.pacers) {
+                return;
+            }
+
+            let tableNeedsUpdate = false;
+
+            Object.entries(data.pacers).forEach(([pacerName, config]) => {
+                const serverStatus = config.running
+                    ? "running"
+                    : (config.finished ? "finished" : "idle");
+                const paces = Array.isArray(config.paces) ? config.paces : [];
+                const paceDisplay = paces.length > 1 ? paces.join(", ") : (paces[0] || 0);
+                const lapCount = config.lap_count || paces.length || 0;
+
+                if (!pacerState[pacerName]) {
+                    pacerState[pacerName] = {
+                        type: config.pacer_type || "constant",
+                        pace: paceDisplay,
+                        lapCount: lapCount,
+                        status: serverStatus
+                    };
+                    tableNeedsUpdate = true;
+                } else {
+                    const pacer = pacerState[pacerName];
+                    if (
+                        pacer.type !== config.pacer_type ||
+                        pacer.pace !== paceDisplay ||
+                        pacer.lapCount !== lapCount ||
+                        pacer.status !== serverStatus
+                    ) {
+                        pacer.type = config.pacer_type || pacer.type;
+                        pacer.pace = paceDisplay;
+                        pacer.lapCount = lapCount;
+                        pacer.status = serverStatus;
+                        tableNeedsUpdate = true;
+                    }
+                }
+
+                if (config.running && pacerStartTimes[pacerName] === undefined) {
+                    pacerStartTimes[pacerName] = Date.now();
+                    tableNeedsUpdate = true;
+                } else if (!config.running && pacerStartTimes[pacerName] !== undefined) {
+                    delete pacerStartTimes[pacerName];
+                    tableNeedsUpdate = true;
+                }
+            });
+
+            if (tableNeedsUpdate) {
+                updateStatusTable();
             }
         }
 
@@ -615,15 +669,12 @@
                     paces: paces
                 });
 
-                // Initialize pacer state
-                if (!pacerState[name]) {
-                    pacerState[name] = {
-                        type: pacerType,
-                        pace: paces.length > 0 ? paces[0] : 0,
-                        lapCount: paces.length,
-                        status: "idle"
-                    };
-                }
+                pacerState[name] = {
+                    type: pacerType,
+                    pace: paces.length > 1 ? paces.join(", ") : (paces[0] || 0),
+                    lapCount: Number(lapCount),
+                    status: "idle"
+                };
             }
 
             const response = await fetch("/submit_pacers", {
@@ -650,10 +701,11 @@
 
             Object.keys(pacerState).forEach(pacerName => {
                 const pacer = pacerState[pacerName];
-                const isRunning = pacerStartTimes[pacerName] !== undefined;
+                const isRunning = pacer.status === "running";
                 const timeRunning = isRunning
                     ? (() => {
-                        const elapsed = Math.floor((Date.now() - pacerStartTimes[pacerName]) / 1000);
+                        const startTime = pacerStartTimes[pacerName] || Date.now();
+                        const elapsed = Math.floor((Date.now() - startTime) / 1000);
                         const minutes = Math.floor(elapsed / 60);
                         const seconds = elapsed % 60;
                         return `${minutes}m ${seconds}s`;

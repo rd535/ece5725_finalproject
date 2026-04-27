@@ -117,14 +117,15 @@ class DynamicPacer:
     Pacer pattern with a dynamic pace that changes over time.
     Pace = index of pace array, which corresponds to lap number. ex. pace[0] is pace for first lap, pace[1] is pace for second lap, etc.
     """
-    def __init__(self, num_leds=300, pin=12, pace=[20, 15, 10, 5], rep_distance=400):
+    def __init__(self, num_leds=300, pin=12, pace=None, rep_distance=400, lap_count=None):
         self.num_leds = num_leds
         self.pin = pin
-        self.pace = pace
+        self.pace = pace or [20, 15, 10, 5]
         self.rep_distance = rep_distance
         self.active = False
         self.thread = None
         self.curr_lap = 0
+        self.lap_count = lap_count or len(self.pace)
 
         self.strip = PixelStrip(
             self.num_leds,

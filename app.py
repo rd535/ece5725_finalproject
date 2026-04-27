@@ -7,6 +7,7 @@ import io
 app = Flask(__name__)
 
 pacer = None
+pacer_instances = {}  # Dict to store pacer instances by name: {"Pacer 1": <pacer_object>, ...}
 
 # Shared State for down and upload
 # New structure with per-pacer configurations
@@ -23,9 +24,35 @@ legacy_state = {
     "rep_distance": 400,
 }
 
+def sync_pacer_runtime_state():
+    """Mirror completed/stopped pacer threads into pi_state for the browser."""
+    for pacer_name, pacer_instance in list(pacer_instances.items()):
+        pacer_config = pi_state["pacers"].get(pacer_name)
+        if pacer_config is None:
+            pacer_instances.pop(pacer_name, None)
+            continue
+
+        thread = getattr(pacer_instance, "thread", None)
+        is_active = bool(getattr(pacer_instance, "active", False))
+        is_alive = bool(thread and thread.is_alive())
+
+        if pacer_config.get("running") and not is_active and not is_alive:
+            pacer_config["running"] = False
+            pacer_config["finished"] = True
+            pacer_config["current_split"] = 0.0
+            pacer_instances.pop(pacer_name, None)
+
+    pi_state["status"] = (
+        "running"
+        if any(p.get("running", False) for p in pi_state["pacers"].values())
+        else "idle"
+    )
+
 # Browser reads current Pi data
 @app.route("/api/status")
 def status():
+    sync_pacer_runtime_state()
+
     # Update timestamp
     pi_state["last_update"] = time.strftime("%H:%M:%S")
 
@@ -202,7 +229,8 @@ def submit_pacers():
             "lap_count": lap_count,
             "paces": paces,
             "current_split": 0.0,
-            "running": False
+            "running": False,
+            "finished": False
         }
 
     pi_state["last_update"] = time.strftime("%H:%M:%S")
@@ -234,9 +262,6 @@ from pacer.state import manager
 from pacer.controller import start_pacer, stop_pacer
 from pacer.pacer_pattern import ConstantPacerWithPacer, DynamicPacer
 
-# New pacer control endpoints for individual pacers
-pacer_instances = {}  # Dict to store pacer instances by name: {"Pacer 1": <pacer_object>, ...}
-
 @app.route('/api/pacer/start/<pacer_name>', methods=['POST'])
 def pacer_start(pacer_name):
     """Start a specific pacer by name"""
@@ -252,6 +277,10 @@ def pacer_start(pacer_name):
     print(f"Starting {pacer_type} pacer: {pacer_name} at {pace} s/lap, distance: {distance}m")
 
     try:
+        existing_pacer = pacer_instances.get(pacer_name)
+        if existing_pacer:
+            existing_pacer.stop()
+
         # Create and start pacer instance based on type
         if pacer_type == "constant_with_pacer":
             pacer_instances[pacer_name] = ConstantPacerWithPacer(
@@ -261,8 +290,9 @@ def pacer_start(pacer_name):
             )
         elif pacer_type == "dynamic":
             pacer_instances[pacer_name] = DynamicPacer(
-                paces=pacer_config["paces"],
-                rep_distance=distance
+                pace=pacer_config["paces"],
+                rep_distance=distance,
+                lap_count=lap_count
             )
         else:  # constant
             pacer_instances[pacer_name] = ConstantPacerWithPacer(
@@ -273,6 +303,7 @@ def pacer_start(pacer_name):
 
         pacer_instances[pacer_name].start()
         pi_state["pacers"][pacer_name]["running"] = True
+        pi_state["pacers"][pacer_name]["finished"] = False
         pi_state["status"] = "running"
         pi_state["last_update"] = time.strftime("%H:%M:%S")
 
@@ -296,10 +327,11 @@ def pacer_stop(pacer_name):
         return jsonify({"ok": False, "error": f"Pacer '{pacer_name}' not found"}), 404
 
     if pacer_name in pacer_instances and pacer_instances[pacer_name]:
-        pacer_instances[pacer_name].active = False
+        pacer_instances[pacer_name].stop()
         del pacer_instances[pacer_name]
 
     pi_state["pacers"][pacer_name]["running"] = False
+    pi_state["pacers"][pacer_name]["finished"] = False
     pi_state["pacers"][pacer_name]["current_split"] = 0.0
 
     # Check if any pacer is still running
