@@ -57,6 +57,7 @@ class NewPacerManager:
             for p in self.pacers:
                 if p.active:
                     position = p.run()
+                    print(f"Pacer with pace {p.pace} is at position {position}")
                     self.LED_index.append((position, p.color, p.TYPE))
 
             # clear strip
@@ -82,7 +83,7 @@ class NewPacerManager:
                     self.strip.setPixelColor(idx, color)
                 
             self.strip.show()
-            print("Updated LED strip with current pacer positions and colors.")
+            # print("Updated LED strip with current pacer positions and colors.")
 
     # have function to start/stop pacer manager depending on if there are active pacers or not, so we don't waste resources updating when there are no active pacers
     def start(self):
