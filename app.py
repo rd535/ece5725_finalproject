@@ -33,7 +33,9 @@ legacy_state = {
 }
 
 def hex_to_rgb(color_hex):
+    # remove whitspace
     color_hex = (color_hex or DEFAULT_PACER_COLOR).strip()
+    # will have #FF0000 value as example
     if color_hex.startswith("#"):
         color_hex = color_hex[1:]
     if len(color_hex) != 6:
@@ -285,7 +287,8 @@ def submit_pacers():
         distance = row.get("rep_distance")
         lap_count = row.get("lap_count")
         paces = row.get("paces", [])
-        color = row.get("color", DEFAULT_PACER_COLOR)
+        color_hex = row.get("color", DEFAULT_PACER_COLOR)
+        color = hex_to_rgb(color_hex)
 
         # Store pacer configuration
         pi_state["pacers"][pacer_name] = {

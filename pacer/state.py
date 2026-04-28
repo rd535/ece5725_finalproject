@@ -178,6 +178,3 @@ class PacerManager:
         for p in self.pacers:
             if p.active:
                 p.position += dt * (p.rep_distance / p.pace[0])
-
-
-manager = PacerManager()
