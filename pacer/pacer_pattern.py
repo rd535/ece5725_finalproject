@@ -6,6 +6,64 @@ from tkinter import OFF
 from rpi_ws281x import PixelStrip, Color, ws
 from pacer.pace_calculator import pace_to_speed, scale_pace
 
+class NewConstantPacer:
+    """
+    To integrate with new handler
+    """
+    TYPE = "constant"
+    
+    def __init__(self, pace=60, rep_distance=400, lap_count=4, color=(0,255,0)):
+        # ensure pace is a list for consistency with dynamic pacer and flask dict handling
+        if type(pace) == int or type(pace) == float:
+            self.pace = [pace]
+        else:
+            self.pace = pace
+
+        self.color = color
+        
+        self.rep_distance = rep_distance
+        self.lap_count = lap_count
+
+        self.active = False
+        self.curr_lap = 0
+        self.last_time = None
+        self.pos = 0.0
+
+    def start(self):
+        self.active = True
+        self.pos = 0.0
+        self.curr_lap = 0
+        self.last_time = time.time()
+
+    def stop(self):
+        self.active = False
+
+    def run(self):
+        # convert pace to 5m for LED strip
+        # conv_pace = scale_pace(self.pace, self.rep_distance)
+        # SPEED = pace_to_speed(conv_pace, self.rep_distance)
+        SPEED = 300 / self.pace[0] # convert to LED/s
+
+        current_time = time.time()
+        dt = current_time - self.last_time
+        self.last_time = current_time
+
+        # current pos + LED/s * dt w/ overflow reset
+        self.pos = self.pos + SPEED * dt
+
+        if self.pos >= self.num_leds:
+            self.curr_lap += 1
+            
+        if self.curr_lap >= self.lap_count:
+            self.active = False
+            return 0
+
+        self.pos = self.pos % self.num_leds
+        return self.pos
+
+
+
+
 class ConstantPacerWithPacer:
     """
     Pacer pattern with a single color for the pacer and a different color for the actual pace.
