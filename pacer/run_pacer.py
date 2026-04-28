@@ -9,21 +9,26 @@ manager = NewPacerManager()
 pacer1 = NewConstantPacer(pace=10, rep_distance=400, lap_count=4, color=Color(255,0,0))
 pacer2 = NewConstantPacer(pace=5, rep_distance=400, lap_count=4, color=Color(0,255,0))
 
+print("Adding pacers to manager…")
 manager.add_pacer(pacer1)
 manager.add_pacer(pacer2)
 
+print("Starting pacer manager…  Press CTRL+C to stop.")
 manager.start()
 
 time.sleep(3)
 
+print("Starting pacers…")
 pacer1.start()
 
 time.sleep(3)
 
+print("Starting second pacer…")
 pacer2.start()
 
 try:
     while True:
+        print("Updating pacer manager…")
         time.sleep(1)
 except KeyboardInterrupt:
     print("\nStopping pacer…")
