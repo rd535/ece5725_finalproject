@@ -287,8 +287,7 @@ def submit_pacers():
         distance = row.get("rep_distance")
         lap_count = row.get("lap_count")
         paces = row.get("paces", [])
-        color_hex = row.get("color", DEFAULT_PACER_COLOR)
-        color = hex_to_rgb(color_hex)
+        color = row.get("color", DEFAULT_PACER_COLOR)
 
         # Store pacer configuration
         pi_state["pacers"][pacer_name] = {
