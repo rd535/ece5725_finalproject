@@ -2,8 +2,7 @@ import threading
 import time
 
 from pacer.event_log import log_event
-from pacer.pacer_pattern import Color, ConstantPacerWithPacer
-from rpi_ws281x import PixelStrip, Color, ws
+from pacer.pacer_pattern import Color, ConstantPacerWithPacer, make_strip
 
 
 class NewPacerManager:
@@ -18,17 +17,8 @@ class NewPacerManager:
         self.num_leds = num_leds
         self.pin = pin
         self._next_order = 0
-        self.strip = PixelStrip(
-            num_leds,
-            pin,
-            800000,
-            10,
-            False,
-            128,
-            0,
-            ws.SK6812_STRIP_RGBW,
-            )
-        self.strip.begin()
+        self._last_frame_log = 0
+        self.strip = make_strip(num_leds, pin)
 
     def add_pacer(self, pacer):
         pacer.num_leds = self.num_leds
@@ -48,18 +38,23 @@ class NewPacerManager:
     def update(self):
         log_event("Pacer manager update loop started", category="manager")
 
-        while self.active:
-            led_updates = []
+        try:
+            while self.active:
+                led_updates = []
 
-            for pacer in self.pacers:
-                if pacer.active:
-                    position = pacer.run()
+                for pacer in self.pacers:
                     if pacer.active:
-                        led_updates.append((position, pacer.color, pacer.TYPE))
+                        position = pacer.run()
+                        if pacer.active:
+                            led_updates.append((position, pacer.color, pacer.TYPE))
 
-            self.render(led_updates)
-            # may or may not need
-            time.sleep(self.UPDATE_INTERVAL)
+                self.render(led_updates)
+                self.log_frame(led_updates)
+                time.sleep(self.UPDATE_INTERVAL)
+        except Exception as exc:
+            self.active = False
+            log_event("Pacer manager update loop crashed", level="ERROR", category="manager", error=repr(exc))
+            raise
 
         self.clear()
         log_event("Pacer manager update loop stopped", category="manager")
@@ -83,10 +78,39 @@ class NewPacerManager:
 
         self.strip.show()
 
+    def log_frame(self, led_updates):
+        now = time.time()
+        if now - self._last_frame_log < 1.0:
+            return
+
+        self._last_frame_log = now
+        if led_updates:
+            first_position, _, first_type = led_updates[0]
+            log_event(
+                "Rendered LED frame",
+                category="manager",
+                updates=len(led_updates),
+                first_position=round(first_position, 2),
+                first_type=first_type,
+            )
+
     def clear(self):
         for i in range(self.num_leds):
             self.strip.setPixelColor(i, Color(0, 0, 0))
         self.strip.show()
+
+    def flash_startup(self, color=None, duration=0.5):
+        color = color or Color(0, 0, 255)
+        width = min(12, self.num_leds)
+        log_event("Flashing startup LED test", category="manager", width=width)
+
+        for i in range(self.num_leds):
+            self.strip.setPixelColor(i, Color(0, 0, 0))
+        for i in range(width):
+            self.strip.setPixelColor(i, color)
+        self.strip.show()
+        time.sleep(duration)
+        self.clear()
 
     def start(self):
         if self.thread is None or not self.thread.is_alive():

@@ -105,6 +105,7 @@ class NewConstantPacer:
             log_event("Pacer finished", category="pacer", pace=self.pace, laps=self.curr_lap)
             return 0
 
+        # wrap back around to 0
         self.pos = self.pos % self.num_leds
         return self.pos
 

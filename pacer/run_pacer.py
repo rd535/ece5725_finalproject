@@ -21,6 +21,8 @@ def main():
     manager.add_pacer(pacer1)
     manager.add_pacer(pacer2)
 
+    manager.flash_startup()
+
     log_event("Starting pacer manager", category="run_pacer")
     manager.start()
 
@@ -28,11 +30,13 @@ def main():
 
     log_event("Starting first pacer", category="run_pacer")
     pacer1.start()
+    log_event("First pacer active state", category="run_pacer", active=pacer1.active, position=pacer1.pos)
 
     time.sleep(3)
 
     log_event("Starting second pacer", category="run_pacer")
     pacer2.start()
+    log_event("Second pacer active state", category="run_pacer", active=pacer2.active, position=pacer2.pos)
 
     try:
         while manager.active:
