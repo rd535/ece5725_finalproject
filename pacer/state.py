@@ -39,10 +39,10 @@ class NewPacerManager:
     # need to figure out pacer.pace vs pacer.rep_dist relationship to determine priority - maybe just use pace for now and then add in rep_dist as a tiebreaker if same pace? or just ignore rep_dist for priority and only use pace?
     def add_pacer(self, pacer):
         for p in self.pacers:
-            if p.active and p.pace == pacer.pace:
+            if p.active and p.pace[0] == pacer.pace[0]:
                 # If same pace, the newer pacer gets higher priority, so we can just add it to the end of the list
                 self.pacers.append(pacer)
-            elif p.active and p.pace < pacer.pace:
+            elif p.active and p.pace[0] < pacer.pace[0]:
                 # If existing pacer has a slower pace, the new pacer gets higher priority, so we can insert it before the slower pacer
                 self.pacers.insert(self.pacers.index(p), pacer)
                 return
