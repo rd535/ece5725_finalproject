@@ -3,12 +3,19 @@ import time
 import json
 import csv
 import io
+from functools import wraps
+from threading import Lock
 from pacer.event_log import get_events, log_event
+from pacer.state import NewPacerManager
+from pacer.pacer_pattern import Color, NewConstantPacer, NewDynamicPacer
 
 app = Flask(__name__)
 
 pacer = None
 pacer_instances = {}  # Dict to store pacer instances by name: {"Pacer 1": <pacer_object>, ...}
+web_pacer_manager = NewPacerManager()
+DEFAULT_PACER_COLOR = "#00ff00"
+pacer_state_lock = Lock()
 
 # Shared State for down and upload
 # New structure with per-pacer configurations
@@ -24,6 +31,25 @@ legacy_state = {
     "target_pace": 60,
     "rep_distance": 400,
 }
+
+def hex_to_rgb(color_hex):
+    color_hex = (color_hex or DEFAULT_PACER_COLOR).strip()
+    if color_hex.startswith("#"):
+        color_hex = color_hex[1:]
+    if len(color_hex) != 6:
+        raise ValueError(f"Invalid color: #{color_hex}")
+    return tuple(int(color_hex[i:i + 2], 16) for i in (0, 2, 4))
+
+def hex_to_color(color_hex):
+    r, g, b = hex_to_rgb(color_hex)
+    return Color(r, g, b)
+
+def with_pacer_lock(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        with pacer_state_lock:
+            return func(*args, **kwargs)
+    return wrapper
 
 def sync_pacer_runtime_state():
     """Mirror completed/stopped pacer threads into pi_state for the browser."""
@@ -42,6 +68,7 @@ def sync_pacer_runtime_state():
             pacer_config["finished"] = True
             pacer_config["current_split"] = 0.0
             pacer_instances.pop(pacer_name, None)
+            web_pacer_manager.remove_pacer_by_name(pacer_name)
             log_event("Pacer finished", category="pacer", pacer_name=pacer_name)
 
     pi_state["status"] = (
@@ -52,6 +79,7 @@ def sync_pacer_runtime_state():
 
 # Browser reads current Pi data
 @app.route("/api/status")
+@with_pacer_lock
 def status():
     sync_pacer_runtime_state()
 
@@ -212,6 +240,7 @@ def logs():
     return jsonify({"ok": True, "logs": get_events(limit)})
 
 @app.route("/submit_pacers", methods=["POST"])
+@with_pacer_lock
 def submit_pacers():
     data = request.get_json()
     pacers = data.get("pacers", [])
@@ -223,6 +252,7 @@ def submit_pacers():
         distance = row.get("rep_distance")
         lap_count = row.get("lap_count")
         paces = row.get("paces", [])
+        color = row.get("color", DEFAULT_PACER_COLOR)
 
         # Validation
         if not pacer_name or distance is None or lap_count is None:
@@ -237,8 +267,17 @@ def submit_pacers():
             log_event("Pacer settings rejected: pacer missing pace", level="ERROR", category="settings", row=i + 1, pacer_type=pacer_type)
             return jsonify({"ok": False, "error": f"Row {i + 1}: {pacer_type} pacer requires a pace value"}), 400
 
+        try:
+            hex_to_rgb(color)
+        except ValueError as exc:
+            log_event("Pacer settings rejected: invalid color", level="ERROR", category="settings", row=i + 1, color=color)
+            return jsonify({"ok": False, "error": f"Row {i + 1}: {exc}"}), 400
+
     # All validation passed, store pacers in pi_state, clear old dict
     pi_state["pacers"] = {}
+    pacer_instances.clear()
+    web_pacer_manager.stop()
+    web_pacer_manager.clear_pacers()
 
     for row in pacers:
         pacer_name = row.get("pacer_name")
@@ -246,6 +285,7 @@ def submit_pacers():
         distance = row.get("rep_distance")
         lap_count = row.get("lap_count")
         paces = row.get("paces", [])
+        color = row.get("color", DEFAULT_PACER_COLOR)
 
         # Store pacer configuration
         pi_state["pacers"][pacer_name] = {
@@ -253,6 +293,7 @@ def submit_pacers():
             "rep_distance": distance,
             "lap_count": lap_count,
             "paces": paces,
+            "color": color,
             "current_split": 0.0,
             "running": False,
             "finished": False
@@ -282,12 +323,8 @@ def submit_pacers():
 #     set_color_all(r, g, b)
 #     return "OK"
 
-# For single pace testing
-from pacer.state import manager
-from pacer.controller import start_pacer, stop_pacer
-from pacer.pacer_pattern import ConstantPacerWithPacer, DynamicPacer
-
 @app.route('/api/pacer/start/<pacer_name>', methods=['POST'])
+@with_pacer_lock
 def pacer_start(pacer_name):
     """Start a specific pacer by name"""
     if pacer_name not in pi_state["pacers"]:
@@ -299,35 +336,36 @@ def pacer_start(pacer_name):
     pace = pacer_config["paces"][0] if pacer_config["paces"] else 60
     distance = pacer_config.get("rep_distance", 400)
     lap_count = pacer_config.get("lap_count", 4)
+    color_hex = pacer_config.get("color", DEFAULT_PACER_COLOR)
 
     log_event("Starting pacer request", category="pacer", pacer_name=pacer_name, pacer_type=pacer_type, pace=pace, distance=distance)
 
     try:
         existing_pacer = pacer_instances.get(pacer_name)
         if existing_pacer:
-            existing_pacer.stop()
+            web_pacer_manager.remove_pacer_by_name(pacer_name)
             log_event("Restarting existing pacer instance", category="pacer", pacer_name=pacer_name)
 
-        # Create and start pacer instance based on type
-        if pacer_type == "constant_with_pacer":
-            pacer_instances[pacer_name] = ConstantPacerWithPacer(
-                pace=pace,
-                rep_distance=distance,
-                lap_count=lap_count
-            )
-        elif pacer_type == "dynamic":
-            pacer_instances[pacer_name] = DynamicPacer(
+        color = hex_to_color(color_hex)
+
+        if pacer_type == "dynamic":
+            pacer_instances[pacer_name] = NewDynamicPacer(
                 pace=pacer_config["paces"],
                 rep_distance=distance,
-                lap_count=lap_count
+                lap_count=lap_count,
+                color=color,
             )
-        else:  # constant
-            pacer_instances[pacer_name] = ConstantPacerWithPacer(
+        else:
+            pacer_instances[pacer_name] = NewConstantPacer(
                 pace=pace,
                 rep_distance=distance,
-                lap_count=lap_count
+                lap_count=lap_count,
+                color=color,
             )
 
+        pacer_instances[pacer_name].name = pacer_name
+        web_pacer_manager.add_pacer(pacer_instances[pacer_name])
+        web_pacer_manager.start()
         pacer_instances[pacer_name].start()
         pi_state["pacers"][pacer_name]["running"] = True
         pi_state["pacers"][pacer_name]["finished"] = False
@@ -350,6 +388,7 @@ def pacer_start(pacer_name):
         }), 500
 
 @app.route('/api/pacer/stop/<pacer_name>', methods=['POST'])
+@with_pacer_lock
 def pacer_stop(pacer_name):
     """Stop a specific pacer by name"""
     if pacer_name not in pi_state["pacers"]:
@@ -357,7 +396,7 @@ def pacer_stop(pacer_name):
         return jsonify({"ok": False, "error": f"Pacer '{pacer_name}' not found"}), 404
 
     if pacer_name in pacer_instances and pacer_instances[pacer_name]:
-        pacer_instances[pacer_name].stop()
+        web_pacer_manager.remove_pacer_by_name(pacer_name)
         del pacer_instances[pacer_name]
 
     pi_state["pacers"][pacer_name]["running"] = False
@@ -368,6 +407,7 @@ def pacer_stop(pacer_name):
     any_running = any(p.get("running", False) for p in pi_state["pacers"].values())
     if not any_running:
         pi_state["status"] = "idle"
+        web_pacer_manager.stop()
 
     pi_state["last_update"] = time.strftime("%H:%M:%S")
     log_event("Pacer stopped", category="pacer", pacer_name=pacer_name)

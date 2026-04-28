@@ -12,6 +12,7 @@ class NewPacerManager:
 
     def __init__(self, num_leds=300, pin=12):
         self.pacers = []
+        self.lock = threading.Lock()
         self.active = False
         self.thread = None
         self.num_leds = num_leds
@@ -21,19 +22,48 @@ class NewPacerManager:
         self.strip = make_strip(num_leds, pin)
 
     def add_pacer(self, pacer):
-        pacer.num_leds = self.num_leds
-        pacer._manager_order = self._next_order
-        self._next_order += 1
-        self.pacers.append(pacer)
-        # Sort pacers by pace (fastest last) and then by order added to manager
-        self.pacers.sort(key=lambda p: (-p.pace[0], p._manager_order))
-        log_event("Pacer added to manager", category="manager", pace=pacer.pace, total=len(self.pacers))
+        with self.lock:
+            pacer.num_leds = self.num_leds
+            pacer._manager_order = self._next_order
+            self._next_order += 1
+            self.pacers = [p for p in self.pacers if getattr(p, "name", None) != getattr(pacer, "name", None)]
+            self.pacers.append(pacer)
+            # Slower pacers render first; faster/newer pacers render later and win overlaps.
+            self.pacers.sort(key=lambda p: (-p.pace[0], p._manager_order))
+            total = len(self.pacers)
+
+        log_event("Pacer added to manager", category="manager", pace=pacer.pace, total=total)
 
     def remove_pacer(self, pacer):
-        if pacer in self.pacers:
+        with self.lock:
+            if pacer not in self.pacers:
+                return
             pacer.stop()
             self.pacers.remove(pacer)
-            log_event("Pacer removed from manager", category="manager", pace=pacer.pace, total=len(self.pacers))
+            total = len(self.pacers)
+
+        log_event("Pacer removed from manager", category="manager", pace=pacer.pace, total=total)
+
+    def remove_pacer_by_name(self, pacer_name):
+        with self.lock:
+            matches = [p for p in self.pacers if getattr(p, "name", None) == pacer_name]
+
+        for pacer in matches:
+            self.remove_pacer(pacer)
+
+    def clear_pacers(self):
+        with self.lock:
+            old_pacers = list(self.pacers)
+            self.pacers = []
+
+        for pacer in old_pacers:
+            pacer.stop()
+
+        log_event("All pacers cleared from manager", category="manager")
+
+    def snapshot_pacers(self):
+        with self.lock:
+            return list(self.pacers)
 
     def update(self):
         log_event("Pacer manager update loop started", category="manager")
@@ -42,7 +72,7 @@ class NewPacerManager:
             while self.active:
                 led_updates = []
 
-                for pacer in self.pacers:
+                for pacer in self.snapshot_pacers():
                     if pacer.active:
                         position = pacer.run()
                         if pacer.active:
@@ -113,6 +143,10 @@ class NewPacerManager:
         self.clear()
 
     def start(self):
+        if self.thread is not None and self.thread.is_alive():
+            self.active = True
+            return
+
         if self.thread is None or not self.thread.is_alive():
             self.active = True
             self.thread = threading.Thread(target=self.update, daemon=True)
@@ -121,7 +155,7 @@ class NewPacerManager:
 
     def stop(self):
         self.active = False
-        for pacer in self.pacers:
+        for pacer in self.snapshot_pacers():
             pacer.stop()
         log_event("Pacer manager stop requested", category="manager")
 

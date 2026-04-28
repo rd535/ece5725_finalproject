@@ -110,6 +110,57 @@ class NewConstantPacer:
         return self.pos
 
 
+class NewDynamicPacer(NewConstantPacer):
+    """
+    Dynamic state object for NewPacerManager. Each lap can use a different pace.
+    """
+
+    TYPE = "dynamic"
+
+    def __init__(self, num_leds=300, pace=None, rep_distance=400, lap_count=None, color=Color(0, 255, 0)):
+        pace = pace or [20, 15, 10, 5]
+        super().__init__(
+            num_leds=num_leds,
+            pace=pace,
+            rep_distance=rep_distance,
+            lap_count=lap_count or len(pace),
+            color=color,
+        )
+        self.pace_index = 0
+
+    def start(self):
+        super().start()
+        self.pace_index = 0
+
+    def run(self):
+        if not self.active:
+            return self.pos
+
+        current_pace = self.pace[min(self.pace_index, len(self.pace) - 1)]
+        speed = self.num_leds / current_pace
+
+        if self.last_time is None:
+            self.last_time = time.time()
+
+        current_time = time.time()
+        dt = current_time - self.last_time
+        self.last_time = current_time
+
+        previous_pos = self.pos
+        self.pos = (self.pos + speed * dt) % self.num_leds
+
+        if self.pos < previous_pos:
+            self.curr_lap += 1
+            self.pace_index += 1
+
+        if self.curr_lap >= self.lap_count or self.pace_index >= len(self.pace):
+            self.active = False
+            log_event("Dynamic pacer finished", category="pacer", pace=self.pace, laps=self.curr_lap)
+            return 0
+
+        return self.pos
+
+
 class ConstantPacerWithPacer:
     """
     Pacer pattern with a single color for the pacer and a different color for the actual pace.

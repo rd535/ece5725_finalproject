@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pacer Control</title>
-    <link rel="stylesheet" href="/static/pacer_style.css?v=3">
+    <link rel="stylesheet" href="/static/pacer_style.css?v=4">
 </head>
 
 <body>
@@ -56,6 +56,7 @@
                                 <th>Type</th>
                                 <th>Pace</th>
                                 <th>Lap Count</th>
+                                <th>Color</th>
                                 <th>Status</th>
                                 <th>Time Running</th>
                                 <th>Controls</th>
@@ -91,14 +92,15 @@
 
                     <!-- Dynamic Table for Pace Entry -->
                     <div class="form-row pacer-table-wrap">
-                        <table border="1" id="pacerTable" style="width: 100%; min-width: 1080px; table-layout: fixed;">
+                        <table border="1" id="pacerTable" style="width: 100%; min-width: 1180px; table-layout: fixed;">
                             <colgroup>
+                                <col style="width: 17%;">
                                 <col style="width: 18%;">
-                                <col style="width: 20%;">
-                                <col style="width: 24%;">
-                                <col style="width: 15%;">
-                                <col style="width: 13%;">
-                                <col style="width: 10%;">
+                                <col style="width: 23%;">
+                                <col style="width: 14%;">
+                                <col style="width: 12%;">
+                                <col style="width: 8%;">
+                                <col style="width: 8%;">
                             </colgroup>
                             <thead>
                                 <tr>
@@ -107,6 +109,7 @@
                                     <th>Pace</th>
                                     <th>Interval (m)</th>
                                     <th>Lap Count</th>
+                                    <th>Color</th>
                                     <th>Action</th>
                                 </tr>
                             </thead>
@@ -130,6 +133,7 @@
                                     </td>
                                     <td><input type="number" class="lapCount" value="1" min="1" max="9"
                                             oninput="updateLapPaceFromLapNum(this)"></td>
+                                    <td><input type="color" class="pacerColor" value="#00ff00" title="Pacer color"></td>
                                     <td><button type="button" class="delBtn" onclick="removeRow(this)">Delete</button>
                                     </td>
                                 </tr>
@@ -489,12 +493,14 @@
                 const paces = Array.isArray(config.paces) ? config.paces : [];
                 const paceDisplay = paces.length > 1 ? paces.join(", ") : (paces[0] || 0);
                 const lapCount = config.lap_count || paces.length || 0;
+                const color = config.color || "#00ff00";
 
                 if (!pacerState[pacerName]) {
                     pacerState[pacerName] = {
                         type: config.pacer_type || "constant",
                         pace: paceDisplay,
                         lapCount: lapCount,
+                        color: color,
                         status: serverStatus
                     };
                     tableNeedsUpdate = true;
@@ -504,11 +510,13 @@
                         pacer.type !== config.pacer_type ||
                         pacer.pace !== paceDisplay ||
                         pacer.lapCount !== lapCount ||
+                        pacer.color !== color ||
                         pacer.status !== serverStatus
                     ) {
                         pacer.type = config.pacer_type || pacer.type;
                         pacer.pace = paceDisplay;
                         pacer.lapCount = lapCount;
+                        pacer.color = color;
                         pacer.status = serverStatus;
                         tableNeedsUpdate = true;
                     }
@@ -591,6 +599,8 @@
                 
                 <td><input type="number" class="lapCount" value="1" min="1" max="9" 
                                         oninput="updateLapPaceFromLapNum(this)"></td>
+
+                <td><input type="color" class="pacerColor" value="${getDefaultPacerColor(rowNum)}" title="Pacer color"></td>
 
                 <td><button type="button" class="delBtn" onclick="removeRow(this)">Delete</button></td>
             `;
@@ -676,6 +686,7 @@
                 const pacerType = rows[i].querySelector(".pacerType").value;
                 const distance = rows[i].querySelector(".distance").value.trim();
                 const lapCount = rows[i].querySelector(".lapCount").value.trim();
+                const color = rows[i].querySelector(".pacerColor").value;
 
                 const paceInputs = rows[i].querySelectorAll(".lapPace");
                 const paces = [];
@@ -713,13 +724,15 @@
                     pacer_type: pacerType,
                     rep_distance: Number(distance),
                     lap_count: Number(lapCount),
-                    paces: paces
+                    paces: paces,
+                    color: color
                 });
 
                 pacerState[name] = {
                     type: pacerType,
                     pace: paces.length > 1 ? paces.join(", ") : (paces[0] || 0),
                     lapCount: Number(lapCount),
+                    color: color,
                     status: "idle"
                 };
             }
@@ -740,6 +753,11 @@
                 updateStatusTable();
                 updateEventLog();
             }
+        }
+
+        function getDefaultPacerColor(rowNum) {
+            const colors = ["#00ff00", "#ff0000", "#0088ff", "#ffcc00", "#ff00ff", "#00ffff"];
+            return colors[(rowNum - 1) % colors.length];
         }
 
         function updateStatusTable() {
@@ -765,6 +783,7 @@
                     <td>${pacer.type.replace(/_/g, ' ').charAt(0).toUpperCase() + pacer.type.replace(/_/g, ' ').slice(1)}</td>
                     <td>${pacer.pace} s/Lap</td>
                     <td>${pacer.lapCount}</td>
+                    <td><span class="color-swatch" style="background: ${pacer.color || '#00ff00'}"></span></td>
                     <td><strong>${pacer.status}</strong></td>
                     <td data-pacer-time="${pacerName}">${timeRunning}</td>
                     <td>

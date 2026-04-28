@@ -417,6 +417,7 @@ table tbody tr:nth-child(even) {
 /* Table Input Styles */
 table input[type="text"],
 table input[type="number"],
+table input[type="color"],
 table select {
     width: 100%;
     min-width: 0;
@@ -431,6 +432,7 @@ table select {
 
 table input[type="text"]:focus,
 table input[type="number"]:focus,
+table input[type="color"]:focus,
 table select:focus {
     outline: none;
     border-color: #667eea;
@@ -459,7 +461,7 @@ table select {
 }
 
 #pacerTable {
-    min-width: 1080px;
+    min-width: 1180px;
     table-layout: fixed;
 }
 
@@ -490,7 +492,28 @@ table select {
 
 #pacerTable th:nth-child(6),
 #pacerTable td:nth-child(6) {
+    width: 90px;
+}
+
+#pacerTable th:nth-child(7),
+#pacerTable td:nth-child(7) {
     width: 120px;
+}
+
+table input[type="color"] {
+    min-width: 48px;
+    height: 38px;
+    padding: 3px;
+}
+
+.color-swatch {
+    display: inline-block;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid #e5e7eb;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+    vertical-align: middle;
 }
 
 /* Small buttons in tables */
