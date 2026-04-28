@@ -11,8 +11,8 @@ class NewConstantPacer:
     To integrate with new handler
     """
     TYPE = "constant"
-    
-    def __init__(self, pace=60, rep_distance=400, lap_count=4, color=(0,255,0)):
+
+    def __init__(self, pace=60, rep_distance=400, lap_count=4, color=Color(0,255,0)):
         # ensure pace is a list for consistency with dynamic pacer and flask dict handling
         if type(pace) == int or type(pace) == float:
             self.pace = [pace]

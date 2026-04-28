@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
 import time
-from pacer_pattern import NewConstantPacer, ConstantPacerWithPacer, DynamicPacer
-from state import NewPacerManager
+from pacer.pacer_pattern import NewConstantPacer, ConstantPacerWithPacer, DynamicPacer
+from pacer.state import NewPacerManager
 from rpi_ws281x import Color
 
 manager = NewPacerManager()
