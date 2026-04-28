@@ -1,64 +1,55 @@
 #!/usr/bin/env python3
 
+import sys
 import time
-from pacer.pacer_pattern import NewConstantPacer, ConstantPacerWithPacer, DynamicPacer
+from pathlib import Path
+
+if __package__ is None or __package__ == "":
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+from pacer.event_log import log_event
+from pacer.pacer_pattern import Color, NewConstantPacer
 from pacer.state import NewPacerManager
-from rpi_ws281x import Color
-
-manager = NewPacerManager()
-pacer1 = NewConstantPacer(pace=10, rep_distance=400, lap_count=4, color=Color(255,0,0))
-pacer2 = NewConstantPacer(pace=5, rep_distance=400, lap_count=4, color=Color(0,255,0))
-
-print("Adding pacers to manager…")
-manager.add_pacer(pacer1)
-manager.add_pacer(pacer2)
-
-print("Starting pacer manager…  Press CTRL+C to stop.")
-manager.start()
-
-time.sleep(3)
-
-print("Starting pacers…")
-pacer1.start()
-
-time.sleep(3)
-
-print("Starting second pacer…")
-pacer2.start()
-
-try:
-    while True:
-        print("Updating pacer manager…")
-        time.sleep(1)
-except KeyboardInterrupt:
-    print("\nStopping pacer…")
-    time.sleep(0.5)
 
 
-# # Create the pacer object
-# # pacer = GreenPacer()
-# # pacer = ConstantPacerWithPacer()
-# pace_input = input("Enter pace (comma-separated values): ")
-# pacer_type = input("Enter pacer type (constant/dynamic): ")
-# if pacer_type == "constant":
-#     pace = 0
-#     for x in pace_input.split(","):
-#         pace += int(x)
-#     pacer = ConstantPacerWithPacer(pace=pace)
-# else:
-#     pacer = DynamicPacer(pace=[int(x) for x in pace_input.split(",")])
+def main():
+    manager = NewPacerManager()
+    pacer1 = NewConstantPacer(pace=10, rep_distance=400, lap_count=4, color=Color(255, 0, 0))
+    pacer2 = NewConstantPacer(pace=5, rep_distance=400, lap_count=4, color=Color(0, 255, 0))
 
-# print("Starting dynamic pacer…  Press CTRL+C to stop.")
+    log_event("Adding pacers to manager", category="run_pacer")
+    manager.add_pacer(pacer1)
+    manager.add_pacer(pacer2)
 
-# try:
-#     pacer.active = True
-#     pacer.start()
+    log_event("Starting pacer manager", category="run_pacer")
+    manager.start()
 
-#     # Keep the script alive while the pacer thread runs
-#     while True:
-#         time.sleep(1)
+    time.sleep(3)
 
-# except KeyboardInterrupt:
-#     print("\nStopping pacer…")
-#     pacer.active = False
-#     time.sleep(0.5)
+    log_event("Starting first pacer", category="run_pacer")
+    pacer1.start()
+
+    time.sleep(3)
+
+    log_event("Starting second pacer", category="run_pacer")
+    pacer2.start()
+
+    try:
+        while manager.active:
+            if not any(p.active for p in manager.pacers):
+                log_event("All pacers finished", category="run_pacer")
+                manager.stop()
+                break
+            time.sleep(0.25)
+    except KeyboardInterrupt:
+        log_event("Keyboard interrupt received; stopping pacer manager", category="run_pacer", level="WARNING")
+        manager.stop()
+
+    if manager.thread and manager.thread.is_alive():
+        manager.thread.join(timeout=1.0)
+
+    log_event("run_pacer complete", category="run_pacer")
+
+
+if __name__ == "__main__":
+    main()

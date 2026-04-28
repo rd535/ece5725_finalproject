@@ -8,6 +8,7 @@
 import time
 from rpi_ws281x import PixelStrip, Color, ws
 import argparse
+from pacer.event_log import log_event
 
 # LED strip configuration:
 LED_COUNT = 420        # Number of LED pixels.
@@ -96,22 +97,22 @@ if __name__ == '__main__':
     # Intialize the library (must be called once before other functions).
     strip.begin()
 
-    print('Press Ctrl-C to quit.')
+    log_event('Press Ctrl-C to quit.', category="strandtest")
     if not args.clear:
-        print('Use "-c" argument to clear LEDs on exit')
+        log_event('Use "-c" argument to clear LEDs on exit', category="strandtest")
 
     try:
 
         while True:
-            print('Color wipe animations.')
+            log_event('Color wipe animations.', category="strandtest")
             colorWipe(strip, Color(255, 0, 0))  # Red wipe
             colorWipe(strip, Color(0, 255, 0))  # Green wipe
             colorWipe(strip, Color(0, 0, 255))  # Blue wipe
-            print('Theater chase animations.')
+            log_event('Theater chase animations.', category="strandtest")
             theaterChase(strip, Color(127, 127, 127))  # White theater chase
             theaterChase(strip, Color(127, 0, 0))  # Red theater chase
             theaterChase(strip, Color(0, 0, 127))  # Blue theater chase
-            print('Rainbow animations.')
+            log_event('Rainbow animations.', category="strandtest")
             rainbow(strip)
             rainbowCycle(strip)
             theaterChaseRainbow(strip)

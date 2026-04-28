@@ -4,6 +4,8 @@ try:
 except ImportError:
     HARDWARE_AVAILABLE = False
 
+from pacer.event_log import log_event
+
 class LEDDriver:
     def __init__(self, count, pin):
         self.count = count
@@ -19,13 +21,13 @@ class LEDDriver:
         if HARDWARE_AVAILABLE:
             self.strip.setPixelColor(i, color)
         else:
-            print(f"[SIM] set_pixel({i}, {color})")
+            return None
 
     def show(self):
         if HARDWARE_AVAILABLE:
             self.strip.show()
         else:
-            print("[SIM] show()")
+            return None
 
     def clear(self):
         if HARDWARE_AVAILABLE:
@@ -33,4 +35,4 @@ class LEDDriver:
                 self.strip.setPixelColor(i, 0)
             self.strip.show()
         else:
-            print("[SIM] clear()")
+            log_event("Simulated LED strip cleared", category="hardware")

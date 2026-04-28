@@ -550,6 +550,51 @@ table button {
     min-width: 90px;
 }
 
+.event-log {
+    max-height: 260px;
+    overflow-y: auto;
+    background: #111827;
+    color: #e5e7eb;
+    border-radius: 8px;
+    padding: 12px;
+    font-family: "Courier New", monospace;
+    font-size: 0.86em;
+}
+
+.log-entry {
+    display: grid;
+    grid-template-columns: 150px 64px 90px 1fr;
+    gap: 10px;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.log-entry:last-child {
+    border-bottom: 0;
+}
+
+.log-entry.error {
+    color: #fecaca;
+}
+
+.log-entry.warning {
+    color: #fde68a;
+}
+
+.log-entry.muted {
+    color: #9ca3af;
+    display: block;
+}
+
+.log-time,
+.log-category {
+    color: #9ca3af;
+}
+
+.log-level {
+    font-weight: 700;
+}
+
 /* Read-only input styling */
 input[readonly] {
     background-color: #f0f0f0;

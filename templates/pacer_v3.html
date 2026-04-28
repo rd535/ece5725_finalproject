@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pacer Control</title>
-    <link rel="stylesheet" href="/static/pacer_style.css?v=2">
+    <link rel="stylesheet" href="/static/pacer_style.css?v=3">
 </head>
 
 <body>
@@ -69,6 +69,13 @@
                         <strong>System Status:</strong> <span id="systemStatus">—</span> |
                         <strong>Last Update:</strong> <span id="lastUpdateTime">—</span>
                     </p>
+                </div>
+
+                <div class="card">
+                    <h2>Event Log</h2>
+                    <div id="eventLog" class="event-log">
+                        <div class="log-entry muted">Waiting for events...</div>
+                    </div>
                 </div>
 
                 <div class="card">
@@ -423,9 +430,49 @@
                 document.getElementById("systemStatus").textContent = data.status || "—";
                 document.getElementById("lastUpdateTime").textContent = data.last_update || "—";
                 syncPacerStateFromPi(data);
+                updateEventLog();
             } catch (error) {
                 console.error('Error updating status:', error);
             }
+        }
+
+        async function updateEventLog() {
+            try {
+                const response = await fetch("/api/logs?limit=40");
+                const data = await response.json();
+                const logContainer = document.getElementById("eventLog");
+
+                if (!logContainer || !data.ok || !data.logs || data.logs.length === 0) {
+                    return;
+                }
+
+                logContainer.innerHTML = data.logs
+                    .slice()
+                    .reverse()
+                    .map(entry => {
+                        const details = entry.details && Object.keys(entry.details).length
+                            ? " " + Object.entries(entry.details).map(([key, value]) => `${key}=${value}`).join(" ")
+                            : "";
+                        return `<div class="log-entry ${entry.level.toLowerCase()}">
+                            <span class="log-time">${escapeHtml(entry.timestamp)}</span>
+                            <span class="log-level">${escapeHtml(entry.level)}</span>
+                            <span class="log-category">${escapeHtml(entry.category)}</span>
+                            <span>${escapeHtml(entry.message + details)}</span>
+                        </div>`;
+                    })
+                    .join("");
+            } catch (error) {
+                console.error('Error updating event log:', error);
+            }
+        }
+
+        function escapeHtml(value) {
+            return String(value)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
         }
 
         function syncPacerStateFromPi(data) {
@@ -691,7 +738,7 @@
             } else {
                 showSuccessMessage("Pacer configuration submitted successfully!");
                 updateStatusTable();
-                console.log(result);
+                updateEventLog();
             }
         }
 

@@ -3,6 +3,7 @@ import time
 import json
 import csv
 import io
+from pacer.event_log import get_events, log_event
 
 app = Flask(__name__)
 
@@ -41,6 +42,7 @@ def sync_pacer_runtime_state():
             pacer_config["finished"] = True
             pacer_config["current_split"] = 0.0
             pacer_instances.pop(pacer_name, None)
+            log_event("Pacer finished", category="pacer", pacer_name=pacer_name)
 
     pi_state["status"] = (
         "running"
@@ -75,25 +77,30 @@ def control():
     data = request.get_json()
 
     if not data:
+        log_event("Control request missing JSON", level="ERROR", category="api")
         return jsonify({"ok": False, "error": "No JSON recieved"}), 400
 
     # Update global status
     if "status" in data:
         pi_state["status"] = data["status"]
+        log_event("System status updated", category="settings", status=data["status"])
 
     if "mode" in data:
         pi_state["mode"] = data["mode"]
+        log_event("Mode updated", category="settings", mode=data["mode"])
 
     # Legacy support: target_pace and rep_distance (updates first pacer if it exists)
     if "target_pace" in data and pi_state["pacers"]:
         first_pacer = list(pi_state["pacers"].keys())[0]
         if first_pacer in pi_state["pacers"]:
             pi_state["pacers"][first_pacer]["paces"] = [data["target_pace"]]
+            log_event("Target pace updated", category="settings", pacer_name=first_pacer, pace=data["target_pace"])
 
     if "rep_distance" in data and pi_state["pacers"]:
         first_pacer = list(pi_state["pacers"].keys())[0]
         if first_pacer in pi_state["pacers"]:
             pi_state["pacers"][first_pacer]["rep_distance"] = data["rep_distance"]
+            log_event("Rep distance updated", category="settings", pacer_name=first_pacer, rep_distance=data["rep_distance"])
 
     pi_state["last_update"] = time.strftime("%H:%M:%S")
 
@@ -104,16 +111,19 @@ def control():
 def upload_file():
     try:
         if 'file' not in request.files:
+            log_event("Upload rejected: no file provided", level="ERROR", category="upload")
             return jsonify({"ok": False, "error": "No file provided"}), 400
 
         file = request.files['file']
 
         if file.filename == '':
+            log_event("Upload rejected: no file selected", level="ERROR", category="upload")
             return jsonify({"ok": False, "error": "No file selected"}), 400
 
         # Check file extension
         filename = file.filename.lower()
         if not (filename.endswith('.json') or filename.endswith('.csv')):
+            log_event("Upload rejected: invalid file type", level="ERROR", category="upload", filename=file.filename)
             return jsonify({"ok": False, "error": "Invalid file type. Only JSON and CSV are supported"}), 400
 
         # Read file content
@@ -125,6 +135,7 @@ def upload_file():
         else:  # CSV
             lines = content.strip().split('\n')
             if len(lines) < 2:
+                log_event("Upload rejected: malformed CSV", level="ERROR", category="upload", filename=file.filename)
                 return jsonify({"ok": False, "error": "CSV file must have headers and at least one data row"}), 400
 
             # Parse CSV
@@ -144,6 +155,7 @@ def upload_file():
             pi_state["rep_distance"] = float(data["rep_distance"])
 
         pi_state["last_update"] = time.strftime("%H:%M:%S")
+        log_event("File uploaded and parsed", category="upload", filename=file.filename)
 
         return jsonify({
             "ok": True,
@@ -152,8 +164,10 @@ def upload_file():
         })
 
     except json.JSONDecodeError as e:
+        log_event("Upload rejected: invalid JSON", level="ERROR", category="upload", error=str(e))
         return jsonify({"ok": False, "error": f"Invalid JSON format: {str(e)}"}), 400
     except Exception as e:
+        log_event("Upload failed", level="ERROR", category="upload", error=str(e))
         return jsonify({"ok": False, "error": f"Error processing file: {str(e)}"}), 500
 
 # Mode selection endpoint
@@ -162,16 +176,19 @@ def set_mode():
     data = request.get_json()
 
     if not data or "mode" not in data:
+        log_event("Mode request rejected: mode not specified", level="ERROR", category="api")
         return jsonify({"ok": False, "error": "Mode not specified"}), 400
 
     valid_modes = ["pacer", "music", "lighting"]
     mode = data["mode"]
 
     if mode not in valid_modes:
+        log_event("Mode request rejected: invalid mode", level="ERROR", category="api", mode=mode)
         return jsonify({"ok": False, "error": f"Invalid mode. Must be one of: {', '.join(valid_modes)}"}), 400
 
     pi_state["mode"] = mode
     pi_state["last_update"] = time.strftime("%H:%M:%S")
+    log_event("Mode selected", category="settings", mode=mode)
 
     return jsonify({"ok": True, "mode": mode, "state": pi_state})
 
@@ -189,6 +206,11 @@ def index():
     ## ADVANCED, SCRIPTED REFRESH - UPGRADED VERSION
     return render_template('pacer_v3.html')
 
+@app.route("/api/logs")
+def logs():
+    limit = request.args.get("limit", 100)
+    return jsonify({"ok": True, "logs": get_events(limit)})
+
 @app.route("/submit_pacers", methods=["POST"])
 def submit_pacers():
     data = request.get_json()
@@ -204,12 +226,15 @@ def submit_pacers():
 
         # Validation
         if not pacer_name or distance is None or lap_count is None:
+            log_event("Pacer settings rejected: missing required fields", level="ERROR", category="settings", row=i + 1)
             return jsonify({"ok": False, "error": f"Row {i + 1}: Missing required fields"}), 400
 
         if pacer_type == "dynamic" and (not paces or len(paces) == 0):
+            log_event("Pacer settings rejected: dynamic pacer missing pace", level="ERROR", category="settings", row=i + 1)
             return jsonify({"ok": False, "error": f"Row {i + 1}: Dynamic pacer requires at least one pace"}), 400
 
         if pacer_type in ["constant", "constant_with_pacer"] and (not paces or len(paces) == 0):
+            log_event("Pacer settings rejected: pacer missing pace", level="ERROR", category="settings", row=i + 1, pacer_type=pacer_type)
             return jsonify({"ok": False, "error": f"Row {i + 1}: {pacer_type} pacer requires a pace value"}), 400
 
     # All validation passed, store pacers in pi_state, clear old dict
@@ -234,7 +259,7 @@ def submit_pacers():
         }
 
     pi_state["last_update"] = time.strftime("%H:%M:%S")
-    print(f"Received pacer configuration: {pacers}")
+    log_event("Pacer settings saved", category="settings", pacer_count=len(pacers))
 
     return jsonify({
         "ok": True,
@@ -266,6 +291,7 @@ from pacer.pacer_pattern import ConstantPacerWithPacer, DynamicPacer
 def pacer_start(pacer_name):
     """Start a specific pacer by name"""
     if pacer_name not in pi_state["pacers"]:
+        log_event("Start rejected: pacer not found", level="ERROR", category="pacer", pacer_name=pacer_name)
         return jsonify({"ok": False, "error": f"Pacer '{pacer_name}' not found"}), 404
 
     pacer_config = pi_state["pacers"][pacer_name]
@@ -274,12 +300,13 @@ def pacer_start(pacer_name):
     distance = pacer_config.get("rep_distance", 400)
     lap_count = pacer_config.get("lap_count", 4)
 
-    print(f"Starting {pacer_type} pacer: {pacer_name} at {pace} s/lap, distance: {distance}m")
+    log_event("Starting pacer request", category="pacer", pacer_name=pacer_name, pacer_type=pacer_type, pace=pace, distance=distance)
 
     try:
         existing_pacer = pacer_instances.get(pacer_name)
         if existing_pacer:
             existing_pacer.stop()
+            log_event("Restarting existing pacer instance", category="pacer", pacer_name=pacer_name)
 
         # Create and start pacer instance based on type
         if pacer_type == "constant_with_pacer":
@@ -306,6 +333,7 @@ def pacer_start(pacer_name):
         pi_state["pacers"][pacer_name]["finished"] = False
         pi_state["status"] = "running"
         pi_state["last_update"] = time.strftime("%H:%M:%S")
+        log_event("Pacer started", category="pacer", pacer_name=pacer_name, pacer_type=pacer_type)
 
         return jsonify({
             "ok": True,
@@ -315,6 +343,7 @@ def pacer_start(pacer_name):
         })
 
     except Exception as e:
+        log_event("Failed to start pacer", level="ERROR", category="pacer", pacer_name=pacer_name, error=str(e))
         return jsonify({
             "ok": False,
             "error": f"Failed to start pacer: {str(e)}"
@@ -324,6 +353,7 @@ def pacer_start(pacer_name):
 def pacer_stop(pacer_name):
     """Stop a specific pacer by name"""
     if pacer_name not in pi_state["pacers"]:
+        log_event("Stop rejected: pacer not found", level="ERROR", category="pacer", pacer_name=pacer_name)
         return jsonify({"ok": False, "error": f"Pacer '{pacer_name}' not found"}), 404
 
     if pacer_name in pacer_instances and pacer_instances[pacer_name]:
@@ -340,6 +370,7 @@ def pacer_stop(pacer_name):
         pi_state["status"] = "idle"
 
     pi_state["last_update"] = time.strftime("%H:%M:%S")
+    log_event("Pacer stopped", category="pacer", pacer_name=pacer_name)
 
     return jsonify({
         "ok": True,
@@ -351,8 +382,9 @@ def pacer_stop(pacer_name):
 @app.route('/start', methods=['POST'])
 def start():
     """Legacy endpoint - starts the first pacer"""
-    print("Received legacy start command")
+    log_event("Legacy start command received", category="pacer")
     if not pi_state["pacers"]:
+        log_event("Legacy start rejected: no pacers configured", level="ERROR", category="pacer")
         return jsonify({"ok": False, "error": "No pacers configured"}), 400
 
     first_pacer_name = list(pi_state["pacers"].keys())[0]
@@ -361,8 +393,9 @@ def start():
 @app.route('/stop', methods=['POST'])
 def stop():
     """Legacy endpoint - stops the first pacer"""
-    print("Received legacy stop command")
+    log_event("Legacy stop command received", category="pacer")
     if not pi_state["pacers"]:
+        log_event("Legacy stop rejected: no pacers configured", level="ERROR", category="pacer")
         return jsonify({"ok": False, "error": "No pacers configured"}), 400
 
     first_pacer_name = list(pi_state["pacers"].keys())[0]
