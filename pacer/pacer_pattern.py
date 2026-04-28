@@ -30,6 +30,7 @@ class NewConstantPacer:
         self.pos = 0.0
 
     def start(self):
+        print(f"Starting pacer with pace {self.pace} and color {self.color}…")
         self.active = True
         self.pos = 0.0
         self.curr_lap = 0
@@ -39,6 +40,7 @@ class NewConstantPacer:
         self.active = False
 
     def run(self):
+        print(f"Running pacer with pace {self.pace} and color {self.color}…")
         # convert pace to 5m for LED strip
         # conv_pace = scale_pace(self.pace, self.rep_distance)
         # SPEED = pace_to_speed(conv_pace, self.rep_distance)
