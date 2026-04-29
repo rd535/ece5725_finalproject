@@ -1,4 +1,3 @@
-import threading
 import time
 
 from pacer.event_log import log_event

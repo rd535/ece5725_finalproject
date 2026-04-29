@@ -2,7 +2,7 @@ import threading
 import time
 
 from pacer.event_log import log_event
-from pacer.pacer_pattern import Color, ConstantPacerWithPacer, make_strip
+from pacer.pacer_pattern import Color, make_strip
 
 
 class NewPacerManager:
