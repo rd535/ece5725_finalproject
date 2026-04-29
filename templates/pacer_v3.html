@@ -17,9 +17,9 @@
 
         <!-- Mode Selection -->
         <div class="mode-nav">
-            <button class="mode-btn active" onclick="switchMode('pacer')">Pacer</button>
-            <button class="mode-btn" onclick="switchMode('music')">Music</button>
-            <button class="mode-btn" onclick="switchMode('lighting')">Lighting</button>
+            <button type="button" class="mode-btn active" onclick="switchMode('pacer')">Pacer</button>
+            <button type="button" class="mode-btn" onclick="switchMode('music')">Music</button>
+            <button type="button" class="mode-btn" onclick="switchMode('lighting')">Lighting</button>
         </div>
 
         <!-- Pacer Mode -->
@@ -54,7 +54,7 @@
                         </div>
                     </div>
                     <div class="button-group">
-                        <button onclick="saveLedSettings()">Save LED Settings</button>
+                        <button type="button" onclick="saveLedSettings()">Save LED Settings</button>
                         <p id="ledCountPreview" class="inline-status">LED Count: --</p>
                     </div>
                 </div>
@@ -65,8 +65,8 @@
                     <div class="preset-row">
                         <input id="presetName" type="text" placeholder="Preset name">
                         <select id="presetSelect" class="control-select"></select>
-                        <button onclick="loadSelectedPreset()">Load Preset</button>
-                        <button onclick="saveCurrentPreset()">Save Preset</button>
+                        <button type="button" onclick="loadSelectedPreset()">Load Preset</button>
+                        <button type="button" onclick="saveCurrentPreset()">Save Preset</button>
                     </div>
 
                     <!-- Auto-fill Toggle -->
@@ -126,9 +126,9 @@
                         </table>
                     </div>
                     <div class="button-group">
-                        <button onclick="addRow()">Add Row</button>
-                        <button onclick="removeLastRow()">Remove Last Row</button>
-                        <button onclick="submitTable()">Submit Table To Pi</button>
+                        <button type="button" onclick="addRow()">Add Row</button>
+                        <button type="button" onclick="removeLastRow()">Remove Last Row</button>
+                        <button type="button" onclick="submitTable()">Submit Table To Pi</button>
                         <p id="errorMessage" style="color: red;"></p>
                     </div>
                 </div>
@@ -160,8 +160,8 @@
                         <strong>Last Update:</strong> <span id="lastUpdateTime">—</span>
                     </p>
                     <div class="button-group">
-                        <button class="btn-success" onclick="startAllPacers()">Start All</button>
-                        <button class="btn-danger" onclick="stopAllPacers()">Stop All</button>
+                        <button type="button" class="btn-success" onclick="startAllPacers()">Start All</button>
+                        <button type="button" class="btn-danger" onclick="stopAllPacers()">Stop All</button>
                     </div>
                 </div>
 
@@ -451,10 +451,23 @@
 
         function populatePresetSelect(presets) {
             const select = document.getElementById("presetSelect");
-            const names = Object.keys(presets);
-            select.innerHTML = names.length
-                ? names.map(name => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join("")
-                : `<option value="">No presets saved</option>`;
+            const names = presets && typeof presets === "object" ? Object.keys(presets) : [];
+            select.replaceChildren();
+
+            if (names.length === 0) {
+                const option = document.createElement("option");
+                option.value = "";
+                option.textContent = "No presets saved";
+                select.appendChild(option);
+                return;
+            }
+
+            names.forEach(name => {
+                const option = document.createElement("option");
+                option.value = name;
+                option.textContent = name;
+                select.appendChild(option);
+            });
         }
 
         function updateAutoNames() {
@@ -617,7 +630,25 @@
             return colors[(rowNum - 1) % colors.length];
         }
 
+        function normalizePaces(rawPaces) {
+            if (Array.isArray(rawPaces)) {
+                return rawPaces;
+            }
+            if (rawPaces === undefined || rawPaces === null || rawPaces === "") {
+                return [];
+            }
+            return [rawPaces];
+        }
+
         function normalizePresetPacers(rawPacers) {
+            if (typeof rawPacers === "string") {
+                try {
+                    return normalizePresetPacers(JSON.parse(rawPacers));
+                } catch (error) {
+                    return [];
+                }
+            }
+
             if (Array.isArray(rawPacers)) {
                 return rawPacers;
             }
@@ -630,11 +661,11 @@
                 return Object.entries(rawPacers).map(([pacerName, config]) => {
                     if (config && typeof config === "object" && !Array.isArray(config)) {
                         return {
-                            pacer_name: config.pacer_name || pacerName,
-                            pacer_type: config.pacer_type || "constant",
-                            rep_distance: config.rep_distance,
-                            lap_count: config.lap_count,
-                            paces: config.paces,
+                            pacer_name: config.pacer_name || config.name || pacerName,
+                            pacer_type: config.pacer_type || config.type || "constant",
+                            rep_distance: config.rep_distance || config.distance || config.interval,
+                            lap_count: config.lap_count || config.lapCount || config.laps,
+                            paces: config.paces || config.pace_list || config.pace,
                             color: config.color
                         };
                     }
@@ -659,13 +690,13 @@
             tableBody.innerHTML = "";
 
             normalizedPacers.forEach((pacer, index) => {
-                const paces = Array.isArray(pacer.paces) ? pacer.paces : [];
+                const paces = normalizePaces(pacer.paces);
                 addRow();
                 const row = tableBody.rows[tableBody.rows.length - 1];
-                row.querySelector(".pacerName").value = pacer.pacer_name || `Pacer ${index + 1}`;
-                row.querySelector(".pacerType").value = pacer.pacer_type || "constant";
-                row.querySelector(".distance").value = pacer.rep_distance || 400;
-                row.querySelector(".lapCount").value = pacer.lap_count || paces.length || 1;
+                row.querySelector(".pacerName").value = pacer.pacer_name || pacer.name || `Pacer ${index + 1}`;
+                row.querySelector(".pacerType").value = pacer.pacer_type || pacer.type || "constant";
+                row.querySelector(".distance").value = pacer.rep_distance || pacer.distance || pacer.interval || 400;
+                row.querySelector(".lapCount").value = pacer.lap_count || pacer.lapCount || pacer.laps || paces.length || 1;
                 row.querySelector(".pacerColor").value = pacer.color || getDefaultPacerColor(index + 1);
                 updateLapPaceFromLapNum(row.querySelector(".lapCount"));
 
@@ -767,7 +798,6 @@
                 return;
             }
 
-            print(data.pacers);
             populatePacerTable(data.pacers);
             document.getElementById("presetName").value = name;
             errorMessage.textContent = "";
@@ -844,8 +874,8 @@
                     <td data-pacer-time="${pacerName}">${timeRunning}</td>
                     <td>
                         ${!isRunning
-                        ? `<button class="btn-success" onclick="startPacer('${pacerName}')">Start</button>`
-                        : `<button class="btn-danger" onclick="stopPacer('${pacerName}')">Stop</button>`
+                        ? `<button type="button" class="btn-success" onclick="startPacer('${pacerName}')">Start</button>`
+                        : `<button type="button" class="btn-danger" onclick="stopPacer('${pacerName}')">Stop</button>`
                     }
                     </td>
                 `;

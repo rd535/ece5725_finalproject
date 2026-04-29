@@ -73,6 +73,11 @@ def pacer_dict_to_list():
     ]
 
 def normalize_pacer_list(raw_pacers):
+    if isinstance(raw_pacers, str):
+        try:
+            return normalize_pacer_list(json.loads(raw_pacers))
+        except json.JSONDecodeError:
+            return []
     if isinstance(raw_pacers, list):
         rows = raw_pacers
     elif isinstance(raw_pacers, dict) and "pacers" in raw_pacers:
@@ -102,14 +107,16 @@ def normalize_pacer_list(raw_pacers):
             continue
 
         paces = row.get("paces", [])
+        if paces in (None, ""):
+            paces = row.get("pace_list", row.get("pace", []))
         if not isinstance(paces, list):
             paces = [paces]
 
         normalized.append({
-            "pacer_name": row.get("pacer_name") or f"Pacer {index + 1}",
-            "pacer_type": row.get("pacer_type", "constant"),
-            "rep_distance": row.get("rep_distance", 400),
-            "lap_count": row.get("lap_count") or len(paces) or 1,
+            "pacer_name": row.get("pacer_name") or row.get("name") or f"Pacer {index + 1}",
+            "pacer_type": row.get("pacer_type") or row.get("type") or "constant",
+            "rep_distance": row.get("rep_distance") or row.get("distance") or row.get("interval") or 400,
+            "lap_count": row.get("lap_count") or row.get("lapCount") or row.get("laps") or len(paces) or 1,
             "paces": paces,
             "color": row.get("color", DEFAULT_PACER_COLOR),
         })
