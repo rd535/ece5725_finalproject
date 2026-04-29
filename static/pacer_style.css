@@ -549,25 +549,6 @@ table button {
     margin: 0;
 }
 
-.addLapBtn {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
-    font-size: 0.8em;
-    padding: 6px 12px;
-    margin-top: 8px;
-}
-
-.addLapBtn:hover:not(:disabled) {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);
-}
-
-.addLapBtn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
 .delBtn {
     background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%);
     color: white;
