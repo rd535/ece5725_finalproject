@@ -339,8 +339,8 @@ def pacer_stop_all():
 @app.route("/submit_pacers", methods=["POST"])
 @with_pacer_lock
 def submit_pacers():
-    data = request.get_json()
-    pacers = data.get("pacers", [])
+    data = request.get_json() or {}
+    pacers = normalize_pacer_list(data.get("pacers", []))
 
     # Validate all pacers first
     for i, row in enumerate(pacers):
@@ -397,14 +397,16 @@ def submit_pacers():
         }
 
     pi_state["last_update"] = time.strftime("%H:%M:%S")
-    save_active_pacers()
-    log_event("Pacer settings saved", category="settings", pacer_count=len(pacers))
+    app_settings["active_pacers"] = pacer_dict_to_list()
+    save_settings(app_settings)
+    log_event("Pacer settings saved", category="settings", pacer_count=len(pacers), active_pacers_saved=len(app_settings["active_pacers"]))
 
     return jsonify({
         "ok": True,
         "message": "Pacers received successfully",
         "pacers": pacers,
-        "state": pi_state
+        "state": pi_state,
+        "active_pacers": app_settings["active_pacers"]
     })
 
 @app.route('/api/pacer/start/<pacer_name>', methods=['POST'])

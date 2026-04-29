@@ -65,9 +65,11 @@
                     <div class="preset-row">
                         <input id="presetName" type="text" placeholder="Preset name">
                         <select id="presetSelect" class="control-select"></select>
-                        <button type="button" onclick="loadSelectedPreset()">Load Preset</button>
-                        <button type="button" onclick="saveCurrentPreset()">Save Preset</button>
-                        <button type="button" class="btn-danger" onclick="deleteSelectedPreset()">Delete Preset</button>
+                        <div class="preset-actions">
+                            <button type="button" onclick="loadSelectedPreset()">Load Preset</button>
+                            <button type="button" onclick="saveCurrentPreset()">Save Preset</button>
+                            <button type="button" class="btn-danger" onclick="deleteSelectedPreset()">Delete Preset</button>
+                        </div>
                     </div>
 
                     <!-- Auto-fill Toggle -->
