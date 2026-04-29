@@ -159,22 +159,3 @@ class NewPacerManager:
             pacer.stop()
         log_event("Pacer manager stop requested", category="manager")
 
-
-class PacerManager:
-    def __init__(self):
-        self.pacers = []
-
-    def create_single_pacer(self, pace, color):
-        if not self.pacers:
-            self.pacers.append(ConstantPacerWithPacer())
-
-        p = self.pacers[0]
-        p.pace = [pace] if isinstance(pace, (int, float)) else list(pace)
-        p.color = color
-        log_event("Legacy pacer settings updated", category="settings", pace=p.pace, color=color)
-        return p
-
-    def update(self, dt):
-        for p in self.pacers:
-            if p.active:
-                p.position += dt * (p.rep_distance / p.pace[0])

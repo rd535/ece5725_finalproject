@@ -26,11 +26,6 @@ pi_state = {
     "pacers": {},  # Format: { "Pacer Name": { "pacer_type", "rep_distance", "lap_count", "paces", "current_split", "running" } }
     }
 
-# Legacy fields for backward compatibility (will be removed)
-legacy_state = {
-    "target_pace": 60,
-    "rep_distance": 400,
-}
 
 def hex_to_rgb(color_hex):
     # remove whitspace
@@ -100,41 +95,6 @@ def status():
             pi_state["pacers"][pacer_name]["current_split"] = 0.0
 
     return jsonify(pi_state)
-
-# Browser sends data to the Pi
-@app.route("/api/control", methods=["POST"])
-def control():
-    data = request.get_json()
-
-    if not data:
-        log_event("Control request missing JSON", level="ERROR", category="api")
-        return jsonify({"ok": False, "error": "No JSON recieved"}), 400
-
-    # Update global status
-    if "status" in data:
-        pi_state["status"] = data["status"]
-        log_event("System status updated", category="settings", status=data["status"])
-
-    if "mode" in data:
-        pi_state["mode"] = data["mode"]
-        log_event("Mode updated", category="settings", mode=data["mode"])
-
-    # Legacy support: target_pace and rep_distance (updates first pacer if it exists)
-    if "target_pace" in data and pi_state["pacers"]:
-        first_pacer = list(pi_state["pacers"].keys())[0]
-        if first_pacer in pi_state["pacers"]:
-            pi_state["pacers"][first_pacer]["paces"] = [data["target_pace"]]
-            log_event("Target pace updated", category="settings", pacer_name=first_pacer, pace=data["target_pace"])
-
-    if "rep_distance" in data and pi_state["pacers"]:
-        first_pacer = list(pi_state["pacers"].keys())[0]
-        if first_pacer in pi_state["pacers"]:
-            pi_state["pacers"][first_pacer]["rep_distance"] = data["rep_distance"]
-            log_event("Rep distance updated", category="settings", pacer_name=first_pacer, rep_distance=data["rep_distance"])
-
-    pi_state["last_update"] = time.strftime("%H:%M:%S")
-
-    return jsonify({"ok": True, "state" : pi_state})
 
 # File upload endpoint for JSON and CSV files
 @app.route("/api/upload", methods=["POST"])
@@ -311,20 +271,6 @@ def submit_pacers():
         "state": pi_state
     })
 
-
-# @app.route('/hello/<name>')
-# def hello(name):
-#     return render_template('page.html', name=name)
-
-# # Testing color from the web interface
-# from color_test import set_color_all
-# @app.route('/set_color', methods=['POST'])
-# def set_color():
-#     data = request.json
-#     r, g, b = data['r'], data['g'], data['b']
-#     set_color_all(r, g, b)
-#     return "OK"
-
 @app.route('/api/pacer/start/<pacer_name>', methods=['POST'])
 @with_pacer_lock
 def pacer_start(pacer_name):
@@ -419,29 +365,6 @@ def pacer_stop(pacer_name):
         "message": f"Pacer '{pacer_name}' stopped",
         "pacer_name": pacer_name
     })
-
-# Legacy endpoints for backward compatibility
-@app.route('/start', methods=['POST'])
-def start():
-    """Legacy endpoint - starts the first pacer"""
-    log_event("Legacy start command received", category="pacer")
-    if not pi_state["pacers"]:
-        log_event("Legacy start rejected: no pacers configured", level="ERROR", category="pacer")
-        return jsonify({"ok": False, "error": "No pacers configured"}), 400
-
-    first_pacer_name = list(pi_state["pacers"].keys())[0]
-    return pacer_start(first_pacer_name)
-
-@app.route('/stop', methods=['POST'])
-def stop():
-    """Legacy endpoint - stops the first pacer"""
-    log_event("Legacy stop command received", category="pacer")
-    if not pi_state["pacers"]:
-        log_event("Legacy stop rejected: no pacers configured", level="ERROR", category="pacer")
-        return jsonify({"ok": False, "error": "No pacers configured"}), 400
-
-    first_pacer_name = list(pi_state["pacers"].keys())[0]
-    return pacer_stop(first_pacer_name)
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

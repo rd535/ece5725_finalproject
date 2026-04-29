@@ -25,63 +25,9 @@
         <!-- Pacer Mode -->
         <div id="pacer" class="tab active">
             <div class="content-area">
+
+                <!-- Pace Configuration v2 -->
                 <div class="card">
-
-                    <!-- Pace Configuration -->
-                    <h2>OUTDATED Pace Configuration</h2>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="target_pace">Target Pace (BPM)</label>
-                            <input id="target_pace" type="number" value="60" min="1" max="200">
-                        </div>
-                        <div class="form-group">
-                            <label for="rep_distance">Rep Distance (meters)</label>
-                            <input id="rep_distance" type="number" value="400" min="1" max="10000">
-                        </div>
-                    </div>
-                    <div class="button-group">
-                        <button class="btn-primary" onclick="sendSettings()">Send Settings to Pi</button>
-                        <button class="btn-success" onclick="setRunning()">Start</button>
-                        <button class="btn-danger" onclick="setIdle()">Stop</button>
-                    </div>
-                </div>
-
-                <!-- Status Display -->
-                <div class="card">
-                    <h2>Pacer Status</h2>
-                    <table border="1" id="statusTable" style="width: 100%; text-align: center;">
-                        <thead>
-                            <tr>
-                                <th>Pacer Name</th>
-                                <th>Type</th>
-                                <th>Pace</th>
-                                <th>Lap Count</th>
-                                <th>Color</th>
-                                <th>Status</th>
-                                <th>Time Running</th>
-                                <th>Controls</th>
-                            </tr>
-                        </thead>
-                        <tbody id="statusTableBody">
-                            <!-- Populated by JavaScript -->
-                        </tbody>
-                    </table>
-                    <p style="margin-top: 15px; color: #666; font-size: 0.9em;">
-                        <strong>System Status:</strong> <span id="systemStatus">—</span> |
-                        <strong>Last Update:</strong> <span id="lastUpdateTime">—</span>
-                    </p>
-                </div>
-
-                <div class="card">
-                    <h2>Event Log</h2>
-                    <div id="eventLog" class="event-log">
-                        <div class="log-entry muted">Waiting for events...</div>
-                    </div>
-                </div>
-
-                <div class="card">
-
-                    <!-- Pace Configuration v2 -->
                     <h2>Pace Configuration v2</h2>
 
                     <!-- Auto-fill Toggle -->
@@ -145,6 +91,39 @@
                         <button onclick="removeLastRow()">Remove Last Row</button>
                         <button onclick="submitTable()">Submit Table To Pi</button>
                         <p id="errorMessage" style="color: red;"></p>
+                    </div>
+                </div>
+
+                <!-- Status Display -->
+                <div class="card">
+                    <h2>Pacer Status</h2>
+                    <table border="1" id="statusTable" style="width: 100%; text-align: center;">
+                        <thead>
+                            <tr>
+                                <th>Pacer Name</th>
+                                <th>Type</th>
+                                <th>Pace</th>
+                                <th>Lap Count</th>
+                                <th>Color</th>
+                                <th>Status</th>
+                                <th>Time Running</th>
+                                <th>Controls</th>
+                            </tr>
+                        </thead>
+                        <tbody id="statusTableBody">
+                            <!-- Populated by JavaScript -->
+                        </tbody>
+                    </table>
+                    <p style="margin-top: 15px; color: #666; font-size: 0.9em;">
+                        <strong>System Status:</strong> <span id="systemStatus">—</span> |
+                        <strong>Last Update:</strong> <span id="lastUpdateTime">—</span>
+                    </p>
+                </div>
+
+                <div class="card">
+                    <h2>Event Log</h2>
+                    <div id="eventLog" class="event-log">
+                        <div class="log-entry muted">Waiting for events...</div>
                     </div>
                 </div>
 
@@ -365,65 +344,6 @@
             setTimeout(() => {
                 msg.classList.remove('show');
             }, 3000);
-        }
-
-        // Original API functions
-        async function sendSettings() {
-            const targetPace = Number(document.getElementById("target_pace").value);
-            const repDistance = Number(document.getElementById("rep_distance").value);
-
-            const response = await fetch("/api/control", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    target_pace: targetPace,
-                    rep_distance: repDistance
-                })
-            });
-
-            const data = await response.json();
-            console.log("Sent to Pi:", data);
-            showSuccessMessage('Settings sent to Pi successfully!');
-            updateStatus();
-        }
-
-        async function setRunning() {
-            await fetch("/api/control", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    status: "running"
-                })
-            });
-
-            await fetch("/start", {
-                method: "POST"
-            });
-            showSuccessMessage('Start command sent to Pi!');
-
-            updateStatus();
-        }
-
-        async function setIdle() {
-            await fetch("/api/control", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    status: "idle",
-                })
-            });
-            await fetch("/stop", {
-                method: "POST"
-            });
-            showSuccessMessage('Stop command sent to Pi!');
-
-            updateStatus();
         }
 
         async function updateStatus() {
