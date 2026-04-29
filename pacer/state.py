@@ -13,15 +13,17 @@ class NewPacerManager:
     def __init__(self, num_leds=300, pin=12):
         self.pacers = []
         self.lock = threading.Lock()
+        self.render_lock = threading.Lock()
         self.active = False
         self.thread = None
+        self.wake_event = threading.Event()
         self.num_leds = num_leds
         self.pin = pin
         self._next_order = 0
         self._last_frame_log = 0
         self.strip = make_strip(num_leds, pin)
 
-    def add_pacer(self, pacer):
+    def add_pacer(self, pacer, log=True):
         with self.lock:
             pacer.num_leds = self.num_leds
             pacer._manager_order = self._next_order
@@ -32,7 +34,9 @@ class NewPacerManager:
             self.pacers.sort(key=lambda p: (-p.pace[0], p._manager_order))
             total = len(self.pacers)
 
-        log_event("Pacer added to manager", category="manager", pace=pacer.pace, total=total)
+        self.wake_event.set()
+        if log:
+            log_event("Pacer added to manager", category="manager", pace=pacer.pace, total=total)
 
     def remove_pacer(self, pacer):
         with self.lock:
@@ -43,6 +47,7 @@ class NewPacerManager:
             total = len(self.pacers)
 
         log_event("Pacer removed from manager", category="manager", pace=pacer.pace, total=total)
+        self.wake_event.set()
 
     def remove_pacer_by_name(self, pacer_name):
         with self.lock:
@@ -60,6 +65,7 @@ class NewPacerManager:
             pacer.stop()
 
         log_event("All pacers cleared from manager", category="manager")
+        self.wake_event.set()
 
     def snapshot_pacers(self):
         with self.lock:
@@ -70,43 +76,55 @@ class NewPacerManager:
 
         try:
             while self.active:
-                led_updates = []
-
-                for pacer in self.snapshot_pacers():
-                    if pacer.active:
-                        position = pacer.run()
-                        if pacer.active:
-                            led_updates.append((position, pacer.color, pacer.TYPE))
-
+                led_updates = self.collect_led_updates()
                 self.render(led_updates)
                 self.log_frame(led_updates)
-                time.sleep(self.UPDATE_INTERVAL)
+                self.wake_event.wait(self.UPDATE_INTERVAL)
+                self.wake_event.clear()
         except Exception as exc:
             self.active = False
             log_event("Pacer manager update loop crashed", level="ERROR", category="manager", error=repr(exc))
             raise
 
-        self.clear()
-        log_event("Pacer manager update loop stopped", category="manager")
+        if not self.active:
+            self.clear()
+            log_event("Pacer manager update loop stopped", category="manager")
+
+    def collect_led_updates(self):
+        led_updates = []
+
+        for pacer in self.snapshot_pacers():
+            if pacer.active:
+                position = pacer.run()
+                if pacer.active:
+                    led_updates.append((position, pacer.color, pacer.TYPE))
+
+        return led_updates
+
+    def render_active_frame(self):
+        led_updates = self.collect_led_updates()
+        self.render(led_updates)
+        self.log_frame(led_updates)
 
     def render(self, led_updates):
-        for i in range(self.num_leds):
-            self.strip.setPixelColor(i, Color(0, 0, 0))
+        with self.render_lock:
+            for i in range(self.num_leds):
+                self.strip.setPixelColor(i, Color(0, 0, 0))
 
-        for position, color, pacer_type in led_updates:
-            if pacer_type == "pacer":
-                for k in range(self.PACER_SEG_LENGTH):
-                    pacer_idx = int((position + k) % self.num_leds)
-                    self.strip.setPixelColor(pacer_idx, color)
+            for position, color, pacer_type in led_updates:
+                if pacer_type == "pacer":
+                    for k in range(self.PACER_SEG_LENGTH):
+                        pacer_idx = int((position + k) % self.num_leds)
+                        self.strip.setPixelColor(pacer_idx, color)
 
-            for j in range(self.SEGMENT_LENGTH):
-                idx_init = position - j
-                if idx_init < 0:
-                    continue
-                idx = int(idx_init % self.num_leds)
-                self.strip.setPixelColor(idx, color)
+                for j in range(self.SEGMENT_LENGTH):
+                    idx_init = position - j
+                    if idx_init < 0:
+                        continue
+                    idx = int(idx_init % self.num_leds)
+                    self.strip.setPixelColor(idx, color)
 
-        self.strip.show()
+            self.strip.show()
 
     def log_frame(self, led_updates):
         now = time.time()
@@ -125,9 +143,10 @@ class NewPacerManager:
             )
 
     def clear(self):
-        for i in range(self.num_leds):
-            self.strip.setPixelColor(i, Color(0, 0, 0))
-        self.strip.show()
+        with self.render_lock:
+            for i in range(self.num_leds):
+                self.strip.setPixelColor(i, Color(0, 0, 0))
+            self.strip.show()
 
     def configure_strip(self, num_leds=None, pin=None):
         was_active = self.active
@@ -158,19 +177,23 @@ class NewPacerManager:
         time.sleep(duration)
         self.clear()
 
-    def start(self):
+    def start(self, log=True):
         if self.thread is not None and self.thread.is_alive():
             self.active = True
+            self.wake_event.set()
             return
 
         if self.thread is None or not self.thread.is_alive():
             self.active = True
             self.thread = threading.Thread(target=self.update, daemon=True)
             self.thread.start()
-            log_event("Pacer manager started", category="manager", pacers=len(self.pacers))
+            if log:
+                log_event("Pacer manager started", category="manager", pacers=len(self.pacers))
+        self.wake_event.set()
 
     def stop(self):
         self.active = False
+        self.wake_event.set()
         for pacer in self.snapshot_pacers():
             pacer.stop()
         log_event("Pacer manager stop requested", category="manager")

@@ -388,8 +388,6 @@ def pacer_start(pacer_name):
     lap_count = pacer_config.get("lap_count", 4)
     color_hex = pacer_config.get("color", DEFAULT_PACER_COLOR)
 
-    log_event("Starting pacer request", category="pacer", pacer_name=pacer_name, pacer_type=pacer_type, pace=pace, distance=distance)
-
     try:
         existing_pacer = pacer_instances.get(pacer_name)
         if existing_pacer:
@@ -413,15 +411,18 @@ def pacer_start(pacer_name):
                 color=color,
             )
 
-        pacer_instances[pacer_name].name = pacer_name
-        web_pacer_manager.add_pacer(pacer_instances[pacer_name])
-        web_pacer_manager.start()
-        pacer_instances[pacer_name].start()
+        pacer_instance = pacer_instances[pacer_name]
+        pacer_instance.name = pacer_name
+        pacer_instance.num_leds = web_pacer_manager.num_leds
+        pacer_instance.start()
+        web_pacer_manager.add_pacer(pacer_instance, log=False)
+        web_pacer_manager.start(log=False)
+        web_pacer_manager.render_active_frame()
         pi_state["pacers"][pacer_name]["running"] = True
         pi_state["pacers"][pacer_name]["finished"] = False
         pi_state["status"] = "running"
         pi_state["last_update"] = time.strftime("%H:%M:%S")
-        log_event("Pacer started", category="pacer", pacer_name=pacer_name, pacer_type=pacer_type)
+        log_event("Pacer started", category="pacer", pacer_name=pacer_name, pacer_type=pacer_type, pace=pace, distance=distance)
 
         return jsonify({
             "ok": True,

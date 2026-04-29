@@ -50,7 +50,6 @@ class NewConstantPacer:
         self.pos = 0.0
 
     def start(self):
-        log_event("Starting pacer", category="pacer", pace=self.pace, color=self.color)
         self.active = True
         self.pos = 0.0
         self.curr_lap = 0
