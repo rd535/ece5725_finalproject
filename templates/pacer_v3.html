@@ -161,6 +161,7 @@
                     </p>
                     <div class="button-group status-actions">
                         <button class="btn-success" onclick="startAllPacers()">Start All</button>
+                        <button class="btn-danger" onclick="stopAllPacers()">Stop All</button>
                     </div>
                 </div>
 
@@ -875,6 +876,27 @@
                     showSuccessMessage("All pacers started!");
                 })
                 .catch(() => showErrorMessage("Failed to start all pacers"));
+        }
+
+        function stopAllPacers() {
+            fetch("/api/pacer/stop_all", { method: "POST" })
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.ok) {
+                        showErrorMessage(data.error || "Failed to stop all pacers");
+                        return;
+                    }
+
+                    (data.stopped || []).forEach(pacerName => {
+                        if (pacerState[pacerName]) {
+                            pacerState[pacerName].status = "stopped";
+                            pacerStartTimes[pacerName] = Date.now();
+                        }
+                    });
+                    updateStatusTable();
+                    showSuccessMessage("All pacers stopped!");
+                })
+                .catch(() => showErrorMessage("Failed to stop all pacers"));
         }
 
         function updateStatusTable() {

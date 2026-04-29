@@ -318,6 +318,19 @@ def pacer_start_all():
     log_event("All pacers started", category="pacer", pacers=started)
     return jsonify({"ok": True, "started": started})
 
+@app.route("/api/pacer/stop_all", methods=["POST"])
+@with_pacer_lock
+def pacer_stop_all():
+    stopped = []
+    for pacer_name in list(pi_state["pacers"].keys()):
+        response = pacer_stop.__wrapped__(pacer_name)
+        if isinstance(response, tuple):
+            return response
+        stopped.append(pacer_name)
+
+    log_event("All pacers stopped", category="pacer", pacers=stopped)
+    return jsonify({"ok": True, "stopped": stopped})
+
 @app.route("/submit_pacers", methods=["POST"])
 @with_pacer_lock
 def submit_pacers():
