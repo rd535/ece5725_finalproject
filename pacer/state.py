@@ -129,6 +129,22 @@ class NewPacerManager:
             self.strip.setPixelColor(i, Color(0, 0, 0))
         self.strip.show()
 
+    def configure_strip(self, num_leds=None, pin=None):
+        was_active = self.active
+        if was_active:
+            self.stop()
+            if self.thread and self.thread.is_alive():
+                self.thread.join(timeout=1.0)
+
+        self.num_leds = num_leds or self.num_leds
+        self.pin = pin or self.pin
+        self.strip = make_strip(self.num_leds, self.pin)
+
+        for pacer in self.snapshot_pacers():
+            pacer.num_leds = self.num_leds
+
+        log_event("LED strip configured", category="settings", num_leds=self.num_leds, pin=self.pin)
+
     def flash_startup(self, color=None, duration=0.5):
         color = color or Color(0, 0, 255)
         width = min(12, self.num_leds)

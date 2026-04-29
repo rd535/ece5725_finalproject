@@ -9,11 +9,14 @@ if __package__ is None or __package__ == "":
 
 from pacer.event_log import log_event
 from pacer.pacer_pattern import Color, NewConstantPacer
+from pacer.settings_store import led_count_from_settings, load_settings
 from pacer.state import NewPacerManager
 
 
 def main():
-    manager = NewPacerManager()
+    settings = load_settings()
+    led_settings = settings["led_strip"]
+    manager = NewPacerManager(num_leds=led_count_from_settings(settings), pin=led_settings["pin"])
     pacer1 = NewConstantPacer(pace=10, rep_distance=400, lap_count=4, color=Color(255, 0, 0))
     pacer2 = NewConstantPacer(pace=5, rep_distance=400, lap_count=4, color=Color(0, 255, 0))
 

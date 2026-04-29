@@ -211,6 +211,31 @@ button {
     margin-top: 25px;
 }
 
+.settings-grid,
+.preset-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 15px;
+    align-items: end;
+    margin-bottom: 20px;
+}
+
+.preset-row {
+    grid-template-columns: minmax(160px, 1fr) minmax(160px, 1fr) auto auto;
+}
+
+.inline-status {
+    display: flex;
+    align-items: center;
+    color: #555;
+    font-weight: 600;
+}
+
+.status-actions {
+    grid-template-columns: minmax(180px, 260px);
+    justify-content: start;
+}
+
 /* Status Display */
 .status-grid {
     display: grid;

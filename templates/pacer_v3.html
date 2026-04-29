@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pacer Control</title>
-    <link rel="stylesheet" href="/static/pacer_style.css?v=4">
+    <link rel="stylesheet" href="/static/pacer_style.css?v=5">
 </head>
 
 <body>
@@ -26,9 +26,48 @@
         <div id="pacer" class="tab active">
             <div class="content-area">
 
+                <div class="card">
+                    <h2>LED Strip Settings</h2>
+                    <div class="settings-grid">
+                        <div class="form-group">
+                            <label for="stripLength">Strip Length (m)</label>
+                            <input id="stripLength" type="number" min="0.1" step="0.1" value="5">
+                        </div>
+                        <div class="form-group">
+                            <label for="ledsPerMeter">LED/m</label>
+                            <input id="ledsPerMeter" type="number" min="1" step="1" value="60">
+                        </div>
+                        <div class="form-group">
+                            <label for="stripPin">GPIO Pin</label>
+                            <input id="stripPin" type="number" min="1" step="1" value="12">
+                        </div>
+                        <div class="form-group">
+                            <label for="colorOrder">Color Order</label>
+                            <select id="colorOrder">
+                                <option value="RGB">RGB</option>
+                                <option value="RBG">RBG</option>
+                                <option value="GRB">GRB</option>
+                                <option value="GBR">GBR</option>
+                                <option value="BRG">BRG</option>
+                                <option value="BGR">BGR</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="button-group">
+                        <button onclick="saveLedSettings()">Save LED Settings</button>
+                        <p id="ledCountPreview" class="inline-status">LED Count: --</p>
+                    </div>
+                </div>
+
                 <!-- Pace Configuration v2 -->
                 <div class="card">
                     <h2>Pace Configuration v2</h2>
+                    <div class="preset-row">
+                        <input id="presetName" type="text" placeholder="Preset name">
+                        <select id="presetSelect"></select>
+                        <button onclick="loadSelectedPreset()">Load Preset</button>
+                        <button onclick="saveCurrentPreset()">Save Preset</button>
+                    </div>
 
                     <!-- Auto-fill Toggle -->
                     <label>
@@ -118,6 +157,9 @@
                         <strong>System Status:</strong> <span id="systemStatus">—</span> |
                         <strong>Last Update:</strong> <span id="lastUpdateTime">—</span>
                     </p>
+                    <div class="button-group status-actions">
+                        <button class="btn-success" onclick="startAllPacers()">Start All</button>
+                    </div>
                 </div>
 
                 <div class="card">
@@ -477,6 +519,68 @@
         const autoNameToggle = document.getElementById("autoNameToggle");
         const errorMessage = document.getElementById("errorMessage");
 
+        async function loadAppSettings() {
+            const response = await fetch("/api/app-settings");
+            const data = await response.json();
+            if (!data.ok) {
+                return;
+            }
+
+            const led = data.settings.led_strip;
+            document.getElementById("stripLength").value = led.strip_length_m;
+            document.getElementById("ledsPerMeter").value = led.leds_per_meter;
+            document.getElementById("stripPin").value = led.pin;
+            document.getElementById("colorOrder").value = led.color_order || "RGB";
+            document.getElementById("ledCountPreview").textContent = `LED Count: ${data.led_count}`;
+
+            populatePresetSelect(data.settings.presets || {});
+
+            if (Array.isArray(data.settings.active_pacers) && data.settings.active_pacers.length > 0) {
+                populatePacerTable(data.settings.active_pacers);
+                data.settings.active_pacers.forEach(pacer => {
+                    pacerState[pacer.pacer_name] = {
+                        type: pacer.pacer_type,
+                        pace: pacer.paces.length > 1 ? pacer.paces.join(", ") : (pacer.paces[0] || 0),
+                        lapCount: pacer.lap_count,
+                        color: pacer.color || "#00ff00",
+                        status: "idle"
+                    };
+                });
+                updateStatusTable();
+            }
+        }
+
+        async function saveLedSettings() {
+            const payload = {
+                strip_length_m: Number(document.getElementById("stripLength").value),
+                leds_per_meter: Number(document.getElementById("ledsPerMeter").value),
+                pin: Number(document.getElementById("stripPin").value),
+                color_order: document.getElementById("colorOrder").value
+            };
+
+            const response = await fetch("/api/led-settings", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json();
+            if (!data.ok) {
+                showErrorMessage(data.error || "Failed to save LED settings");
+                return;
+            }
+            document.getElementById("ledCountPreview").textContent = `LED Count: ${data.led_count}`;
+            showSuccessMessage("LED settings saved!");
+            updateEventLog();
+        }
+
+        function populatePresetSelect(presets) {
+            const select = document.getElementById("presetSelect");
+            const names = Object.keys(presets);
+            select.innerHTML = names.length
+                ? names.map(name => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join("")
+                : `<option value="">No presets saved</option>`;
+        }
+
         function updateAutoNames() {
             const rows = tableBody.querySelectorAll("tr");
 
@@ -596,65 +700,12 @@
         }
 
         async function submitTable() {
-            errorMessage.textContent = "";
-
-            const rows = tableBody.querySelectorAll("tr");
-            const data = [];
-
-            for (let i = 0; i < rows.length; i++) {
-                const name = rows[i].querySelector(".pacerName").value.trim();
-                const pacerType = rows[i].querySelector(".pacerType").value;
-                const distance = rows[i].querySelector(".distance").value.trim();
-                const lapCount = rows[i].querySelector(".lapCount").value.trim();
-                const color = rows[i].querySelector(".pacerColor").value;
-
-                const paceInputs = rows[i].querySelectorAll(".lapPace");
-                const paces = [];
-
-                for (let j = 0; j < paceInputs.length; j++) {
-                    const pace = paceInputs[j].value.trim();
-
-                    if (!pace) {
-                        errorMessage.textContent = `Error: Row ${i + 1}, Lap ${j + 1} pace is incomplete.`;
-                        return;
-                    }
-
-                    paces.push(Number(pace));
-                }
-
-                if (pacerType === "dynamic" && paces.length !== Number(lapCount)) {
-                    errorMessage.textContent =
-                        `Error: Row ${i + 1} needs ${lapCount} pace values.`;
-                    return;
-                }
-
-                if (!name || !distance || !lapCount) {
-                    errorMessage.textContent = `Error: Row ${i + 1} is incomplete.`;
-                    return;
-                }
-
-                if (pacerType === "dynamic" && paces.length === 0) {
-                    errorMessage.textContent = `Error: Row ${i + 1} (Dynamic) requires at least one pace.`;
-                    return;
-                }
-
-                // paces: paces.length > 0 ? paces : [Number(paces[0]) || 0]
-                data.push({
-                    pacer_name: name,
-                    pacer_type: pacerType,
-                    rep_distance: Number(distance),
-                    lap_count: Number(lapCount),
-                    paces: paces,
-                    color: color
-                });
-
-                pacerState[name] = {
-                    type: pacerType,
-                    pace: paces.length > 1 ? paces.join(", ") : (paces[0] || 0),
-                    lapCount: Number(lapCount),
-                    color: color,
-                    status: "idle"
-                };
+            let data;
+            try {
+                data = collectPacerRows();
+            } catch (error) {
+                errorMessage.textContent = error.message;
+                return;
             }
 
             const response = await fetch("/submit_pacers", {
@@ -669,6 +720,15 @@
             if (!response.ok) {
                 errorMessage.textContent = result.error || "Server error.";
             } else {
+                data.forEach(pacer => {
+                    pacerState[pacer.pacer_name] = {
+                        type: pacer.pacer_type,
+                        pace: pacer.paces.length > 1 ? pacer.paces.join(", ") : (pacer.paces[0] || 0),
+                        lapCount: pacer.lap_count,
+                        color: pacer.color,
+                        status: "idle"
+                    };
+                });
                 showSuccessMessage("Pacer configuration submitted successfully!");
                 updateStatusTable();
                 updateEventLog();
@@ -678,6 +738,143 @@
         function getDefaultPacerColor(rowNum) {
             const colors = ["#00ff00", "#ff0000", "#0088ff", "#ffcc00", "#ff00ff", "#00ffff"];
             return colors[(rowNum - 1) % colors.length];
+        }
+
+        function populatePacerTable(pacers) {
+            autoNameToggle.checked = false;
+            tableBody.innerHTML = "";
+
+            pacers.forEach((pacer, index) => {
+                addRow();
+                const row = tableBody.rows[index];
+                row.querySelector(".pacerName").value = pacer.pacer_name || `Pacer ${index + 1}`;
+                row.querySelector(".pacerType").value = pacer.pacer_type || "constant";
+                row.querySelector(".distance").value = pacer.rep_distance || 400;
+                row.querySelector(".lapCount").value = pacer.lap_count || pacer.paces.length || 1;
+                row.querySelector(".pacerColor").value = pacer.color || getDefaultPacerColor(index + 1);
+                updateLapPaceFromLapNum(row.querySelector(".lapCount"));
+
+                const paceInputs = row.querySelectorAll(".lapPace");
+                (pacer.paces || []).forEach((pace, paceIndex) => {
+                    if (paceInputs[paceIndex]) {
+                        paceInputs[paceIndex].value = pace;
+                    }
+                });
+            });
+
+            if (pacers.length === 0) {
+                addRow();
+            }
+        }
+
+        function collectPacerRows() {
+            errorMessage.textContent = "";
+            const rows = tableBody.querySelectorAll("tr");
+            const data = [];
+
+            for (let i = 0; i < rows.length; i++) {
+                const name = rows[i].querySelector(".pacerName").value.trim();
+                const pacerType = rows[i].querySelector(".pacerType").value;
+                const distance = rows[i].querySelector(".distance").value.trim();
+                const lapCount = rows[i].querySelector(".lapCount").value.trim();
+                const color = rows[i].querySelector(".pacerColor").value;
+                const paces = Array.from(rows[i].querySelectorAll(".lapPace")).map(input => input.value.trim());
+
+                for (let j = 0; j < paces.length; j++) {
+                    if (!paces[j]) {
+                        throw new Error(`Error: Row ${i + 1}, Lap ${j + 1} pace is incomplete.`);
+                    }
+                }
+
+                if (pacerType === "dynamic" && paces.length !== Number(lapCount)) {
+                    throw new Error(`Error: Row ${i + 1} needs ${lapCount} pace values.`);
+                }
+
+                if (!name || !distance || !lapCount) {
+                    throw new Error(`Error: Row ${i + 1} is incomplete.`);
+                }
+
+                data.push({
+                    pacer_name: name,
+                    pacer_type: pacerType,
+                    rep_distance: Number(distance),
+                    lap_count: Number(lapCount),
+                    paces: paces.map(Number),
+                    color: color
+                });
+            }
+
+            return data;
+        }
+
+        async function saveCurrentPreset() {
+            const name = document.getElementById("presetName").value.trim();
+            if (!name) {
+                showErrorMessage("Enter a preset name first");
+                return;
+            }
+
+            let pacers;
+            try {
+                pacers = collectPacerRows();
+            } catch (error) {
+                errorMessage.textContent = error.message;
+                return;
+            }
+
+            const response = await fetch(`/api/presets/${encodeURIComponent(name)}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ pacers })
+            });
+            const data = await response.json();
+            if (!data.ok) {
+                showErrorMessage(data.error || "Failed to save preset");
+                return;
+            }
+
+            populatePresetSelect(data.presets);
+            document.getElementById("presetSelect").value = name;
+            showSuccessMessage(`Preset "${name}" saved!`);
+        }
+
+        async function loadSelectedPreset() {
+            const name = document.getElementById("presetSelect").value;
+            if (!name) {
+                showErrorMessage("No preset selected");
+                return;
+            }
+
+            const response = await fetch(`/api/presets/${encodeURIComponent(name)}`);
+            const data = await response.json();
+            if (!data.ok) {
+                showErrorMessage(data.error || "Failed to load preset");
+                return;
+            }
+
+            populatePacerTable(data.pacers);
+            showSuccessMessage(`Preset "${name}" loaded!`);
+        }
+
+        function startAllPacers() {
+            fetch("/api/pacer/start_all", { method: "POST" })
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.ok) {
+                        showErrorMessage(data.error || "Failed to start all pacers");
+                        return;
+                    }
+
+                    (data.started || []).forEach(pacerName => {
+                        if (pacerState[pacerName]) {
+                            pacerState[pacerName].status = "running";
+                            pacerStartTimes[pacerName] = Date.now();
+                        }
+                    });
+                    updateStatusTable();
+                    showSuccessMessage("All pacers started!");
+                })
+                .catch(() => showErrorMessage("Failed to start all pacers"));
         }
 
         function updateStatusTable() {
@@ -780,6 +977,7 @@
             }, 3000);
         }
 
+        loadAppSettings();
         updateStatus();
         setInterval(updateStatus, 1000);
         setInterval(updateRunningTimes, 250);

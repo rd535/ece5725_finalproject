@@ -8,12 +8,14 @@ from threading import Lock
 from pacer.event_log import get_events, log_event
 from pacer.state import NewPacerManager
 from pacer.pacer_pattern import Color, NewConstantPacer, NewDynamicPacer
+from pacer.settings_store import led_count_from_settings, load_settings, save_settings
 
 app = Flask(__name__)
 
 pacer = None
 pacer_instances = {}  # Dict to store pacer instances by name: {"Pacer 1": <pacer_object>, ...}
-web_pacer_manager = NewPacerManager()
+app_settings = load_settings()
+web_pacer_manager = NewPacerManager(num_leds=led_count_from_settings(app_settings), pin=app_settings["led_strip"]["pin"])
 DEFAULT_PACER_COLOR = "#00ff00"
 pacer_state_lock = Lock()
 
@@ -24,6 +26,17 @@ pi_state = {
     "status": "idle",
     "last_update": time.strftime("%H:%M:%S"),
     "pacers": {},  # Format: { "Pacer Name": { "pacer_type", "rep_distance", "lap_count", "paces", "current_split", "running" } }
+    }
+for saved_pacer in app_settings.get("active_pacers", []):
+    pi_state["pacers"][saved_pacer["pacer_name"]] = {
+        "pacer_type": saved_pacer.get("pacer_type", "constant"),
+        "rep_distance": saved_pacer.get("rep_distance", 400),
+        "lap_count": saved_pacer.get("lap_count", 1),
+        "paces": saved_pacer.get("paces", []),
+        "color": saved_pacer.get("color", DEFAULT_PACER_COLOR),
+        "current_split": 0.0,
+        "running": False,
+        "finished": False,
     }
 
 
@@ -39,7 +52,26 @@ def hex_to_rgb(color_hex):
 
 def hex_to_color(color_hex):
     r, g, b = hex_to_rgb(color_hex)
-    return Color(r, g, b)
+    order = app_settings["led_strip"].get("color_order", "RGB").upper()
+    values = {"R": r, "G": g, "B": b}
+    return Color(values[order[0]], values[order[1]], values[order[2]])
+
+def pacer_dict_to_list():
+    return [
+        {
+            "pacer_name": name,
+            "pacer_type": config.get("pacer_type", "constant"),
+            "rep_distance": config.get("rep_distance", 400),
+            "lap_count": config.get("lap_count", 1),
+            "paces": config.get("paces", []),
+            "color": config.get("color", DEFAULT_PACER_COLOR),
+        }
+        for name, config in pi_state["pacers"].items()
+    ]
+
+def save_active_pacers():
+    app_settings["active_pacers"] = pacer_dict_to_list()
+    save_settings(app_settings)
 
 def with_pacer_lock(func):
     @wraps(func)
@@ -201,6 +233,88 @@ def logs():
     limit = request.args.get("limit", 100)
     return jsonify({"ok": True, "logs": get_events(limit)})
 
+@app.route("/api/app-settings", methods=["GET"])
+def get_app_settings():
+    return jsonify({
+        "ok": True,
+        "settings": app_settings,
+        "led_count": led_count_from_settings(app_settings),
+    })
+
+@app.route("/api/led-settings", methods=["POST"])
+@with_pacer_lock
+def save_led_settings():
+    data = request.get_json() or {}
+
+    try:
+        strip_length_m = float(data.get("strip_length_m"))
+        leds_per_meter = float(data.get("leds_per_meter"))
+        pin = int(data.get("pin", 12))
+        color_order = data.get("color_order", "RGB").upper()
+    except (TypeError, ValueError):
+        return jsonify({"ok": False, "error": "LED settings must include numeric strip length, LED/m, and pin."}), 400
+
+    if strip_length_m <= 0 or leds_per_meter <= 0:
+        return jsonify({"ok": False, "error": "Strip length and LED/m must be greater than 0."}), 400
+
+    if color_order not in {"RGB", "RBG", "GRB", "GBR", "BRG", "BGR"}:
+        return jsonify({"ok": False, "error": "Color order must be one of RGB, RBG, GRB, GBR, BRG, BGR."}), 400
+
+    app_settings["led_strip"] = {
+        "strip_length_m": strip_length_m,
+        "leds_per_meter": leds_per_meter,
+        "pin": pin,
+        "color_order": color_order,
+    }
+    save_settings(app_settings)
+
+    pacer_instances.clear()
+    for config in pi_state["pacers"].values():
+        config["running"] = False
+    pi_state["status"] = "idle"
+    web_pacer_manager.configure_strip(num_leds=led_count_from_settings(app_settings), pin=pin)
+    log_event("LED settings saved", category="settings", led_count=led_count_from_settings(app_settings), color_order=color_order)
+
+    return jsonify({"ok": True, "settings": app_settings, "led_count": led_count_from_settings(app_settings)})
+
+@app.route("/api/presets", methods=["GET"])
+def list_presets():
+    return jsonify({"ok": True, "presets": app_settings.get("presets", {})})
+
+@app.route("/api/presets/<preset_name>", methods=["GET"])
+def load_preset(preset_name):
+    preset = app_settings.get("presets", {}).get(preset_name)
+    if preset is None:
+        return jsonify({"ok": False, "error": f"Preset '{preset_name}' not found"}), 404
+    return jsonify({"ok": True, "name": preset_name, "pacers": preset})
+
+@app.route("/api/presets/<preset_name>", methods=["POST"])
+@with_pacer_lock
+def save_preset(preset_name):
+    data = request.get_json() or {}
+    pacers = data.get("pacers", pacer_dict_to_list())
+    presets = app_settings.setdefault("presets", {})
+    if preset_name not in presets and len(presets) >= 3:
+        return jsonify({"ok": False, "error": "Only 3 presets can be saved. Reuse an existing preset name to overwrite it."}), 400
+
+    presets[preset_name] = pacers
+    save_settings(app_settings)
+    log_event("Preset saved", category="settings", preset=preset_name, pacer_count=len(pacers))
+    return jsonify({"ok": True, "presets": presets})
+
+@app.route("/api/pacer/start_all", methods=["POST"])
+@with_pacer_lock
+def pacer_start_all():
+    started = []
+    for pacer_name in list(pi_state["pacers"].keys()):
+        response = pacer_start.__wrapped__(pacer_name)
+        if isinstance(response, tuple):
+            return response
+        started.append(pacer_name)
+
+    log_event("All pacers started", category="pacer", pacers=started)
+    return jsonify({"ok": True, "started": started})
+
 @app.route("/submit_pacers", methods=["POST"])
 @with_pacer_lock
 def submit_pacers():
@@ -262,6 +376,7 @@ def submit_pacers():
         }
 
     pi_state["last_update"] = time.strftime("%H:%M:%S")
+    save_active_pacers()
     log_event("Pacer settings saved", category="settings", pacer_count=len(pacers))
 
     return jsonify({
