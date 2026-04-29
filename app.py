@@ -54,6 +54,7 @@ def hex_to_color(color_hex):
     print("Converting color hex:", color_hex)
     r, g, b = hex_to_rgb(color_hex)
     order = app_settings["led_strip"].get("color_order", "RGB").upper()
+    print("Color order from settings:", order)
     values = {"R": r, "G": g, "B": b}
     print("Color values before reordering:", values)
     return Color(values[order[0]], values[order[1]], values[order[2]])
