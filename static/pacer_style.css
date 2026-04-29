@@ -276,6 +276,76 @@ button {
     justify-content: start;
 }
 
+.lighting-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.lighting-pattern-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+}
+
+.lighting-pattern-panel {
+    border: 1px solid #e4e6f0;
+    border-radius: 8px;
+    padding: 18px;
+    background: #fbfcff;
+}
+
+.lighting-pattern-panel h3 {
+    color: #4f5fd5;
+    margin-bottom: 14px;
+    font-size: 1.15em;
+}
+
+.lighting-color-row,
+.lighting-controls {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.lighting-color-row {
+    min-height: 54px;
+    margin-bottom: 16px;
+}
+
+.lighting-color-row label,
+.lighting-controls label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 0.9em;
+    margin-bottom: 0;
+}
+
+.lighting-controls {
+    justify-content: space-between;
+}
+
+.lighting-controls input[type="range"] {
+    width: 130px;
+}
+
+.muted {
+    color: #777;
+    font-weight: 600;
+}
+
+.error-text {
+    color: #d33;
+    font-weight: 600;
+    margin-top: 14px;
+}
+
 /* Status Display */
 .status-grid {
     display: grid;
@@ -411,6 +481,16 @@ button {
 
     .button-group {
         grid-template-columns: 1fr;
+    }
+
+    .preset-row {
+        grid-template-columns: 1fr;
+    }
+
+    .preset-actions,
+    .lighting-toolbar {
+        flex-direction: column;
+        align-items: stretch;
     }
 
     .mode-nav {

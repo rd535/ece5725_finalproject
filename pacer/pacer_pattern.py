@@ -8,6 +8,31 @@ try:
 except ImportError:
     HARDWARE_AVAILABLE = False
 
+    def Color(r, g, b):
+        return (int(r) << 16) | (int(g) << 8) | int(b)
+
+    class _MockWs:
+        SK6812_STRIP_RGBW = None
+
+    ws = _MockWs()
+
+    class PixelStrip:
+        def __init__(self, num_leds, *args, **kwargs):
+            self._pixels = [0] * int(num_leds)
+
+        def begin(self):
+            return None
+
+        def numPixels(self):
+            return len(self._pixels)
+
+        def setPixelColor(self, index, color):
+            if 0 <= int(index) < len(self._pixels):
+                self._pixels[int(index)] = color
+
+        def show(self):
+            return None
+
 def normalize_pace(pace):
     if isinstance(pace, (int, float)):
         return [pace]

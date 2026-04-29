@@ -17,9 +17,9 @@
 
         <!-- Mode Selection -->
         <div class="mode-nav">
-            <button type="button" class="mode-btn active" onclick="switchMode('pacer')">Pacer</button>
-            <button type="button" class="mode-btn" onclick="switchMode('music')">Music</button>
-            <button type="button" class="mode-btn" onclick="switchMode('lighting')">Lighting</button>
+            <button type="button" class="mode-btn active" onclick="switchMode('pacer', this)">Pacer</button>
+            <button type="button" class="mode-btn" onclick="switchMode('music', this)">Music</button>
+            <button type="button" class="mode-btn" onclick="switchMode('lighting', this)">Lighting</button>
         </div>
 
         <!-- Pacer Mode -->
@@ -195,13 +195,18 @@
         <div id="lighting" class="tab">
             <div class="content-area">
                 <div class="card">
-                    <div class="button-group">
-                        <button type="button">Color Fade</button>
-                        <button type="button">Theater Lighting</button>
-                        <button type="button">Rainbow</button>
-                        <button type="button">Static Color</button>
-                        <p id="errorMessage" style="color: red;"></p>
+                    <h2>Lighting Mode</h2>
+                    <div class="lighting-toolbar">
+                        <div>
+                            <strong>Active Pattern:</strong>
+                            <span id="lightingActivePattern">None</span>
+                        </div>
+                        <button type="button" class="btn-danger" onclick="stopLightingPattern()">Stop Lighting</button>
                     </div>
+                    <div id="lightingPatternGrid" class="lighting-pattern-grid">
+                        <p class="muted">Loading lighting patterns...</p>
+                    </div>
+                    <p id="lightingErrorMessage" class="error-text"></p>
                 </div>
             </div>
         </div>
@@ -211,9 +216,12 @@
         // Global state for pacers
         const pacerState = {};
         let pacerStartTimes = {};
+        let lightingPatterns = {};
 
         // Mode switching
-        function switchMode(mode) {
+        function switchMode(mode, button) {
+            const previousMode = document.querySelector(".tab.active")?.id;
+
             // Hide all tabs
             document.querySelectorAll('.tab').forEach(tab => {
                 tab.classList.remove('active');
@@ -228,10 +236,19 @@
             document.getElementById(mode).classList.add('active');
 
             // Activate selected button
-            event.target.classList.add('active');
+            if (button) {
+                button.classList.add('active');
+            }
 
-            // Stop any running pacers when switching modes
-            stopAllPacers();
+            if (previousMode === "pacer" && mode !== "pacer") {
+                stopAllPacers();
+            }
+            if (previousMode === "lighting" && mode !== "lighting") {
+                stopLightingPattern();
+            }
+            if (mode === "lighting") {
+                stopAllPacers();
+            }
 
             // Notify server of mode change
             fetch('/api/mode', {
@@ -300,6 +317,145 @@
             } catch (error) {
                 console.error('Error updating event log:', error);
             }
+        }
+
+        async function loadLightingPatterns() {
+            try {
+                const response = await fetch("/api/lighting/patterns");
+                const data = await response.json();
+                if (!data.ok) {
+                    showLightingError(data.error || "Failed to load lighting patterns");
+                    return;
+                }
+
+                lightingPatterns = data.patterns || {};
+                renderLightingPatterns();
+                updateLightingStatus();
+            } catch (error) {
+                console.error("Error loading lighting patterns:", error);
+                showLightingError("Failed to load lighting patterns");
+            }
+        }
+
+        function renderLightingPatterns() {
+            const grid = document.getElementById("lightingPatternGrid");
+            grid.innerHTML = "";
+
+            Object.entries(lightingPatterns).forEach(([patternKey, meta], index) => {
+                const panel = document.createElement("div");
+                panel.className = "lighting-pattern-panel";
+                panel.dataset.pattern = patternKey;
+
+                const title = document.createElement("h3");
+                title.textContent = meta.label;
+                panel.appendChild(title);
+
+                const colorRow = document.createElement("div");
+                colorRow.className = "lighting-color-row";
+                const colorCount = Number(meta.color_count || 0);
+
+                if (colorCount === 0) {
+                    const noColor = document.createElement("span");
+                    noColor.className = "muted";
+                    noColor.textContent = "No color input";
+                    colorRow.appendChild(noColor);
+                } else {
+                    for (let i = 0; i < colorCount; i++) {
+                        const label = document.createElement("label");
+                        label.textContent = `Color ${i + 1}`;
+                        const input = document.createElement("input");
+                        input.type = "color";
+                        input.className = "lightingColor";
+                        input.value = getDefaultPacerColor(index + i + 1);
+                        label.appendChild(input);
+                        colorRow.appendChild(label);
+                    }
+                }
+                panel.appendChild(colorRow);
+
+                const controls = document.createElement("div");
+                controls.className = "lighting-controls";
+
+                const speedLabel = document.createElement("label");
+                speedLabel.textContent = "Speed";
+                const speed = document.createElement("input");
+                speed.type = "range";
+                speed.className = "lightingSpeed";
+                speed.min = "0.25";
+                speed.max = "3";
+                speed.step = "0.25";
+                speed.value = "1";
+                speedLabel.appendChild(speed);
+                controls.appendChild(speedLabel);
+
+                const startButton = document.createElement("button");
+                startButton.type = "button";
+                startButton.className = "btn-success";
+                startButton.textContent = "Start";
+                startButton.addEventListener("click", () => startLightingPattern(patternKey));
+                controls.appendChild(startButton);
+
+                const stopButton = document.createElement("button");
+                stopButton.type = "button";
+                stopButton.className = "btn-danger";
+                stopButton.textContent = "Stop";
+                stopButton.addEventListener("click", stopLightingPattern);
+                controls.appendChild(stopButton);
+
+                panel.appendChild(controls);
+                grid.appendChild(panel);
+            });
+        }
+
+        async function startLightingPattern(patternKey) {
+            const panel = document.querySelector(`[data-pattern="${patternKey}"]`);
+            const colors = Array.from(panel.querySelectorAll(".lightingColor")).map(input => input.value);
+            const speed = Number(panel.querySelector(".lightingSpeed").value);
+
+            const response = await fetch("/api/lighting/start", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ pattern: patternKey, colors, speed })
+            });
+            const data = await response.json();
+            if (!data.ok) {
+                showLightingError(data.error || "Failed to start lighting pattern");
+                return;
+            }
+
+            showLightingError("");
+            updateLightingStatus(data.lighting);
+            showSuccessMessage(`${lightingPatterns[patternKey]?.label || patternKey} started!`);
+            updateEventLog();
+        }
+
+        async function stopLightingPattern() {
+            try {
+                const response = await fetch("/api/lighting/stop", { method: "POST" });
+                const data = await response.json();
+                if (data.ok) {
+                    updateLightingStatus(data.lighting);
+                    updateEventLog();
+                }
+            } catch (error) {
+                console.error("Error stopping lighting:", error);
+            }
+        }
+
+        async function updateLightingStatus(statusData = null) {
+            let lighting = statusData;
+            if (!lighting) {
+                const response = await fetch("/api/lighting/status");
+                const data = await response.json();
+                lighting = data.lighting;
+            }
+
+            const label = lighting?.pattern ? lightingPatterns[lighting.pattern]?.label || lighting.pattern : "None";
+            document.getElementById("lightingActivePattern").textContent = lighting?.running ? label : "None";
+        }
+
+        function showLightingError(message) {
+            document.getElementById("lightingErrorMessage").textContent = message || "";
         }
 
         function escapeHtml(value) {
@@ -990,6 +1146,7 @@
         }
 
         loadAppSettings();
+        loadLightingPatterns();
         updateStatus();
         setInterval(updateStatus, 1000);
         setInterval(updateRunningTimes, 250);
