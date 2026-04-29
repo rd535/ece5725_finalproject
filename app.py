@@ -127,6 +127,18 @@ def save_active_pacers():
     app_settings["active_pacers"] = pacer_dict_to_list()
     save_settings(app_settings)
 
+def clean_presets():
+    presets = app_settings.setdefault("presets", {})
+    invalid_names = [name for name, preset in presets.items() if preset is None]
+    for name in invalid_names:
+        presets.pop(name, None)
+
+    if invalid_names:
+        save_settings(app_settings)
+        log_event("Removed invalid saved preset entries", category="settings", presets=invalid_names)
+
+    return presets
+
 def with_pacer_lock(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
@@ -216,6 +228,7 @@ def logs():
 
 @app.route("/api/app-settings", methods=["GET"])
 def get_app_settings():
+    clean_presets()
     return jsonify({
         "ok": True,
         "settings": app_settings,
@@ -260,32 +273,38 @@ def save_led_settings():
 
 @app.route("/api/presets", methods=["GET"])
 def list_presets():
-    return jsonify({"ok": True, "presets": app_settings.get("presets", {})})
+    return jsonify({"ok": True, "presets": clean_presets()})
 
 @app.route("/api/presets/<preset_name>", methods=["GET"])
 def load_preset(preset_name):
-    preset = app_settings.get("presets", {}).get(preset_name)
+    preset = clean_presets().get(preset_name)
     if preset is None:
+        log_event("Preset load rejected: not found", level="ERROR", category="settings", preset=preset_name)
         return jsonify({"ok": False, "error": f"Preset '{preset_name}' not found"}), 404
-    return jsonify({"ok": True, "name": preset_name, "pacers": normalize_pacer_list(preset)})
+    pacers = normalize_pacer_list(preset)
+    log_event("Preset loaded", category="settings", preset=preset_name, pacer_count=len(pacers))
+    return jsonify({"ok": True, "name": preset_name, "pacers": pacers})
 
 @app.route("/api/presets/<preset_name>", methods=["POST"])
 @with_pacer_lock
 def save_preset(preset_name):
     data = request.get_json() or {}
     pacers = normalize_pacer_list(data.get("pacers", pacer_dict_to_list()))
-    presets = app_settings.setdefault("presets", {})
+    presets = clean_presets()
+    evicted_preset = None
 
-    # want to automatically clear out old presets 
-    if preset_name not in presets and len(presets) >= 3:
-        preset_names = list(presets.keys())
-        presets[preset_names[0]] = None
-        log_event("Preset limit reached, clearing oldest preset", category="settings", cleared_preset=preset_names[0])
+    if preset_name in presets:
+        # Re-saving an existing preset makes it the newest one for fair FIFO eviction.
+        presets.pop(preset_name)
+    elif len(presets) >= 3:
+        evicted_preset = next(iter(presets))
+        presets.pop(evicted_preset)
+        log_event("Preset limit reached, evicting oldest preset", category="settings", evicted_preset=evicted_preset)
 
     presets[preset_name] = pacers
     save_settings(app_settings)
     log_event("Preset saved", category="settings", preset=preset_name, pacer_count=len(pacers))
-    return jsonify({"ok": True, "presets": presets})
+    return jsonify({"ok": True, "presets": presets, "evicted_preset": evicted_preset})
 
 @app.route("/api/pacer/start_all", methods=["POST"])
 @with_pacer_lock

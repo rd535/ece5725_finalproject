@@ -449,7 +449,7 @@
             updateEventLog();
         }
 
-        function populatePresetSelect(presets) {
+        function populatePresetSelect(presets, selectedName = "") {
             const select = document.getElementById("presetSelect");
             const names = presets && typeof presets === "object" ? Object.keys(presets) : [];
             select.replaceChildren();
@@ -468,6 +468,10 @@
                 option.textContent = name;
                 select.appendChild(option);
             });
+
+            if (selectedName && names.includes(selectedName)) {
+                select.value = selectedName;
+            }
         }
 
         function updateAutoNames() {
@@ -522,9 +526,13 @@
 
             // Add event listener for the type select
             const typeSelect = newRow.querySelector(".pacerType");
-            typeSelect.addEventListener("change", updateAddLapButtons);
+            typeSelect.addEventListener("change", () => updateLapPaceFromLapNum(typeSelect));
 
             updateAutoNames();
+        }
+
+        function updateAddLapButtons() {
+            tableBody.querySelectorAll(".pacerType").forEach(typeSelect => updateLapPaceFromLapNum(typeSelect));
         }
 
         function removeLastRow() {
@@ -685,9 +693,8 @@
         }
 
         function populatePacerTable(pacers) {
-            print("Populating pacer table with preset data...");
             const normalizedPacers = normalizePresetPacers(pacers);
-            print(`Normalized pacers: ${JSON.stringify(normalizedPacers)}`);
+            console.log("Populating pacer table from preset", normalizedPacers);
             autoNameToggle.checked = false;
             tableBody.innerHTML = "";
 
@@ -696,15 +703,10 @@
                 addRow();
                 const row = tableBody.rows[tableBody.rows.length - 1];
                 row.querySelector(".pacerName").value = pacer.pacer_name || pacer.name || `Pacer ${index + 1}`;
-                print(`Populating row for pacer: ${row.querySelector(".pacerName").value}`);
                 row.querySelector(".pacerType").value = pacer.pacer_type || pacer.type || "constant";
-                print(`Pacer type set to: ${row.querySelector(".pacerType").value}`);
                 row.querySelector(".distance").value = pacer.rep_distance || pacer.distance || pacer.interval || 400;
-                print(`Distance set to: ${row.querySelector(".distance").value}`);
                 row.querySelector(".lapCount").value = pacer.lap_count || pacer.lapCount || pacer.laps || paces.length || 1;
-                print(`Lap count set to: ${row.querySelector(".lapCount").value}`);
                 row.querySelector(".pacerColor").value = pacer.color || getDefaultPacerColor(index + 1);
-                print(`Pacer color set to: ${row.querySelector(".pacerColor").value}`);
                 updateLapPaceFromLapNum(row.querySelector(".lapCount"));
 
                 const paceInputs = row.querySelectorAll(".lapPace");
@@ -786,9 +788,12 @@
                 return;
             }
 
-            populatePresetSelect(data.presets);
-            document.getElementById("presetSelect").value = name;
-            showSuccessMessage(`Preset "${name}" saved!`);
+            populatePresetSelect(data.presets, name);
+            if (data.evicted_preset) {
+                showSuccessMessage(`Preset "${name}" saved. Removed oldest preset "${data.evicted_preset}".`);
+            } else {
+                showSuccessMessage(`Preset "${name}" saved!`);
+            }
         }
 
         async function loadSelectedPreset() {
@@ -802,15 +807,16 @@
             const data = await response.json();
             if (!data.ok) {
                 showErrorMessage(data.error || "Failed to load preset");
-                log_error(`Failed to load preset "${name}": ${data.error || "Unknown error"}`);
+                console.error(`Failed to load preset "${name}": ${data.error || "Unknown error"}`);
                 return;
             }
 
+            console.log(`Loading preset "${name}"`, data.pacers);
             populatePacerTable(data.pacers);
             document.getElementById("presetName").value = name;
             errorMessage.textContent = "";
             showSuccessMessage(`Preset "${name}" loaded!`);
-            log_info(`Preset "${name}" loaded successfully`); 
+            console.log(`Preset "${name}" loaded successfully`);
         }
 
         function startAllPacers() {
