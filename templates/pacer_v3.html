@@ -702,7 +702,6 @@
 
         async function submitTable() {
             let data;
-            pacerState = {}; // clear current state to be replaced by server response
             try {
                 data = collectPacerRows();
             } catch (error) {
@@ -722,6 +721,7 @@
             if (!response.ok) {
                 errorMessage.textContent = result.error || "Server error.";
             } else {
+                pacerState = {};
                 data.forEach(pacer => {
                     pacerState[pacer.pacer_name] = {
                         type: pacer.pacer_type,
