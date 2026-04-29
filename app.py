@@ -72,6 +72,50 @@ def pacer_dict_to_list():
         for name, config in pi_state["pacers"].items()
     ]
 
+def normalize_pacer_list(raw_pacers):
+    if isinstance(raw_pacers, list):
+        rows = raw_pacers
+    elif isinstance(raw_pacers, dict) and "pacers" in raw_pacers:
+        return normalize_pacer_list(raw_pacers["pacers"])
+    elif isinstance(raw_pacers, dict):
+        rows = []
+        for pacer_name, config in raw_pacers.items():
+            if isinstance(config, dict):
+                row = dict(config)
+                row.setdefault("pacer_name", pacer_name)
+                rows.append(row)
+            else:
+                rows.append({
+                    "pacer_name": pacer_name,
+                    "pacer_type": "constant",
+                    "rep_distance": 400,
+                    "lap_count": 1,
+                    "paces": [config],
+                    "color": DEFAULT_PACER_COLOR,
+                })
+    else:
+        rows = []
+
+    normalized = []
+    for index, row in enumerate(rows):
+        if not isinstance(row, dict):
+            continue
+
+        paces = row.get("paces", [])
+        if not isinstance(paces, list):
+            paces = [paces]
+
+        normalized.append({
+            "pacer_name": row.get("pacer_name") or f"Pacer {index + 1}",
+            "pacer_type": row.get("pacer_type", "constant"),
+            "rep_distance": row.get("rep_distance", 400),
+            "lap_count": row.get("lap_count") or len(paces) or 1,
+            "paces": paces,
+            "color": row.get("color", DEFAULT_PACER_COLOR),
+        })
+
+    return normalized
+
 def save_active_pacers():
     app_settings["active_pacers"] = pacer_dict_to_list()
     save_settings(app_settings)
@@ -216,13 +260,13 @@ def load_preset(preset_name):
     preset = app_settings.get("presets", {}).get(preset_name)
     if preset is None:
         return jsonify({"ok": False, "error": f"Preset '{preset_name}' not found"}), 404
-    return jsonify({"ok": True, "name": preset_name, "pacers": preset})
+    return jsonify({"ok": True, "name": preset_name, "pacers": normalize_pacer_list(preset)})
 
 @app.route("/api/presets/<preset_name>", methods=["POST"])
 @with_pacer_lock
 def save_preset(preset_name):
     data = request.get_json() or {}
-    pacers = data.get("pacers", pacer_dict_to_list())
+    pacers = normalize_pacer_list(data.get("pacers", pacer_dict_to_list()))
     presets = app_settings.setdefault("presets", {})
     if preset_name not in presets and len(presets) >= 3:
         return jsonify({"ok": False, "error": "Only 3 presets can be saved. Reuse an existing preset name to overwrite it."}), 400

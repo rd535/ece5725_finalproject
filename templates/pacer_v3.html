@@ -43,7 +43,7 @@
                         </div>
                         <div class="form-group">
                             <label for="colorOrder">Color Order</label>
-                            <select id="colorOrder">
+                            <select id="colorOrder" class="control-select">
                                 <option value="RGB">RGB</option>
                                 <option value="RBG">RBG</option>
                                 <option value="GRB">GRB</option>
@@ -64,7 +64,7 @@
                     <h2>Pace Configuration v2</h2>
                     <div class="preset-row">
                         <input id="presetName" type="text" placeholder="Preset name">
-                        <select id="presetSelect"></select>
+                        <select id="presetSelect" class="control-select"></select>
                         <button onclick="loadSelectedPreset()">Load Preset</button>
                         <button onclick="saveCurrentPreset()">Save Preset</button>
                     </div>
@@ -617,14 +617,51 @@
             return colors[(rowNum - 1) % colors.length];
         }
 
+        function normalizePresetPacers(rawPacers) {
+            if (Array.isArray(rawPacers)) {
+                return rawPacers;
+            }
+
+            if (rawPacers && Object.prototype.hasOwnProperty.call(rawPacers, "pacers")) {
+                return normalizePresetPacers(rawPacers.pacers);
+            }
+
+            if (rawPacers && typeof rawPacers === "object") {
+                return Object.entries(rawPacers).map(([pacerName, config]) => {
+                    if (config && typeof config === "object" && !Array.isArray(config)) {
+                        return {
+                            pacer_name: config.pacer_name || pacerName,
+                            pacer_type: config.pacer_type || "constant",
+                            rep_distance: config.rep_distance,
+                            lap_count: config.lap_count,
+                            paces: config.paces,
+                            color: config.color
+                        };
+                    }
+
+                    return {
+                        pacer_name: pacerName,
+                        pacer_type: "constant",
+                        rep_distance: 400,
+                        lap_count: 1,
+                        paces: [Number(config) || 60],
+                        color: getDefaultPacerColor(1)
+                    };
+                });
+            }
+
+            return [];
+        }
+
         function populatePacerTable(pacers) {
+            const normalizedPacers = normalizePresetPacers(pacers);
             autoNameToggle.checked = false;
             tableBody.innerHTML = "";
 
-            pacers.forEach((pacer, index) => {
+            normalizedPacers.forEach((pacer, index) => {
                 const paces = Array.isArray(pacer.paces) ? pacer.paces : [];
                 addRow();
-                const row = tableBody.rows[index];
+                const row = tableBody.rows[tableBody.rows.length - 1];
                 row.querySelector(".pacerName").value = pacer.pacer_name || `Pacer ${index + 1}`;
                 row.querySelector(".pacerType").value = pacer.pacer_type || "constant";
                 row.querySelector(".distance").value = pacer.rep_distance || 400;
@@ -640,7 +677,7 @@
                 });
             });
 
-            if (pacers.length === 0) {
+            if (normalizedPacers.length === 0) {
                 addRow();
             }
         }
