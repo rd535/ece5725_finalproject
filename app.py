@@ -131,70 +131,6 @@ def status():
 
     return jsonify(pi_state)
 
-# File upload endpoint for JSON and CSV files
-@app.route("/api/upload", methods=["POST"])
-def upload_file():
-    try:
-        if 'file' not in request.files:
-            log_event("Upload rejected: no file provided", level="ERROR", category="upload")
-            return jsonify({"ok": False, "error": "No file provided"}), 400
-
-        file = request.files['file']
-
-        if file.filename == '':
-            log_event("Upload rejected: no file selected", level="ERROR", category="upload")
-            return jsonify({"ok": False, "error": "No file selected"}), 400
-
-        # Check file extension
-        filename = file.filename.lower()
-        if not (filename.endswith('.json') or filename.endswith('.csv')):
-            log_event("Upload rejected: invalid file type", level="ERROR", category="upload", filename=file.filename)
-            return jsonify({"ok": False, "error": "Invalid file type. Only JSON and CSV are supported"}), 400
-
-        # Read file content
-        content = file.read().decode('utf-8')
-
-        # Parse based on file type
-        if filename.endswith('.json'):
-            data = json.loads(content)
-        else:  # CSV
-            lines = content.strip().split('\n')
-            if len(lines) < 2:
-                log_event("Upload rejected: malformed CSV", level="ERROR", category="upload", filename=file.filename)
-                return jsonify({"ok": False, "error": "CSV file must have headers and at least one data row"}), 400
-
-            # Parse CSV
-            reader = csv.DictReader(io.StringIO(content))
-            data = next(reader)
-            # Convert numeric strings to numbers where applicable
-            if 'target_pace' in data:
-                data['target_pace'] = float(data['target_pace'])
-            if 'rep_distance' in data:
-                data['rep_distance'] = float(data['rep_distance'])
-
-        # Update pi_state with values from file
-        if "target_pace" in data:
-            pi_state["target_pace"] = float(data["target_pace"])
-
-        if "rep_distance" in data:
-            pi_state["rep_distance"] = float(data["rep_distance"])
-
-        pi_state["last_update"] = time.strftime("%H:%M:%S")
-        log_event("File uploaded and parsed", category="upload", filename=file.filename)
-
-        return jsonify({
-            "ok": True,
-            "message": f"File {file.filename} uploaded and parsed successfully",
-            "state": pi_state
-        })
-
-    except json.JSONDecodeError as e:
-        log_event("Upload rejected: invalid JSON", level="ERROR", category="upload", error=str(e))
-        return jsonify({"ok": False, "error": f"Invalid JSON format: {str(e)}"}), 400
-    except Exception as e:
-        log_event("Upload failed", level="ERROR", category="upload", error=str(e))
-        return jsonify({"ok": False, "error": f"Error processing file: {str(e)}"}), 500
-
 # Mode selection endpoint
 @app.route("/api/mode", methods=["POST"])
 def set_mode():
@@ -220,15 +156,6 @@ def set_mode():
 # HTML front end
 @app.route('/')
 def index():
-    #return 'Hello world'
-    #return render_template('index.html')
-
-    ## BASIC, REQUIRES REFRESH
-    # current_time = time.strftime("%H:%M:%S")
-    # lap_count = 7
-    # return render_template('pacer_basic.html', current_time=current_time, lap_count=lap_count)
-
-    ## ADVANCED, SCRIPTED REFRESH - UPGRADED VERSION
     return render_template('pacer_v3.html')
 
 @app.route("/api/logs")
