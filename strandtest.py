@@ -84,6 +84,7 @@ def theaterChaseRainbow(strip, wait_ms=50):
             for i in range(0, strip.numPixels(), 3):
                 strip.setPixelColor(i + q, 0)
 
+# for color debugging
 def staticColor(strip, R, G, B):
     """Set all pixels to the same color."""
     for i in range(strip.numPixels()):
@@ -110,21 +111,23 @@ if __name__ == '__main__':
     try:
 
         while True:
-            rgb = input("Enter RGB values (e.g. '255 0 0' for red, or '0 0 0' to turn off): ")
-            r, g, b = map(int, rgb.split())
-            staticColor(strip, r, g, b)
-            # log_event('Color wipe animations.', category="strandtest")
-            # colorWipe(strip, Color(255, 0, 0))  # Red wipe
-            # colorWipe(strip, Color(0, 255, 0))  # Green wipe
-            # colorWipe(strip, Color(0, 0, 255))  # Blue wipe
-            # log_event('Theater chase animations.', category="strandtest")
-            # theaterChase(strip, Color(127, 127, 127))  # White theater chase
-            # theaterChase(strip, Color(127, 0, 0))  # Red theater chase
-            # theaterChase(strip, Color(0, 0, 127))  # Blue theater chase
-            # log_event('Rainbow animations.', category="strandtest")
-            # rainbow(strip)
-            # rainbowCycle(strip)
-            # theaterChaseRainbow(strip)
+            # COLOR DEBUGGING
+            # rgb = input("Enter RGB values (e.g. '255 0 0' for red, or '0 0 0' to turn off): ")
+            # r, g, b = map(int, rgb.split())
+            # staticColor(strip, r, g, b)
+
+            log_event('Color wipe animations.', category="strandtest")
+            colorWipe(strip, Color(255, 0, 0))  # Red wipe
+            colorWipe(strip, Color(0, 255, 0))  # Green wipe
+            colorWipe(strip, Color(0, 0, 255))  # Blue wipe
+            log_event('Theater chase animations.', category="strandtest")
+            theaterChase(strip, Color(127, 127, 127))  # White theater chase
+            theaterChase(strip, Color(127, 0, 0))  # Red theater chase
+            theaterChase(strip, Color(0, 0, 127))  # Blue theater chase
+            log_event('Rainbow animations.', category="strandtest")
+            rainbow(strip)
+            rainbowCycle(strip)
+            theaterChaseRainbow(strip)
 
     except KeyboardInterrupt:
         if args.clear:

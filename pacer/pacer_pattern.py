@@ -111,7 +111,7 @@ class NewDynamicPacer(NewConstantPacer):
         self.pace_index = 0
     
     def stop(self):
-        super.stop()
+        super().stop()
 
     def run(self):
         if not self.active:
