@@ -448,6 +448,15 @@
             }
 
             let tableNeedsUpdate = false;
+            const serverPacerNames = new Set(Object.keys(data.pacers));
+
+            Object.keys(pacerState).forEach(pacerName => {
+                if (!serverPacerNames.has(pacerName)) {
+                    delete pacerState[pacerName];
+                    delete pacerStartTimes[pacerName];
+                    tableNeedsUpdate = true;
+                }
+            });
 
             Object.entries(data.pacers).forEach(([pacerName, config]) => {
                 const serverStatus = config.running
@@ -518,6 +527,11 @@
         // Pacer table functions
         const tableBody = document.getElementById("tableBody");
         const autoNameToggle = document.getElementById("autoNameToggle");
+
+        function clearPacerState() {
+            Object.keys(pacerState).forEach(pacerName => delete pacerState[pacerName]);
+            pacerStartTimes = {};
+        }
         const errorMessage = document.getElementById("errorMessage");
 
         async function loadAppSettings() {
@@ -721,7 +735,7 @@
             if (!response.ok) {
                 errorMessage.textContent = result.error || "Server error.";
             } else {
-                pacerState = {};
+                clearPacerState();
                 data.forEach(pacer => {
                     pacerState[pacer.pacer_name] = {
                         type: pacer.pacer_type,
@@ -747,17 +761,18 @@
             tableBody.innerHTML = "";
 
             pacers.forEach((pacer, index) => {
+                const paces = Array.isArray(pacer.paces) ? pacer.paces : [];
                 addRow();
                 const row = tableBody.rows[index];
                 row.querySelector(".pacerName").value = pacer.pacer_name || `Pacer ${index + 1}`;
                 row.querySelector(".pacerType").value = pacer.pacer_type || "constant";
                 row.querySelector(".distance").value = pacer.rep_distance || 400;
-                row.querySelector(".lapCount").value = pacer.lap_count || pacer.paces.length || 1;
+                row.querySelector(".lapCount").value = pacer.lap_count || paces.length || 1;
                 row.querySelector(".pacerColor").value = pacer.color || getDefaultPacerColor(index + 1);
                 updateLapPaceFromLapNum(row.querySelector(".lapCount"));
 
                 const paceInputs = row.querySelectorAll(".lapPace");
-                (pacer.paces || []).forEach((pace, paceIndex) => {
+                paces.forEach((pace, paceIndex) => {
                     if (paceInputs[paceIndex]) {
                         paceInputs[paceIndex].value = pace;
                     }
@@ -855,6 +870,8 @@
             }
 
             populatePacerTable(data.pacers);
+            document.getElementById("presetName").value = name;
+            errorMessage.textContent = "";
             showSuccessMessage(`Preset "${name}" loaded!`);
         }
 
