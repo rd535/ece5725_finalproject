@@ -291,20 +291,24 @@ def save_preset(preset_name):
     data = request.get_json() or {}
     pacers = normalize_pacer_list(data.get("pacers", pacer_dict_to_list()))
     presets = clean_presets()
-    evicted_preset = None
-
-    if preset_name in presets:
-        # Re-saving an existing preset makes it the newest one for fair FIFO eviction.
-        presets.pop(preset_name)
-    elif len(presets) >= 3:
-        evicted_preset = next(iter(presets))
-        presets.pop(evicted_preset)
-        log_event("Preset limit reached, evicting oldest preset", category="settings", evicted_preset=evicted_preset)
 
     presets[preset_name] = pacers
     save_settings(app_settings)
     log_event("Preset saved", category="settings", preset=preset_name, pacer_count=len(pacers))
-    return jsonify({"ok": True, "presets": presets, "evicted_preset": evicted_preset})
+    return jsonify({"ok": True, "presets": presets})
+
+@app.route("/api/presets/<preset_name>", methods=["DELETE"])
+@with_pacer_lock
+def delete_preset(preset_name):
+    presets = clean_presets()
+    if preset_name not in presets:
+        log_event("Preset delete rejected: not found", level="ERROR", category="settings", preset=preset_name)
+        return jsonify({"ok": False, "error": f"Preset '{preset_name}' not found"}), 404
+
+    presets.pop(preset_name)
+    save_settings(app_settings)
+    log_event("Preset deleted", category="settings", preset=preset_name)
+    return jsonify({"ok": True, "presets": presets, "deleted_preset": preset_name})
 
 @app.route("/api/pacer/start_all", methods=["POST"])
 @with_pacer_lock

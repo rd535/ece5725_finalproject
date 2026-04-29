@@ -247,7 +247,7 @@ button {
 }
 
 .preset-row {
-    grid-template-columns: minmax(160px, 1fr) minmax(160px, 1fr) auto auto;
+    grid-template-columns: minmax(160px, 1fr) minmax(160px, 1fr) auto auto auto;
 }
 
 .inline-status {

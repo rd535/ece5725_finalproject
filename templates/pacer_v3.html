@@ -67,6 +67,7 @@
                         <select id="presetSelect" class="control-select"></select>
                         <button type="button" onclick="loadSelectedPreset()">Load Preset</button>
                         <button type="button" onclick="saveCurrentPreset()">Save Preset</button>
+                        <button type="button" class="btn-danger" onclick="deleteSelectedPreset()">Delete Preset</button>
                     </div>
 
                     <!-- Auto-fill Toggle -->
@@ -789,11 +790,7 @@
             }
 
             populatePresetSelect(data.presets, name);
-            if (data.evicted_preset) {
-                showSuccessMessage(`Preset "${name}" saved. Removed oldest preset "${data.evicted_preset}".`);
-            } else {
-                showSuccessMessage(`Preset "${name}" saved!`);
-            }
+            showSuccessMessage(`Preset "${name}" saved!`);
         }
 
         async function loadSelectedPreset() {
@@ -817,6 +814,30 @@
             errorMessage.textContent = "";
             showSuccessMessage(`Preset "${name}" loaded!`);
             console.log(`Preset "${name}" loaded successfully`);
+        }
+
+        async function deleteSelectedPreset() {
+            const select = document.getElementById("presetSelect");
+            const name = select.value;
+            if (!name) {
+                showErrorMessage("No preset selected");
+                return;
+            }
+
+            const response = await fetch(`/api/presets/${encodeURIComponent(name)}`, {
+                method: "DELETE"
+            });
+            const data = await response.json();
+            if (!data.ok) {
+                showErrorMessage(data.error || "Failed to delete preset");
+                return;
+            }
+
+            populatePresetSelect(data.presets);
+            if (document.getElementById("presetName").value.trim() === name) {
+                document.getElementById("presetName").value = "";
+            }
+            showSuccessMessage(`Preset "${name}" deleted!`);
         }
 
         function startAllPacers() {
