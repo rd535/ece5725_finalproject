@@ -8,26 +8,6 @@ try:
 except ImportError:
     HARDWARE_AVAILABLE = False
 
-    def Color(r, g, b):
-        return (r, g, b)
-
-    class ws:
-        SK6812_STRIP_RGBW = None
-
-    class PixelStrip:
-        def __init__(self, count, pin, *args, **kwargs):
-            self.count = count
-            self.pin = pin
-
-        def begin(self):
-            log_event("Using simulated LED strip", category="hardware", count=self.count, pin=self.pin)
-
-        def setPixelColor(self, i, color):
-            return None
-
-        def show(self):
-            return None
-
 def normalize_pace(pace):
     if isinstance(pace, (int, float)):
         return [pace]
@@ -129,6 +109,9 @@ class NewDynamicPacer(NewConstantPacer):
     def start(self):
         super().start()
         self.pace_index = 0
+    
+    def stop(self):
+        super.stop()
 
     def run(self):
         if not self.active:
