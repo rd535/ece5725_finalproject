@@ -195,10 +195,12 @@
         <div id="lighting" class="tab">
             <div class="content-area">
                 <div class="card">
-                    <div class="empty-state">
-                        <div class="empty-state-icon">💡</div>
-                        <p>Lighting Mode - Coming Soon!</p>
-                        <p style="color: #ccc; font-size: 0.95em;">Lighting control features will be available here</p>
+                    <div class="button-group">
+                        <button type="button">Color Fade</button>
+                        <button type="button">Theater Lighting</button>
+                        <button type="button">Rainbow</button>
+                        <button type="button">Static Color</button>
+                        <p id="errorMessage" style="color: red;"></p>
                     </div>
                 </div>
             </div>
@@ -227,6 +229,9 @@
 
             // Activate selected button
             event.target.classList.add('active');
+
+            // Stop any running pacers when switching modes
+            stopAllPacers();
 
             // Notify server of mode change
             fetch('/api/mode', {
