@@ -702,6 +702,7 @@
 
         async function submitTable() {
             let data;
+            pacerState = {}; // clear current state to be replaced by server response
             try {
                 data = collectPacerRows();
             } catch (error) {
