@@ -51,9 +51,11 @@ def hex_to_rgb(color_hex):
     return tuple(int(color_hex[i:i + 2], 16) for i in (0, 2, 4))
 
 def hex_to_color(color_hex):
+    print("Converting color hex:", color_hex)
     r, g, b = hex_to_rgb(color_hex)
     order = app_settings["led_strip"].get("color_order", "RGB").upper()
     values = {"R": r, "G": g, "B": b}
+    print("Color values before reordering:", values)
     return Color(values[order[0]], values[order[1]], values[order[2]])
 
 def pacer_dict_to_list():
