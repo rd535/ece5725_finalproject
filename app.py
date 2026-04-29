@@ -275,8 +275,12 @@ def save_preset(preset_name):
     data = request.get_json() or {}
     pacers = normalize_pacer_list(data.get("pacers", pacer_dict_to_list()))
     presets = app_settings.setdefault("presets", {})
+
+    # want to automatically clear out old presets 
     if preset_name not in presets and len(presets) >= 3:
-        return jsonify({"ok": False, "error": "Only 3 presets can be saved. Reuse an existing preset name to overwrite it."}), 400
+        preset_names = list(presets.keys())
+        presets[preset_names[0]] = None
+        log_event("Preset limit reached, clearing oldest preset", category="settings", cleared_preset=preset_names[0])
 
     presets[preset_name] = pacers
     save_settings(app_settings)

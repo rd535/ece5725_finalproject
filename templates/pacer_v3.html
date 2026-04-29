@@ -694,10 +694,15 @@
                 addRow();
                 const row = tableBody.rows[tableBody.rows.length - 1];
                 row.querySelector(".pacerName").value = pacer.pacer_name || pacer.name || `Pacer ${index + 1}`;
+                print(`Populating row for pacer: ${row.querySelector(".pacerName").value}`);
                 row.querySelector(".pacerType").value = pacer.pacer_type || pacer.type || "constant";
+                print(`Pacer type set to: ${row.querySelector(".pacerType").value}`);
                 row.querySelector(".distance").value = pacer.rep_distance || pacer.distance || pacer.interval || 400;
+                print(`Distance set to: ${row.querySelector(".distance").value}`);
                 row.querySelector(".lapCount").value = pacer.lap_count || pacer.lapCount || pacer.laps || paces.length || 1;
+                print(`Lap count set to: ${row.querySelector(".lapCount").value}`);
                 row.querySelector(".pacerColor").value = pacer.color || getDefaultPacerColor(index + 1);
+                print(`Pacer color set to: ${row.querySelector(".pacerColor").value}`);
                 updateLapPaceFromLapNum(row.querySelector(".lapCount"));
 
                 const paceInputs = row.querySelectorAll(".lapPace");
@@ -795,6 +800,7 @@
             const data = await response.json();
             if (!data.ok) {
                 showErrorMessage(data.error || "Failed to load preset");
+                log_error(`Failed to load preset "${name}": ${data.error || "Unknown error"}`);
                 return;
             }
 
@@ -802,6 +808,7 @@
             document.getElementById("presetName").value = name;
             errorMessage.textContent = "";
             showSuccessMessage(`Preset "${name}" loaded!`);
+            log_info(`Preset "${name}" loaded successfully`); 
         }
 
         function startAllPacers() {
