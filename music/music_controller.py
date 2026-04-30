@@ -75,7 +75,7 @@ class ADS1115Reader:
         self.bus.write_i2c_block_data(self.address, register, [high, low])
 
 
-class MusicController:
+ class MusicController:
     """Read ADC microphone audio, detect bass beats, and flash the LED strip."""
 
     def __init__(
