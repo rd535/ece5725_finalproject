@@ -1,3 +1,4 @@
+import os
 import time
 
 from pacer.event_log import log_event
@@ -8,6 +9,25 @@ try:
 except ImportError:
     HARDWARE_AVAILABLE = False
 
+    def Color(r, g, b):
+        return (int(r), int(g), int(b))
+
+
+class SimulatedStrip:
+    def __init__(self, num_leds):
+        self._pixels = [Color(0, 0, 0)] * num_leds
+
+    def setPixelColor(self, index, color):
+        if 0 <= index < len(self._pixels):
+            self._pixels[index] = color
+
+    def show(self):
+        return None
+
+    def numPixels(self):
+        return len(self._pixels)
+
+
 def normalize_pace(pace):
     if isinstance(pace, (int, float)):
         return [pace]
@@ -15,18 +35,30 @@ def normalize_pace(pace):
 
 
 def make_strip(num_leds, pin):
-    strip = PixelStrip(
-        num_leds,
-        pin,
-        800000,
-        10,
-        False,
-        128,
-        0,
-        ws.SK6812_STRIP_RGBW,
-    )
-    strip.begin()
-    return strip
+    if not HARDWARE_AVAILABLE:
+        log_event("Using simulated LED strip", level="WARNING", category="hardware")
+        return SimulatedStrip(num_leds)
+
+    if hasattr(os, "geteuid") and os.geteuid() != 0:
+        log_event("LED strip requires root; using simulated strip", level="WARNING", category="hardware")
+        return SimulatedStrip(num_leds)
+
+    try:
+        strip = PixelStrip(
+            num_leds,
+            pin,
+            800000,
+            10,
+            False,
+            128,
+            0,
+            ws.SK6812_STRIP_GRBW,
+        )
+        strip.begin()
+        return strip
+    except RuntimeError as exc:
+        log_event("LED strip init failed; using simulated strip", level="ERROR", category="hardware", error=str(exc))
+        return SimulatedStrip(num_leds)
 
 
 class NewConstantPacer:

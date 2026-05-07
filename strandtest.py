@@ -19,7 +19,7 @@ LED_DMA = 10          # DMA channel to use for generating signal (try 10)
 LED_BRIGHTNESS = 24  # Set to 0 for darkest and 255 for brightest
 LED_INVERT = False    # True to invert the signal (when using NPN transistor level shift)
 LED_CHANNEL = 0       # set to '1' for GPIOs 13, 19, 41, 45 or 53
-LED_STRIP = ws.SK6812_STRIP_RGBW # set strip type properly so it displays correctly 
+LED_STRIP = ws.SK6812_STRIP_GRBW # set strip type properly so it displays correctly 
 
 # Define functions which animate LEDs in various ways.
 def colorWipe(strip, color, wait_ms=50):

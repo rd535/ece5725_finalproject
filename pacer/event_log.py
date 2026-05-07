@@ -34,10 +34,12 @@ def log_event(message, level="INFO", category="system", **details):
     with _lock:
         # store in memory log
         _events.append(entry)
-        # also append to file log if directory exists
-        LOG_DIR.mkdir(exist_ok=True)
-        with LOG_FILE.open("a", encoding="utf-8") as log_file:
-            log_file.write(line + "\n")
+        try:
+            LOG_DIR.mkdir(exist_ok=True)
+            with LOG_FILE.open("a", encoding="utf-8") as log_file:
+                log_file.write(line + "\n")
+        except PermissionError:
+            pass
 
     print(line, flush=True)
     return entry

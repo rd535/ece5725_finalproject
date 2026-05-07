@@ -18,6 +18,7 @@ class BeatDetector:
         history_size=30,    #window size of normal bass freqs to average over
                             #for normal bass frequency
         cooldown=0.18,      #how much to wait before looking for next beat
+        warmup_chunks=5,    #number of chunks to collect before detecting beats
     ):
         self.sample_rate = sample_rate
         self.bass_low = bass_low
@@ -25,6 +26,7 @@ class BeatDetector:
         self.sensitivity = sensitivity
         self.history_size = history_size
         self.cooldown = cooldown
+        self.warmup_chunks = warmup_chunks
 
         self.energy_history = []
         self.last_beat_time = 0.0
@@ -49,6 +51,9 @@ class BeatDetector:
         bass_energy = self._bass_energy(samples)
         average_energy = self._average_energy()
         self._remember_energy(bass_energy)
+
+        if len(self.energy_history) < self.warmup_chunks:
+            return False
 
         #make sure that waiting period is over
         now = time.time()

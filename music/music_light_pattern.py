@@ -1,4 +1,3 @@
-#fallback for library not workign
 try:
     from rpi_ws281x import Color
 except ImportError:
@@ -7,44 +6,31 @@ except ImportError:
 
 
 class MusicLightPattern:
-    """Simple full-strip flash that fades after each detected beat."""
+    """Simple full-strip on/off white pulse for each detected beat."""
 
-    def __init__(self, color=(255, 255, 255), fade_rate=0.85, min_brightness=0.01):
+    def __init__(self, color=(255, 255, 255), pulse_seconds=0.08):
         self.color = color
-        self.fade_rate = fade_rate
-        self.min_brightness = min_brightness
-        self.brightness = 0.0
+        self.pulse_seconds = pulse_seconds
+        self.pulse_until = 0.0
 
     def on_beat(self):
         """Call this when the beat detector finds a beat."""
-        self.brightness = 1.0
+        import time
+        self.pulse_until = time.time() + self.pulse_seconds
 
     def render(self, strip, num_leds):
-        """Draw the current flash brightness to the LED strip."""
-        r, g, b = self._current_color()
+        """Draw full white during the pulse, otherwise turn the strip off."""
+        import time
+        pixel = Color(*self.color) if time.time() < self.pulse_until else 0
 
         for i in range(num_leds):
-            strip.setPixelColor(i, Color(r, g, b))
+            strip.setPixelColor(i, pixel)
 
         strip.show()
-        self._fade()
 
     def clear(self, strip, num_leds):
-        """Turn the strip off and reset brightness."""
-        self.brightness = 0.0
+        """Turn the strip off and reset pulse state."""
+        self.pulse_until = 0.0
         for i in range(num_leds):
-            strip.setPixelColor(i, Color(0, 0, 0))
+            strip.setPixelColor(i, 0)
         strip.show()
-
-    def _current_color(self):
-        r, g, b = self.color
-        return (
-            int(r * self.brightness),
-            int(g * self.brightness),
-            int(b * self.brightness),
-        )
-
-    def _fade(self):
-        self.brightness *= self.fade_rate
-        if self.brightness < self.min_brightness:
-            self.brightness = 0.0
