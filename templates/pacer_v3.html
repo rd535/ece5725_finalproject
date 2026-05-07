@@ -459,7 +459,13 @@
                 const audioLevel = document.getElementById("musicAudioLevel");
                 const beatStats = document.getElementById("musicBeatStats");
                 if (status) {
-                    status.textContent = music?.active ? "Active" : "Inactive";
+                    if (music?.active) {
+                        status.textContent = "Active";
+                    } else if (music?.controller_active) {
+                        status.textContent = "Audio Offline";
+                    } else {
+                        status.textContent = "Inactive";
+                    }
                 }
                 if (bpm) {
                     bpm.textContent = music?.bpm ? music.bpm : "--";
@@ -468,8 +474,9 @@
                     const level = music?.audio_level ?? "--";
                     const floor = music?.signal_floor ?? "--";
                     const age = music?.last_audio_age ?? "--";
-                    const process = music?.audio_process_alive ? "on" : "off";
-                    audioLevel.textContent = `${level} / ${floor} (${process}, ${age}s)`;
+                    const process = music?.audio_process_alive ? "proc on" : "proc off";
+                    const thread = music?.audio_thread_alive ? "thread on" : "thread off";
+                    audioLevel.textContent = `${level} / ${floor} (${process}, ${thread}, ${age}s)`;
                 }
                 if (beatStats) {
                     beatStats.textContent = `${music?.accepted_beats || 0} / ${music?.beat_candidates || 0}`;

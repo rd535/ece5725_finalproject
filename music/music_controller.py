@@ -169,7 +169,7 @@ class BeatGridTracker:
         if self.bpm is not None and self.min_bpm <= raw_bpm <= 155:
             return interval
 
-        if self.bpm is None and self.min_bpm <= raw_bpm < 125:
+        if self.bpm is None and self.min_bpm <= raw_bpm <= self.max_bpm:
             return interval
 
         candidates = []
@@ -192,12 +192,12 @@ class BeatGridTracker:
         # For initial music lock, only force the slower pulse when the raw
         # candidate is a very dense subdivision. Otherwise choose a normal
         # music pulse near 110 so real 105-125 BPM songs do not fold too low.
-        if raw_bpm >= 200:
+        if raw_bpm >= self.max_bpm * 1.15:
             slow_candidates = [item for item in candidates if 70 <= item[0] <= 115]
             if slow_candidates:
                 return min(slow_candidates, key=lambda item: abs(item[0] - 90.0))[1]
 
-        return min(candidates, key=lambda item: abs(item[0] - 110.0))[1]
+        return min(candidates, key=lambda item: abs(item[0] - 135.0))[1]
 
     def _clamp_interval(self, interval):
         return min(self.max_interval, max(self.min_interval, interval))
@@ -356,8 +356,13 @@ class MusicController:
             accepted_beats = self.accepted_beats
             last_audio_age = round(time.time() - self.last_audio_time, 2) if self.last_audio_time else None
             audio_process_alive = self.process is not None and self.process.poll() is None
+            audio_thread_alive = self.audio_thread is not None and self.audio_thread.is_alive()
+            healthy = self.active and audio_process_alive and audio_thread_alive and (
+                last_audio_age is None or last_audio_age <= 2.0
+            )
         return {
-            "active": self.active,
+            "active": healthy,
+            "controller_active": self.active,
             "bpm": bpm,
             "started_at": self.started_time,
             "color": color,
@@ -368,6 +373,7 @@ class MusicController:
             "accepted_beats": accepted_beats,
             "last_audio_age": last_audio_age,
             "audio_process_alive": audio_process_alive,
+            "audio_thread_alive": audio_thread_alive,
         }
 
     def clear(self):
@@ -402,6 +408,12 @@ class MusicController:
             while self.active:
                 samples = self._read_audio_chunk()
                 if samples is None:
+                    if self.process is not None and self.process.poll() is not None:
+                        self.active = False
+                        self._reset_beat_lock()
+                        self.clear()
+                        log_event("USB audio process stopped", level="ERROR", category="music")
+                        return
                     continue
 
                 audio_time += len(samples) / self.sample_rate
@@ -426,10 +438,6 @@ class MusicController:
                     previous_time = audio_time
                     previous_aubio_onset = False
                     continue
-
-                if self.bpm is not None and self.last_logged_bpm is not None:
-                    if not self.last_sound_time or now - self.last_sound_time >= self.silence_seconds:
-                        continue
 
                 max_abs = float(np.max(np.abs(centered)))
                 normalized = centered / max_abs if max_abs > 0 else centered
