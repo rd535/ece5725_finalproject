@@ -194,6 +194,14 @@
                                 <strong>BPM:</strong>
                                 <span id="musicBpm">--</span>
                             </div>
+                            <div>
+                                <strong>Audio:</strong>
+                                <span id="musicAudioLevel">--</span>
+                            </div>
+                            <div>
+                                <strong>Beats:</strong>
+                                <span id="musicBeatStats">0 / 0</span>
+                            </div>
                             <label>
                                 Pulse Color
                                 <input id="musicPulseColor" type="color" value="#ffffff" title="Music pulse color">
@@ -447,11 +455,23 @@
                 }
                 const status = document.getElementById("musicActiveStatus");
                 const bpm = document.getElementById("musicBpm");
+                const audioLevel = document.getElementById("musicAudioLevel");
+                const beatStats = document.getElementById("musicBeatStats");
                 if (status) {
                     status.textContent = music?.active ? "Active" : "Inactive";
                 }
                 if (bpm) {
                     bpm.textContent = music?.bpm ? music.bpm : "--";
+                }
+                if (audioLevel) {
+                    const level = music?.audio_level ?? "--";
+                    const floor = music?.signal_floor ?? "--";
+                    const age = music?.last_audio_age ?? "--";
+                    const process = music?.audio_process_alive ? "on" : "off";
+                    audioLevel.textContent = `${level} / ${floor} (${process}, ${age}s)`;
+                }
+                if (beatStats) {
+                    beatStats.textContent = `${music?.accepted_beats || 0} / ${music?.beat_candidates || 0}`;
                 }
                 if (music?.color && document.getElementById("musicPulseColor")) {
                     document.getElementById("musicPulseColor").value = music.color;

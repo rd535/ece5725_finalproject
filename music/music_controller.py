@@ -257,6 +257,12 @@ class MusicController:
         self.started_time = None
         self.last_beat_wall_time = None
         self.silence_logged = False
+        self.last_audio_level = 0.0
+        self.last_signal_floor = self.min_audio_level
+        self.audio_chunks = 0
+        self.beat_candidates = 0
+        self.accepted_beats = 0
+        self.last_audio_time = None
         self.high_bpm_count = 0
         self.half_time_threshold = 140
 
@@ -279,6 +285,12 @@ class MusicController:
         self.started_time = now
         self.last_beat_wall_time = None
         self.silence_logged = False
+        self.last_audio_level = 0.0
+        self.last_signal_floor = self.min_audio_level
+        self.audio_chunks = 0
+        self.beat_candidates = 0
+        self.accepted_beats = 0
+        self.last_audio_time = None
         self.active = True
 
         self.audio_thread = threading.Thread(target=self._track_audio, daemon=True)
@@ -331,11 +343,25 @@ class MusicController:
         with self.lock:
             bpm = round(self.bpm, 1) if self.bpm is not None else None
             color = self.pulse_color_hex
+            audio_level = round(self.last_audio_level, 6)
+            signal_floor = round(self.last_signal_floor, 6)
+            audio_chunks = self.audio_chunks
+            beat_candidates = self.beat_candidates
+            accepted_beats = self.accepted_beats
+            last_audio_age = round(time.time() - self.last_audio_time, 2) if self.last_audio_time else None
+            audio_process_alive = self.process is not None and self.process.poll() is None
         return {
             "active": self.active,
             "bpm": bpm,
             "started_at": self.started_time,
             "color": color,
+            "audio_level": audio_level,
+            "signal_floor": signal_floor,
+            "audio_chunks": audio_chunks,
+            "beat_candidates": beat_candidates,
+            "accepted_beats": accepted_beats,
+            "last_audio_age": last_audio_age,
+            "audio_process_alive": audio_process_alive,
         }
 
     def clear(self):
@@ -355,7 +381,7 @@ class MusicController:
         """Read USB mic audio once, correcting the beat grid from strong onsets."""
         onset = aubio.onset("default", self.chunk_size * 2, self.chunk_size, self.sample_rate)
         onset.set_silence(-70)
-        onset.set_threshold(0.12)
+        onset.set_threshold(0.08)
 
         level_history = []
         audio_time = 0.0
@@ -376,12 +402,18 @@ class MusicController:
                 centered = samples - np.mean(samples)
                 level = float(np.std(centered))
                 now = time.time()
+                with self.lock:
+                    self.last_audio_level = level
+                    self.audio_chunks += 1
+                    self.last_audio_time = now
 
                 self._update_sound_state(level, now)
                 if self._music_stopped(level, now):
                     continue
 
-                signal_floor = max(self.min_audio_level * 2.5, self._silence_level())
+                signal_floor = self.min_audio_level
+                with self.lock:
+                    self.last_signal_floor = signal_floor
                 if level < signal_floor:
                     before_previous_level = previous_level
                     previous_level = level
@@ -412,6 +444,8 @@ class MusicController:
                         candidate_time = previous_time
                         if last_candidate_time is None or candidate_time - last_candidate_time >= min_candidate_gap:
                             last_candidate_time = candidate_time
+                            with self.lock:
+                                self.beat_candidates += 1
                             accepted = self.tracker.update(candidate_time)
                             if accepted:
                                 self.last_sound_time = now
@@ -478,6 +512,7 @@ class MusicController:
             self.beat_interval = self._display_interval(self.bpm, self.tracker.interval)
             self.next_beat_time = wall_time
             self.last_beat_wall_time = wall_time
+            self.accepted_beats += 1
             rounded_bpm = round(self.bpm, 1) if self.bpm is not None else None
             should_log = rounded_bpm is not None and (
                 self.last_logged_bpm is None or abs(rounded_bpm - self.last_logged_bpm) >= 1.0
