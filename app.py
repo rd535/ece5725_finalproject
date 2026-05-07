@@ -152,6 +152,9 @@ def stop_pacer_runtime(clear_strip=True):
         config["current_split"] = 0.0
     pacer_instances.clear()
     web_pacer_manager.stop()
+    pacer_thread = getattr(web_pacer_manager, "thread", None)
+    if pacer_thread and pacer_thread.is_alive():
+        pacer_thread.join(timeout=1.0)
     web_pacer_manager.clear_pacers()
     if clear_strip:
         web_pacer_manager.clear()
@@ -437,6 +440,7 @@ def submit_pacers():
             return jsonify({"ok": False, "error": f"Row {i + 1}: {exc}"}), 400
 
     # All validation passed, store pacers in pi_state, clear old dict
+    web_lighting_manager.stop(join=True)
     pi_state["pacers"] = {}
     pacer_instances.clear()
     web_pacer_manager.stop()
@@ -479,6 +483,8 @@ def submit_pacers():
 @with_pacer_lock
 def pacer_start(pacer_name):
     """Start a specific pacer by name"""
+    web_lighting_manager.stop(join=True)
+
     if pacer_name not in pi_state["pacers"]:
         log_event("Start rejected: pacer not found", level="ERROR", category="pacer", pacer_name=pacer_name)
         return jsonify({"ok": False, "error": f"Pacer '{pacer_name}' not found"}), 404
