@@ -171,7 +171,7 @@
 
                 <div class="card">
                     <h2>Event Log</h2>
-                    <div id="eventLog" class="event-log">
+                    <div id="pacerEventLog" class="event-log">
                         <div class="log-entry muted">Waiting for events...</div>
                     </div>
                 </div>
@@ -212,7 +212,7 @@
 
                 <div class="card">
                     <h2>Event Log</h2>
-                    <div id="eventLog" class="event-log">
+                    <div id="lightingEventLog" class="event-log">
                         <div class="log-entry muted">Waiting for events...</div>
                     </div>
                 </div>
@@ -289,13 +289,13 @@
             try {
                 const response = await fetch("/api/logs?limit=40");
                 const data = await response.json();
-                const logContainer = document.getElementById("eventLog");
+                const logContainers = document.querySelectorAll(".event-log");
 
-                if (!logContainer || !data.ok || !data.logs || data.logs.length === 0) {
+                if (!logContainers.length || !data.ok || !data.logs || data.logs.length === 0) {
                     return;
                 }
 
-                logContainer.innerHTML = data.logs
+                const logHtml = data.logs
                     .slice()
                     .reverse()
                     .map(entry => {
@@ -310,6 +310,9 @@
                         </div>`;
                     })
                     .join("");
+                logContainers.forEach(logContainer => {
+                    logContainer.innerHTML = logHtml;
+                });
             } catch (error) {
                 console.error('Error updating event log:', error);
             }

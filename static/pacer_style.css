@@ -304,10 +304,18 @@ button {
 }
 
 .lighting-pattern-panel {
-    border: 1px solid #e4e6f0;
+    border: 2px solid var(--cornell-border);
     border-radius: 8px;
     padding: 18px;
-    background: #fbfcff;
+    background: linear-gradient(180deg, #ffffff 0%, var(--cornell-light-gray) 100%);
+    box-shadow: 0 4px 14px rgba(34, 34, 34, 0.12);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.lighting-pattern-panel:hover {
+    border-color: var(--cornell-red);
+    box-shadow: 0 8px 22px rgba(179, 27, 27, 0.18);
+    transform: translateY(-1px);
 }
 
 .lighting-pattern-panel h3 {
