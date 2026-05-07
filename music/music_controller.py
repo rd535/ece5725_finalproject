@@ -220,6 +220,9 @@ class MusicController:
         min_audio_level=0.0008,
         strip=None,
         startup_test=False,
+        pulse_color=None,
+        pulse_color_hex="#ffffff",
+        beat_timeout_seconds=2.5,
     ):
         self.num_leds = num_leds
         self.pin = pin
@@ -232,6 +235,9 @@ class MusicController:
         self.silence_seconds = silence_seconds
         self.min_audio_level = min_audio_level
         self.startup_test = startup_test
+        self.pulse_color = pulse_color or Color(255, 255, 255)
+        self.pulse_color_hex = pulse_color_hex
+        self.beat_timeout_seconds = beat_timeout_seconds
 
         self.strip = strip
         self.process = None
@@ -249,6 +255,8 @@ class MusicController:
         self.music_level = None
         self.last_logged_bpm = None
         self.started_time = None
+        self.last_beat_wall_time = None
+        self.silence_logged = False
         self.high_bpm_count = 0
         self.half_time_threshold = 140
 
@@ -266,8 +274,11 @@ class MusicController:
             self._startup_blink_test()
 
         self.process = self._start_audio_process()
-        self.last_sound_time = time.time()
-        self.started_time = self.last_sound_time
+        now = time.time()
+        self.last_sound_time = None
+        self.started_time = now
+        self.last_beat_wall_time = None
+        self.silence_logged = False
         self.active = True
 
         self.audio_thread = threading.Thread(target=self._track_audio, daemon=True)
@@ -310,13 +321,21 @@ class MusicController:
         self.clear()
         log_event("USB music strip configured", category="music", num_leds=self.num_leds, pin=self.pin)
 
+    def set_pulse_color(self, pulse_color, pulse_color_hex=None):
+        with self.lock:
+            self.pulse_color = pulse_color
+            if pulse_color_hex:
+                self.pulse_color_hex = pulse_color_hex
+
     def status(self):
         with self.lock:
             bpm = round(self.bpm, 1) if self.bpm is not None else None
+            color = self.pulse_color_hex
         return {
             "active": self.active,
             "bpm": bpm,
             "started_at": self.started_time,
+            "color": color,
         }
 
     def clear(self):
@@ -360,7 +379,15 @@ class MusicController:
 
                 self._update_sound_state(level, now)
                 if self._music_stopped(level, now):
-                    return
+                    continue
+
+                signal_floor = max(self.min_audio_level * 2.5, self._silence_level())
+                if level < signal_floor:
+                    before_previous_level = previous_level
+                    previous_level = level
+                    previous_time = audio_time
+                    previous_aubio_onset = False
+                    continue
 
                 if self.bpm is not None and self.last_logged_bpm is not None:
                     if not self.last_sound_time or now - self.last_sound_time >= self.silence_seconds:
@@ -409,10 +436,12 @@ class MusicController:
         silence_level = self._silence_level()
         if self.bpm is None and level >= silence_level:
             self.last_sound_time = now
+            self.silence_logged = False
 
     def _music_stopped(self, level, now):
         silence_level = self._silence_level()
         if level >= silence_level:
+            self.silence_logged = False
             return False
 
         if self.started_time and now - self.started_time < self.silence_seconds + 3.0:
@@ -421,15 +450,17 @@ class MusicController:
         if self.last_sound_time and now - self.last_sound_time < self.silence_seconds:
             return False
 
-        log_event(
-            "USB music stopped; turning lights off",
-            category="music",
-            audio_level=round(level, 6),
-            silence_level=round(silence_level, 6),
-        )
-        self.active = False
+        if not self.silence_logged:
+            log_event(
+                "USB music stopped; turning lights off",
+                category="music",
+                audio_level=round(level, 6),
+                silence_level=round(silence_level, 6),
+            )
+            self.silence_logged = True
+        self._reset_beat_lock()
         self.clear()
-        return True
+        return False
 
     def _silence_level(self):
         if self.music_level is None:
@@ -446,6 +477,7 @@ class MusicController:
             self.bpm = self.tracker.bpm
             self.beat_interval = self._display_interval(self.bpm, self.tracker.interval)
             self.next_beat_time = wall_time
+            self.last_beat_wall_time = wall_time
             rounded_bpm = round(self.bpm, 1) if self.bpm is not None else None
             should_log = rounded_bpm is not None and (
                 self.last_logged_bpm is None or abs(rounded_bpm - self.last_logged_bpm) >= 1.0
@@ -462,6 +494,14 @@ class MusicController:
             with self.lock:
                 beat_interval = self.beat_interval
                 next_beat_time = self.next_beat_time
+                last_beat_wall_time = self.last_beat_wall_time
+                pulse_color = self.pulse_color
+
+            if last_beat_wall_time is not None and time.time() - last_beat_wall_time > self.beat_timeout_seconds:
+                self._reset_beat_lock()
+                self.clear()
+                time.sleep(0.02)
+                continue
 
             if beat_interval is None or next_beat_time is None:
                 time.sleep(0.01)
@@ -472,7 +512,7 @@ class MusicController:
                 time.sleep(min(0.01, next_beat_time - now))
                 continue
 
-            self._set_all(Color(255, 255, 255))
+            self._set_all(pulse_color)
             time.sleep(self.pulse_seconds)
             self.clear()
 
@@ -498,6 +538,15 @@ class MusicController:
             for i in range(self.pixel_count()):
                 self.strip.setPixelColor(i, color)
             self.strip.show()
+
+    def _reset_beat_lock(self):
+        with self.lock:
+            self.tracker = BeatGridTracker(min_bpm=self.min_bpm, max_bpm=self.max_bpm)
+            self.bpm = None
+            self.beat_interval = None
+            self.next_beat_time = None
+            self.last_beat_wall_time = None
+            self.last_logged_bpm = None
 
     def _start_audio_process(self):
         command = [

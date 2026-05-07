@@ -194,6 +194,10 @@
                                 <strong>BPM:</strong>
                                 <span id="musicBpm">--</span>
                             </div>
+                            <label>
+                                Pulse Color
+                                <input id="musicPulseColor" type="color" value="#ffffff" title="Music pulse color">
+                            </label>
                             <div class="preset-actions">
                                 <button type="button" class="btn-success" onclick="startMusicMode()">Start Music</button>
                                 <button type="button" class="btn-danger" onclick="stopMusicMode()">Stop Music</button>
@@ -271,7 +275,10 @@
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ mode: mode })
+                body: JSON.stringify({
+                    mode: mode,
+                    music_color: getMusicPulseColor()
+                })
             })
                 .then(response => response.json())
                 .then(data => {
@@ -369,7 +376,11 @@
 
         async function startMusicMode() {
             try {
-                const response = await fetch("/api/music/start", { method: "POST" });
+                const response = await fetch("/api/music/start", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ color: getMusicPulseColor() })
+                });
                 const data = await response.json();
                 if (!data.ok) {
                     showMusicError(data.error || "Failed to start music mode");
@@ -400,6 +411,32 @@
             }
         }
 
+        async function updateMusicColor() {
+            try {
+                const response = await fetch("/api/music/color", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ color: getMusicPulseColor() })
+                });
+                const data = await response.json();
+                if (!data.ok) {
+                    showMusicError(data.error || "Failed to update music color");
+                    return;
+                }
+                showMusicError("");
+                updateMusicStatus(data.music);
+                updateEventLog();
+            } catch (error) {
+                console.error("Error updating music color:", error);
+                showMusicError("Failed to update music color");
+            }
+        }
+
+        const musicPulseColorInput = document.getElementById("musicPulseColor");
+        if (musicPulseColorInput) {
+            musicPulseColorInput.addEventListener("change", updateMusicColor);
+        }
+
         async function updateMusicStatus(statusData = null) {
             try {
                 let music = statusData;
@@ -416,9 +453,17 @@
                 if (bpm) {
                     bpm.textContent = music?.bpm ? music.bpm : "--";
                 }
+                if (music?.color && document.getElementById("musicPulseColor")) {
+                    document.getElementById("musicPulseColor").value = music.color;
+                }
             } catch (error) {
                 console.error("Error updating music status:", error);
             }
+        }
+
+        function getMusicPulseColor() {
+            const input = document.getElementById("musicPulseColor");
+            return input ? input.value : "#ffffff";
         }
 
         function showMusicError(message) {

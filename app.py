@@ -22,6 +22,7 @@ web_pacer_manager = NewPacerManager(num_leds=led_count_from_settings(app_setting
 web_lighting_manager = None
 web_music_controller = None
 DEFAULT_PACER_COLOR = "#00ff00"
+DEFAULT_MUSIC_COLOR = "#ffffff"
 pacer_state_lock = Lock()
 
 
@@ -180,6 +181,8 @@ def create_music_controller():
         num_leds=led_count_from_settings(app_settings),
         pin=app_settings["led_strip"]["pin"],
         strip=web_pacer_manager.strip,
+        pulse_color=hex_to_color(DEFAULT_MUSIC_COLOR),
+        pulse_color_hex=DEFAULT_MUSIC_COLOR,
     )
 
 def ensure_music_controller():
@@ -195,6 +198,11 @@ def stop_music_controller(destroy=False):
     web_music_controller.stop()
     if destroy:
         web_music_controller = None
+
+def set_music_color(color_hex):
+    controller = ensure_music_controller()
+    controller.set_pulse_color(hex_to_color(color_hex), color_hex)
+    return controller
 
 def stop_pacer_runtime(clear_strip=True):
     for config in pi_state["pacers"].values():
@@ -292,7 +300,10 @@ def set_mode():
     elif mode == "music":
         stop_lighting_manager(destroy=True)
         try:
-            ensure_music_controller().start()
+            color_hex = data.get("music_color", DEFAULT_MUSIC_COLOR)
+            hex_to_rgb(color_hex)
+            controller = set_music_color(color_hex)
+            controller.start()
         except Exception as exc:
             stop_music_controller(destroy=True)
             log_event("Music mode start failed", level="ERROR", category="music", error=repr(exc))
@@ -394,10 +405,13 @@ def music_status():
 @app.route("/api/music/start", methods=["POST"])
 @with_pacer_lock
 def music_start():
+    data = request.get_json() or {}
+    color_hex = data.get("color", DEFAULT_MUSIC_COLOR)
     try:
+        hex_to_rgb(color_hex)
         stop_pacer_runtime()
         stop_lighting_manager(destroy=True)
-        controller = ensure_music_controller()
+        controller = set_music_color(color_hex)
         controller.start()
         pi_state["mode"] = "music"
         pi_state["last_update"] = time.strftime("%H:%M:%S")
@@ -417,6 +431,21 @@ def music_stop():
     if web_music_controller is None:
         return jsonify({"ok": True, "music": {"active": False, "bpm": None, "started_at": None}})
     return jsonify({"ok": True, "music": web_music_controller.status()})
+
+@app.route("/api/music/color", methods=["POST"])
+@with_pacer_lock
+def music_color():
+    data = request.get_json() or {}
+    color_hex = data.get("color", DEFAULT_MUSIC_COLOR)
+    try:
+        hex_to_rgb(color_hex)
+        controller = set_music_color(color_hex)
+    except Exception as exc:
+        log_event("Music color update failed", level="ERROR", category="music", error=repr(exc))
+        return jsonify({"ok": False, "error": f"Failed to update music color: {exc}"}), 400
+
+    log_event("Music pulse color updated", category="music", color=color_hex)
+    return jsonify({"ok": True, "music": controller.status()})
 
 @app.route("/api/lighting/start", methods=["POST"])
 @with_pacer_lock
