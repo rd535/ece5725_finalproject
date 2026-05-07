@@ -221,8 +221,6 @@
 
         // Mode switching
         function switchMode(mode, button) {
-            const previousMode = document.querySelector(".tab.active")?.id;
-
             // Hide all tabs
             document.querySelectorAll('.tab').forEach(tab => {
                 tab.classList.remove('active');
@@ -239,16 +237,6 @@
             // Activate selected button
             if (button) {
                 button.classList.add('active');
-            }
-
-            if (previousMode === "pacer" && mode !== "pacer") {
-                stopAllPacers();
-            }
-            if (previousMode === "lighting" && mode !== "lighting") {
-                stopLightingPattern();
-            }
-            if (mode === "lighting") {
-                stopAllPacers();
             }
 
             // Notify server of mode change

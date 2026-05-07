@@ -6,7 +6,7 @@ from pacer.pacer_pattern import Color, make_strip
 from lighting.lighting_patterns import PATTERN_REGISTRY, pattern_metadata
 
 
-class LightingManager:
+class LightingManagerV2:
     UPDATE_INTERVAL = 0.03
 
     def __init__(self, num_leds=300, pin=12, color_order="RGB"):
@@ -14,12 +14,11 @@ class LightingManager:
         self.pin = pin
         self.color_order = color_order
         self.strip = make_strip(num_leds, pin)
-
         self.lock = threading.Lock()
         self.render_lock = threading.Lock()
         self.thread = None
         self.stop_event = threading.Event()
-
+        self.active = False
         self.current_pattern = None
         self.current_pattern_name = None
         self.started_at = None
@@ -37,6 +36,27 @@ class LightingManager:
         self.clear_strip()
         log_event("Lighting strip configured", category="lighting", num_leds=self.num_leds, pin=self.pin, color_order=self.color_order)
 
+    def start(self):
+        with self.lock:
+            if self.active:
+                return
+            self.active = True
+            self.stop_event.set()
+            self.current_pattern = None
+            self.current_pattern_name = None
+            self.started_at = None
+        self.clear_strip()
+        log_event("Lighting manager started", category="lighting")
+
+    def stop(self):
+        self.stop_pattern(log=False)
+        with self.lock:
+            was_active = self.active
+            self.active = False
+        self.clear_strip()
+        if was_active:
+            log_event("Lighting manager stopped", category="lighting")
+
     def start_pattern(self, pattern_name, colors=None, speed=1.0):
         pattern_class = PATTERN_REGISTRY.get(pattern_name)
         if pattern_class is None:
@@ -47,18 +67,41 @@ class LightingManager:
         if required > 0 and len(colors) != required:
             raise ValueError(f"{pattern_class.label} requires {required} color(s)")
 
-        self.stop(log=False)
+        with self.lock:
+            if not self.active:
+                self.active = True
+
+        self.stop_pattern(log=False)
 
         with self.lock:
             self.current_pattern = pattern_class(colors=colors, speed=speed)
             self.current_pattern_name = pattern_name
             self.started_at = time.time()
             self.stop_event.clear()
-
             self.thread = threading.Thread(target=self.update_loop, daemon=True)
             self.thread.start()
 
         log_event("Lighting pattern started", category="lighting", pattern=pattern_name, colors=len(colors), speed=speed)
+
+    def stop_pattern(self, log=True):
+        with self.lock:
+            old_thread = self.thread
+            pattern_name = self.current_pattern_name
+            self.stop_event.set()
+            self.current_pattern = None
+            self.current_pattern_name = None
+            self.started_at = None
+
+        if old_thread and old_thread.is_alive() and old_thread is not threading.current_thread():
+            old_thread.join(timeout=1.0)
+
+        with self.lock:
+            if self.thread is old_thread:
+                self.thread = None
+
+        self.clear_strip()
+        if log:
+            log_event("Lighting pattern stopped", category="lighting", pattern=pattern_name)
 
     def update_loop(self):
         while not self.stop_event.is_set():
@@ -73,26 +116,6 @@ class LightingManager:
             elapsed = time.time() - started_at
             self.render(pattern.frame(led_count, elapsed))
             self.stop_event.wait(self.UPDATE_INTERVAL)
-
-    def stop(self, join=True, log=True):
-        with self.lock:
-            old_thread = self.thread
-            pattern_name = self.current_pattern_name
-            self.stop_event.set()
-            self.current_pattern = None
-            self.current_pattern_name = None
-            self.started_at = None
-
-        if join and old_thread and old_thread.is_alive() and old_thread is not threading.current_thread():
-            old_thread.join(timeout=1.0)
-
-        with self.lock:
-            if self.thread is old_thread:
-                self.thread = None
-
-        self.clear_strip()
-        if log:
-            log_event("Lighting stopped", category="lighting", pattern=pattern_name)
 
     def render(self, colors):
         with self.render_lock:
@@ -121,10 +144,11 @@ class LightingManager:
     def status(self):
         with self.lock:
             return {
+                "active": self.active,
                 "running": self.thread is not None and self.thread.is_alive(),
                 "pattern": self.current_pattern_name,
                 "started_at": self.started_at,
             }
 
 
-LightingManagerV2 = LightingManager
+LightingManager = LightingManagerV2
