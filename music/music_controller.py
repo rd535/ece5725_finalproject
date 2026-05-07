@@ -261,6 +261,7 @@ class MusicController:
         self.silence_logged = False
         self.last_audio_level = 0.0
         self.last_signal_floor = self.min_audio_level
+        self.music_level = None
         self.audio_chunks = 0
         self.beat_candidates = 0
         self.accepted_beats = 0
@@ -326,6 +327,7 @@ class MusicController:
             self.blink_thread.join(timeout=1.0)
 
         self._stop_audio_process()
+        self._reset_beat_lock()
         self.clear()
         if was_active:
             log_event("USB music controller stopped", category="music")
@@ -345,6 +347,16 @@ class MusicController:
                 self.pulse_color_hex = pulse_color_hex
 
     def status(self):
+        now = time.time()
+        with self.lock:
+            stale_bpm = self.bpm is not None and (
+                self.last_beat_wall_time is None
+                or now - self.last_beat_wall_time > self.beat_timeout_seconds
+            )
+        if stale_bpm:
+            self._reset_beat_lock()
+            self.clear()
+
         with self.lock:
             bpm = round(self.bpm, 1) if self.bpm is not None else None
             color = self.pulse_color_hex
@@ -353,7 +365,7 @@ class MusicController:
             audio_chunks = self.audio_chunks
             beat_candidates = self.beat_candidates
             accepted_beats = self.accepted_beats
-            last_audio_age = round(time.time() - self.last_audio_time, 2) if self.last_audio_time else None
+            last_audio_age = round(now - self.last_audio_time, 2) if self.last_audio_time else None
             audio_process_alive = self.process is not None and self.process.poll() is None
             audio_thread_alive = self.audio_thread is not None and self.audio_thread.is_alive()
             healthy = self.active and audio_process_alive and audio_thread_alive and (
@@ -426,6 +438,12 @@ class MusicController:
 
                 self._update_sound_state(level, now)
                 if self._music_stopped(level, now):
+                    level_history = []
+                    previous_time = None
+                    previous_level = None
+                    before_previous_level = None
+                    previous_aubio_onset = False
+                    last_candidate_time = None
                     continue
 
                 signal_floor = self.min_audio_level
@@ -486,10 +504,20 @@ class MusicController:
             self.silence_logged = False
 
     def _music_stopped(self, level, now):
+        if self._beat_lock_is_stale(now):
+            self._reset_beat_lock()
+            self.clear()
+            return True
+
         silence_level = self._silence_level()
         if level >= silence_level:
             self.silence_logged = False
             return False
+
+        with self.lock:
+            has_locked_bpm = self.bpm is not None
+        if has_locked_bpm:
+            return True
 
         if self.started_time and now - self.started_time < self.silence_seconds + 3.0:
             return False
@@ -507,7 +535,15 @@ class MusicController:
             self.silence_logged = True
         self._reset_beat_lock()
         self.clear()
-        return False
+        return True
+
+    def _beat_lock_is_stale(self, now):
+        with self.lock:
+            if self.bpm is None:
+                return False
+            if self.last_beat_wall_time is None:
+                return True
+            return now - self.last_beat_wall_time > self.beat_timeout_seconds
 
     def _silence_level(self):
         if self.music_level is None:
