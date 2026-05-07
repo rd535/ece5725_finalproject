@@ -85,13 +85,9 @@ class RainbowPattern(LightingPattern):
     label = "Rainbow"
 
     def frame(self, led_count, elapsed):
-        offset = int(elapsed * self.speed * 70)
-        pulse = 0.35 + 0.65 * ((math.sin(elapsed * self.speed * math.pi * 2) + 1) / 2)
-        strobe_on = int(elapsed * self.speed * 12) % 4 != 0
-        if not strobe_on:
-            return [(0, 0, 0)] * led_count
+        offset = int(elapsed * self.speed * 45)
         return [
-            scale_color(wheel(int(i * 256 / max(1, led_count) + offset)), pulse)
+            wheel(int(i * 256 / max(1, led_count) + offset))
             for i in range(led_count)
         ]
 

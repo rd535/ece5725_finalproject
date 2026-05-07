@@ -12,7 +12,7 @@ DEFAULT_SETTINGS = {
         "strip_length_m": 5.0,
         "leds_per_meter": 60,
         "pin": 12,
-        "color_order": "RGB",
+        "color_order": "GRB",
     },
     "presets": {},
     "active_pacers": [],

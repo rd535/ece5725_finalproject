@@ -141,7 +141,9 @@ class LightingManagerV2:
     def to_strip_color(self, color):
         if isinstance(color, (tuple, list)):
             r, g, b = int(color[0]), int(color[1]), int(color[2])
-            return Color(r, g, b)
+            values = {"R": r, "G": g, "B": b}
+            order = self.color_order.upper()
+            return Color(values[order[0]], values[order[1]], values[order[2]])
         else:
             return int(color)
 
