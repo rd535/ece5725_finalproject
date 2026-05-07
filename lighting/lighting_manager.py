@@ -22,6 +22,7 @@ class LightingManager:
         self.current_pattern = None
         self.current_pattern_name = None
         self.started_at = None
+        self.generation = 0
 
     def configure_strip(self, num_leds=None, pin=None, color_order=None):
         was_active = self.active
@@ -49,28 +50,32 @@ class LightingManager:
         if required > 0 and len(colors) != required:
             raise ValueError(f"{pattern_class.label} requires {required} color(s)")
 
+        self.stop(join=True, log=False)
+
         with self.lock:
+            self.generation += 1
             self.current_pattern = pattern_class(colors=colors, speed=speed)
             self.current_pattern_name = pattern_name
             self.started_at = time.time()
             self.active = True
+            generation = self.generation
 
         self.render_active_frame()
-        self.start_loop()
+        self.start_loop(generation)
         log_event("Lighting pattern started", category="lighting", pattern=pattern_name, colors=len(colors), speed=speed)
 
-    def start_loop(self):
+    def start_loop(self, generation):
         if self.thread is not None and self.thread.is_alive():
             self.wake_event.set()
             return
 
-        self.thread = threading.Thread(target=self.update, daemon=True)
+        self.thread = threading.Thread(target=self.update, args=(generation,), daemon=True)
         self.thread.start()
         self.wake_event.set()
 
-    def update(self):
+    def update(self, generation):
         try:
-            while self.active:
+            while self.active and self.generation == generation:
                 self.render_active_frame()
                 self.wake_event.wait(self.UPDATE_INTERVAL)
                 self.wake_event.clear()
@@ -79,8 +84,9 @@ class LightingManager:
             log_event("Lighting manager update loop crashed", level="ERROR", category="lighting", error=repr(exc))
             raise
 
-        self.clear()
-        log_event("Lighting manager update loop stopped", category="lighting")
+        if self.generation == generation:
+            self.clear()
+            log_event("Lighting manager update loop stopped", category="lighting")
 
     def render_active_frame(self):
         with self.lock:
@@ -95,7 +101,8 @@ class LightingManager:
 
     def render(self, colors):
         with self.render_lock:
-            for i, color in enumerate(colors[:self.num_leds]):
+            for i in range(self.num_leds):
+                color = colors[i] if i < len(colors) else (0, 0, 0)
                 self.strip.setPixelColor(i, self.to_strip_color(color))
             self.strip.show()
 
@@ -116,16 +123,21 @@ class LightingManager:
                 self.strip.setPixelColor(i, Color(0, 0, 0))
             self.strip.show()
 
-    def stop(self):
+    def stop(self, join=False, log=True):
+        old_thread = self.thread
         self.active = False
+        self.generation += 1
         self.wake_event.set()
         with self.lock:
             pattern_name = self.current_pattern_name
             self.current_pattern = None
             self.current_pattern_name = None
             self.started_at = None
+        if join and old_thread and old_thread.is_alive() and old_thread is not threading.current_thread():
+            old_thread.join(timeout=0.5)
         self.clear()
-        log_event("Lighting stopped", category="lighting", pattern=pattern_name)
+        if log:
+            log_event("Lighting stopped", category="lighting", pattern=pattern_name)
 
     def status(self):
         with self.lock:

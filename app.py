@@ -333,7 +333,7 @@ def lighting_start():
 @app.route("/api/lighting/stop", methods=["POST"])
 @with_pacer_lock
 def lighting_stop():
-    web_lighting_manager.stop()
+    web_lighting_manager.stop(join=True)
     pi_state["last_update"] = time.strftime("%H:%M:%S")
     return jsonify({"ok": True, "lighting": web_lighting_manager.status()})
 

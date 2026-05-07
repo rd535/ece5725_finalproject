@@ -64,7 +64,8 @@ class ColorFadePattern(LightingPattern):
     label = "Color Fade"
 
     def frame(self, led_count, elapsed):
-        phase = (math.sin(elapsed * self.speed * math.pi) + 1) / 2
+        cycle = (elapsed * self.speed * 0.35) % 2.0
+        phase = cycle if cycle <= 1.0 else 2.0 - cycle
         color = blend_color(self.colors[0], self.colors[1], phase)
         return [color] * led_count
 
@@ -84,8 +85,15 @@ class RainbowPattern(LightingPattern):
     label = "Rainbow"
 
     def frame(self, led_count, elapsed):
-        offset = int(elapsed * self.speed * 60)
-        return [wheel(int(i * 256 / max(1, led_count) + offset)) for i in range(led_count)]
+        offset = int(elapsed * self.speed * 70)
+        pulse = 0.35 + 0.65 * ((math.sin(elapsed * self.speed * math.pi * 2) + 1) / 2)
+        strobe_on = int(elapsed * self.speed * 12) % 4 != 0
+        if not strobe_on:
+            return [(0, 0, 0)] * led_count
+        return [
+            scale_color(wheel(int(i * 256 / max(1, led_count) + offset)), pulse)
+            for i in range(led_count)
+        ]
 
 
 class PulsePattern(LightingPattern):
@@ -93,7 +101,7 @@ class PulsePattern(LightingPattern):
     label = "Pulse"
 
     def frame(self, led_count, elapsed):
-        intensity = 0.15 + 0.85 * ((math.sin(elapsed * self.speed * math.pi * 2) + 1) / 2)
+        intensity = 0.05 + 0.95 * ((math.sin(elapsed * self.speed * math.pi * 2) + 1) / 2)
         return [scale_color(self.colors[0], intensity)] * led_count
 
 
