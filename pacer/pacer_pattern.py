@@ -46,7 +46,7 @@ def make_strip(num_leds, pin):
         800000,
         10,
         False,
-        128,
+        24,
         0,
         ws.SK6812_STRIP_RGBW,
     )

@@ -8,6 +8,7 @@ from lighting.lighting_patterns import PATTERN_REGISTRY, pattern_metadata
 
 class LightingManagerV2:
     UPDATE_INTERVAL = 0.03
+    CLEAR_REPEAT_COUNT = 3
 
     def __init__(self, num_leds=300, pin=12, color_order="RGB", strip=None):
         self.num_leds = num_leds
@@ -119,27 +120,30 @@ class LightingManagerV2:
 
     def render(self, colors):
         with self.render_lock:
-            for i in range(self.num_leds):
+            for i in range(self.pixel_count()):
                 color = colors[i] if i < len(colors) else (0, 0, 0)
                 self.strip.setPixelColor(i, self.to_strip_color(color))
             self.strip.show()
 
     def clear_strip(self):
         with self.render_lock:
-            for i in range(self.num_leds):
-                self.strip.setPixelColor(i, Color(0, 0, 0))
-            self.strip.show()
+            for _ in range(self.CLEAR_REPEAT_COUNT):
+                for i in range(self.pixel_count()):
+                    self.strip.setPixelColor(i, self.to_strip_color((0, 0, 0)))
+                self.strip.show()
+                time.sleep(0.01)
+
+    def pixel_count(self):
+        if hasattr(self.strip, "numPixels"):
+            return min(self.num_leds, int(self.strip.numPixels()))
+        return self.num_leds
 
     def to_strip_color(self, color):
         if isinstance(color, (tuple, list)):
             r, g, b = int(color[0]), int(color[1]), int(color[2])
+            return Color(r, g, b)
         else:
-            value = int(color)
-            r, g, b = (value >> 16) & 255, (value >> 8) & 255, value & 255
-
-        values = {"R": r, "G": g, "B": b}
-        order = self.color_order.upper()
-        return Color(values[order[0]], values[order[1]], values[order[2]])
+            return int(color)
 
     def status(self):
         with self.lock:
