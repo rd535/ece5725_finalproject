@@ -20,6 +20,7 @@ pacer_instances = {}  # Dict to store pacer instances by name: {"Pacer 1": <pace
 app_settings = load_settings()
 web_pacer_manager = NewPacerManager(num_leds=led_count_from_settings(app_settings), pin=app_settings["led_strip"]["pin"])
 web_lighting_manager = None
+web_music_controller = None
 DEFAULT_PACER_COLOR = "#00ff00"
 pacer_state_lock = Lock()
 
@@ -172,6 +173,29 @@ def stop_lighting_manager(destroy=False):
     if destroy:
         web_lighting_manager = None
 
+def create_music_controller():
+    from music.music_controller import MusicController
+
+    return MusicController(
+        num_leds=led_count_from_settings(app_settings),
+        pin=app_settings["led_strip"]["pin"],
+        strip=web_pacer_manager.strip,
+    )
+
+def ensure_music_controller():
+    global web_music_controller
+    if web_music_controller is None:
+        web_music_controller = create_music_controller()
+    return web_music_controller
+
+def stop_music_controller(destroy=False):
+    global web_music_controller
+    if web_music_controller is None:
+        return
+    web_music_controller.stop()
+    if destroy:
+        web_music_controller = None
+
 def stop_pacer_runtime(clear_strip=True):
     for config in pi_state["pacers"].values():
         config["running"] = False
@@ -263,9 +287,19 @@ def set_mode():
         stop_pacer_runtime()
 
     if mode == "lighting":
+        stop_music_controller(destroy=True)
         ensure_lighting_manager().start()
+    elif mode == "music":
+        stop_lighting_manager(destroy=True)
+        try:
+            ensure_music_controller().start()
+        except Exception as exc:
+            stop_music_controller(destroy=True)
+            log_event("Music mode start failed", level="ERROR", category="music", error=repr(exc))
+            return jsonify({"ok": False, "error": f"Failed to start music mode: {exc}"}), 500
     else:
         stop_lighting_manager(destroy=True)
+        stop_music_controller(destroy=True)
 
     pi_state["mode"] = mode
     pi_state["last_update"] = time.strftime("%H:%M:%S")
@@ -331,6 +365,12 @@ def save_led_settings():
             color_order=color_order,
             strip=web_pacer_manager.strip,
         )
+    if web_music_controller is not None:
+        web_music_controller.configure_strip(
+            num_leds=led_count_from_settings(app_settings),
+            pin=pin,
+            strip=web_pacer_manager.strip,
+        )
     log_event("LED settings saved", category="settings", led_count=led_count_from_settings(app_settings), color_order=color_order)
 
     return jsonify({"ok": True, "settings": app_settings, "led_count": led_count_from_settings(app_settings)})
@@ -344,6 +384,39 @@ def lighting_status():
     if web_lighting_manager is None:
         return jsonify({"ok": True, "lighting": {"active": False, "running": False, "pattern": None, "started_at": None}})
     return jsonify({"ok": True, "lighting": web_lighting_manager.status()})
+
+@app.route("/api/music/status", methods=["GET"])
+def music_status():
+    if web_music_controller is None:
+        return jsonify({"ok": True, "music": {"active": False, "bpm": None, "started_at": None}})
+    return jsonify({"ok": True, "music": web_music_controller.status()})
+
+@app.route("/api/music/start", methods=["POST"])
+@with_pacer_lock
+def music_start():
+    try:
+        stop_pacer_runtime()
+        stop_lighting_manager(destroy=True)
+        controller = ensure_music_controller()
+        controller.start()
+        pi_state["mode"] = "music"
+        pi_state["last_update"] = time.strftime("%H:%M:%S")
+    except Exception as exc:
+        stop_music_controller(destroy=True)
+        log_event("Music start failed", level="ERROR", category="music", error=repr(exc))
+        return jsonify({"ok": False, "error": f"Failed to start music mode: {exc}"}), 500
+
+    return jsonify({"ok": True, "music": controller.status()})
+
+@app.route("/api/music/stop", methods=["POST"])
+@with_pacer_lock
+def music_stop():
+    if web_music_controller is not None:
+        web_music_controller.stop()
+    pi_state["last_update"] = time.strftime("%H:%M:%S")
+    if web_music_controller is None:
+        return jsonify({"ok": True, "music": {"active": False, "bpm": None, "started_at": None}})
+    return jsonify({"ok": True, "music": web_music_controller.status()})
 
 @app.route("/api/lighting/start", methods=["POST"])
 @with_pacer_lock
@@ -359,6 +432,7 @@ def lighting_start():
     try:
         color_objects = [hex_to_rgb(color) for color in colors]
         stop_pacer_runtime()
+        stop_music_controller(destroy=True)
         manager = ensure_lighting_manager()
         manager.start()
         manager.start_pattern(pattern_name, color_objects, speed=speed)
@@ -484,6 +558,7 @@ def submit_pacers():
 
     # All validation passed, store pacers in pi_state, clear old dict
     stop_lighting_manager(destroy=True)
+    stop_music_controller(destroy=True)
     pi_state["pacers"] = {}
     pacer_instances.clear()
     web_pacer_manager.stop()
@@ -527,6 +602,7 @@ def submit_pacers():
 def pacer_start(pacer_name):
     """Start a specific pacer by name"""
     stop_lighting_manager(destroy=True)
+    stop_music_controller(destroy=True)
 
     if pacer_name not in pi_state["pacers"]:
         log_event("Start rejected: pacer not found", level="ERROR", category="pacer", pacer_name=pacer_name)

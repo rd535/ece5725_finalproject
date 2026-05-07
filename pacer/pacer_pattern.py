@@ -10,25 +10,6 @@ except ImportError:
     HARDWARE_AVAILABLE = False
 
     def Color(r, g, b):
-<<<<<<< HEAD
-        return (int(r), int(g), int(b))
-
-
-class SimulatedStrip:
-    def __init__(self, num_leds):
-        self._pixels = [Color(0, 0, 0)] * num_leds
-
-    def setPixelColor(self, index, color):
-        if 0 <= index < len(self._pixels):
-            self._pixels[index] = color
-
-    def show(self):
-        return None
-
-    def numPixels(self):
-        return len(self._pixels)
-
-=======
         return (int(r) << 16) | (int(g) << 8) | int(b)
 
     class _MockWs:
@@ -52,7 +33,6 @@ class SimulatedStrip:
 
         def show(self):
             return None
->>>>>>> lighting-mode
 
 def normalize_pace(pace):
     if isinstance(pace, (int, float)):
@@ -61,32 +41,6 @@ def normalize_pace(pace):
 
 
 def make_strip(num_leds, pin):
-<<<<<<< HEAD
-    if not HARDWARE_AVAILABLE:
-        log_event("Using simulated LED strip", level="WARNING", category="hardware")
-        return SimulatedStrip(num_leds)
-
-    if hasattr(os, "geteuid") and os.geteuid() != 0:
-        log_event("LED strip requires root; using simulated strip", level="WARNING", category="hardware")
-        return SimulatedStrip(num_leds)
-
-    try:
-        strip = PixelStrip(
-            num_leds,
-            pin,
-            800000,
-            10,
-            False,
-            128,
-            0,
-            ws.SK6812_STRIP_GRBW,
-        )
-        strip.begin()
-        return strip
-    except RuntimeError as exc:
-        log_event("LED strip init failed; using simulated strip", level="ERROR", category="hardware", error=str(exc))
-        return SimulatedStrip(num_leds)
-=======
     strip = PixelStrip(
         num_leds,
         pin,
@@ -102,7 +56,6 @@ def make_strip(num_leds, pin):
         strip.setPixelColor(i, Color(0, 0, 0))
     strip.show()
     return strip
->>>>>>> lighting-mode
 
 
 class NewConstantPacer:

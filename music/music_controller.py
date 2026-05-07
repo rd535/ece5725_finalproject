@@ -5,15 +5,21 @@ import threading
 import time
 from pathlib import Path
 
-import aubio
 import numpy as np
-from rpi_ws281x import Color, PixelStrip, ws
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from pacer.event_log import log_event
+from pacer.pacer_pattern import Color, make_strip
+
+try:
+    import aubio
+    AUBIO_AVAILABLE = True
+except ImportError:
+    aubio = None
+    AUBIO_AVAILABLE = False
 
 
 class BeatGridTracker:
@@ -212,6 +218,8 @@ class MusicController:
         pulse_seconds=0.05,
         silence_seconds=5.0,
         min_audio_level=0.0008,
+        strip=None,
+        startup_test=False,
     ):
         self.num_leds = num_leds
         self.pin = pin
@@ -223,14 +231,16 @@ class MusicController:
         self.pulse_seconds = pulse_seconds
         self.silence_seconds = silence_seconds
         self.min_audio_level = min_audio_level
+        self.startup_test = startup_test
 
-        self.strip = None
+        self.strip = strip
         self.process = None
         self.audio_thread = None
         self.blink_thread = None
         self.active = False
 
         self.lock = threading.Lock()
+        self.strip_lock = threading.Lock()
         self.tracker = BeatGridTracker(min_bpm=min_bpm, max_bpm=max_bpm)
         self.bpm = None
         self.beat_interval = None
@@ -246,10 +256,14 @@ class MusicController:
         """Start audio tracking and LED blinking."""
         if self.active:
             return
+        if not AUBIO_AVAILABLE:
+            raise RuntimeError("aubio is not installed; music beat detection cannot start")
 
-        self.strip = self._make_strip()
+        if self.strip is None:
+            self.strip = self._make_strip()
         self.clear()
-        self._startup_blink_test()
+        if self.startup_test:
+            self._startup_blink_test()
 
         self.process = self._start_audio_process()
         self.last_sound_time = time.time()
@@ -274,6 +288,7 @@ class MusicController:
 
     def stop(self):
         """Stop audio capture and turn the LEDs off."""
+        was_active = self.active
         self.active = False
 
         current_thread = threading.current_thread()
@@ -284,14 +299,38 @@ class MusicController:
 
         self._stop_audio_process()
         self.clear()
-        log_event("USB music controller stopped", category="music")
+        if was_active:
+            log_event("USB music controller stopped", category="music")
+
+    def configure_strip(self, num_leds=None, pin=None, strip=None):
+        self.stop()
+        self.num_leds = num_leds or self.num_leds
+        self.pin = pin or self.pin
+        self.strip = strip or make_strip(self.num_leds, self.pin)
+        self.clear()
+        log_event("USB music strip configured", category="music", num_leds=self.num_leds, pin=self.pin)
+
+    def status(self):
+        with self.lock:
+            bpm = round(self.bpm, 1) if self.bpm is not None else None
+        return {
+            "active": self.active,
+            "bpm": bpm,
+            "started_at": self.started_time,
+        }
 
     def clear(self):
         if not self.strip:
             return
-        for i in range(self.num_leds):
-            self.strip.setPixelColor(i, Color(0, 0, 0, 0))
-        self.strip.show()
+        with self.strip_lock:
+            for i in range(self.pixel_count()):
+                self.strip.setPixelColor(i, Color(0, 0, 0))
+            self.strip.show()
+
+    def pixel_count(self):
+        if self.strip and hasattr(self.strip, "numPixels"):
+            return min(self.num_leds, int(self.strip.numPixels()))
+        return self.num_leds
 
     def _track_audio(self):
         """Read USB mic audio once, correcting the beat grid from strong onsets."""
@@ -442,18 +481,7 @@ class MusicController:
                     self.next_beat_time += self.beat_interval or beat_interval
 
     def _make_strip(self):
-        strip = PixelStrip(
-            self.num_leds,
-            self.pin,
-            800000,
-            10,
-            False,
-            24,
-            0,
-            ws.SK6812_STRIP_GRBW,
-        )
-        strip.begin()
-        return strip
+        return make_strip(self.num_leds, self.pin)
 
     def _startup_blink_test(self):
         print("LED startup blink test", flush=True)
@@ -466,9 +494,10 @@ class MusicController:
             time.sleep(0.12)
 
     def _set_all(self, color):
-        for i in range(self.num_leds):
-            self.strip.setPixelColor(i, color)
-        self.strip.show()
+        with self.strip_lock:
+            for i in range(self.pixel_count()):
+                self.strip.setPixelColor(i, color)
+            self.strip.show()
 
     def _start_audio_process(self):
         command = [

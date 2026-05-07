@@ -182,11 +182,30 @@
         <div id="music" class="tab">
             <div class="content-area">
                 <div class="card">
-                    <div class="empty-state">
+                    <div class="music-status-panel">
                         <div class="empty-state-icon">🎵</div>
-                        <p>Music Mode - Coming Soon!</p>
-                        <p style="color: #ccc; font-size: 0.95em;">Music synchronization features will be available here
-                        </p>
+                        <h2>Music Mode</h2>
+                        <div class="lighting-toolbar">
+                            <div>
+                                <strong>Status:</strong>
+                                <span id="musicActiveStatus">Inactive</span>
+                            </div>
+                            <div>
+                                <strong>BPM:</strong>
+                                <span id="musicBpm">--</span>
+                            </div>
+                            <div class="preset-actions">
+                                <button type="button" class="btn-success" onclick="startMusicMode()">Start Music</button>
+                                <button type="button" class="btn-danger" onclick="stopMusicMode()">Stop Music</button>
+                            </div>
+                        </div>
+                        <p id="musicErrorMessage" class="error-text"></p>
+                    </div>
+                </div>
+                <div class="card">
+                    <h2>Event Log</h2>
+                    <div id="musicEventLog" class="event-log">
+                        <div class="log-entry muted">Waiting for events...</div>
                     </div>
                 </div>
             </div>
@@ -256,8 +275,20 @@
             })
                 .then(response => response.json())
                 .then(data => {
+                    if (!data.ok) {
+                        if (mode === "music") {
+                            showMusicError(data.error || "Failed to start music mode");
+                        }
+                        console.error('Mode change rejected:', data.error || data);
+                        return;
+                    }
                     console.log('Mode changed to:', data.mode);
+                    if (mode === "music") {
+                        showMusicError("");
+                    }
                     updateStatus();
+                    updateMusicStatus();
+                    updateLightingStatus();
                 })
                 .catch(error => console.error('Mode change error:', error));
         }
@@ -333,6 +364,67 @@
             } catch (error) {
                 console.error("Error loading lighting patterns:", error);
                 showLightingError("Failed to load lighting patterns");
+            }
+        }
+
+        async function startMusicMode() {
+            try {
+                const response = await fetch("/api/music/start", { method: "POST" });
+                const data = await response.json();
+                if (!data.ok) {
+                    showMusicError(data.error || "Failed to start music mode");
+                    return;
+                }
+                showMusicError("");
+                updateMusicStatus(data.music);
+                updateEventLog();
+            } catch (error) {
+                console.error("Error starting music mode:", error);
+                showMusicError("Failed to start music mode");
+            }
+        }
+
+        async function stopMusicMode() {
+            try {
+                const response = await fetch("/api/music/stop", { method: "POST" });
+                const data = await response.json();
+                if (!data.ok) {
+                    showMusicError(data.error || "Failed to stop music mode");
+                    return;
+                }
+                updateMusicStatus(data.music);
+                updateEventLog();
+            } catch (error) {
+                console.error("Error stopping music mode:", error);
+                showMusicError("Failed to stop music mode");
+            }
+        }
+
+        async function updateMusicStatus(statusData = null) {
+            try {
+                let music = statusData;
+                if (!music) {
+                    const response = await fetch("/api/music/status");
+                    const data = await response.json();
+                    music = data.music;
+                }
+                const status = document.getElementById("musicActiveStatus");
+                const bpm = document.getElementById("musicBpm");
+                if (status) {
+                    status.textContent = music?.active ? "Active" : "Inactive";
+                }
+                if (bpm) {
+                    bpm.textContent = music?.bpm ? music.bpm : "--";
+                }
+            } catch (error) {
+                console.error("Error updating music status:", error);
+            }
+        }
+
+        function showMusicError(message) {
+            const error = document.getElementById("musicErrorMessage");
+            if (error) {
+                error.textContent = message || "";
             }
         }
 
@@ -1159,10 +1251,12 @@
 
         loadAppSettings();
         loadLightingPatterns();
+        updateMusicStatus();
         updateStatus();
 
         // Set intervals to periodically update lighting status and pacer running times
         setInterval(updateStatus, 1000);
+        setInterval(updateMusicStatus, 1000);
         setInterval(updateRunningTimes, 250);
 
         // Initialize add lap button states
