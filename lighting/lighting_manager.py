@@ -9,9 +9,10 @@ from lighting.lighting_patterns import PATTERN_REGISTRY, pattern_metadata
 class LightingManager:
     UPDATE_INTERVAL = 0.03
 
-    def __init__(self, num_leds=300, pin=12):
+    def __init__(self, num_leds=300, pin=12, color_order="RGB"):
         self.num_leds = num_leds
         self.pin = pin
+        self.color_order = color_order
         self.strip = make_strip(num_leds, pin)
         self.lock = threading.Lock()
         self.render_lock = threading.Lock()
@@ -22,7 +23,7 @@ class LightingManager:
         self.current_pattern_name = None
         self.started_at = None
 
-    def configure_strip(self, num_leds=None, pin=None):
+    def configure_strip(self, num_leds=None, pin=None, color_order=None):
         was_active = self.active
         if was_active:
             self.stop()
@@ -31,8 +32,9 @@ class LightingManager:
 
         self.num_leds = num_leds or self.num_leds
         self.pin = pin or self.pin
+        self.color_order = color_order or self.color_order
         self.strip = make_strip(self.num_leds, self.pin)
-        log_event("Lighting strip configured", category="lighting", num_leds=self.num_leds, pin=self.pin)
+        log_event("Lighting strip configured", category="lighting", num_leds=self.num_leds, pin=self.pin, color_order=self.color_order)
 
     def metadata(self):
         return pattern_metadata()
@@ -42,7 +44,7 @@ class LightingManager:
         if pattern_class is None:
             raise ValueError(f"Unknown lighting pattern: {pattern_name}")
 
-        colors = colors or [Color(255, 255, 255)]
+        colors = colors or [(255, 255, 255)]
         required = pattern_class.color_count
         if required > 0 and len(colors) != required:
             raise ValueError(f"{pattern_class.label} requires {required} color(s)")
@@ -94,8 +96,19 @@ class LightingManager:
     def render(self, colors):
         with self.render_lock:
             for i, color in enumerate(colors[:self.num_leds]):
-                self.strip.setPixelColor(i, color)
+                self.strip.setPixelColor(i, self.to_strip_color(color))
             self.strip.show()
+
+    def to_strip_color(self, color):
+        if isinstance(color, (tuple, list)):
+            r, g, b = int(color[0]), int(color[1]), int(color[2])
+        else:
+            value = int(color)
+            r, g, b = (value >> 16) & 255, (value >> 8) & 255, value & 255
+
+        values = {"R": r, "G": g, "B": b}
+        order = self.color_order.upper()
+        return Color(values[order[0]], values[order[1]], values[order[2]])
 
     def clear(self):
         with self.render_lock:

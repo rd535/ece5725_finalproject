@@ -17,7 +17,11 @@ pacer = None
 pacer_instances = {}  # Dict to store pacer instances by name: {"Pacer 1": <pacer_object>, ...}
 app_settings = load_settings()
 web_pacer_manager = NewPacerManager(num_leds=led_count_from_settings(app_settings), pin=app_settings["led_strip"]["pin"])
-web_lighting_manager = LightingManager(num_leds=led_count_from_settings(app_settings), pin=app_settings["led_strip"]["pin"])
+web_lighting_manager = LightingManager(
+    num_leds=led_count_from_settings(app_settings),
+    pin=app_settings["led_strip"]["pin"],
+    color_order=app_settings["led_strip"].get("color_order", "RGB"),
+)
 DEFAULT_PACER_COLOR = "#00ff00"
 pacer_state_lock = Lock()
 
@@ -287,7 +291,7 @@ def save_led_settings():
         config["running"] = False
     pi_state["status"] = "idle"
     web_pacer_manager.configure_strip(num_leds=led_count_from_settings(app_settings), pin=pin)
-    web_lighting_manager.configure_strip(num_leds=led_count_from_settings(app_settings), pin=pin)
+    web_lighting_manager.configure_strip(num_leds=led_count_from_settings(app_settings), pin=pin, color_order=color_order)
     log_event("LED settings saved", category="settings", led_count=led_count_from_settings(app_settings), color_order=color_order)
 
     return jsonify({"ok": True, "settings": app_settings, "led_count": led_count_from_settings(app_settings)})
@@ -312,7 +316,7 @@ def lighting_start():
         return jsonify({"ok": False, "error": "Lighting pattern is required."}), 400
 
     try:
-        color_objects = [hex_to_color(color) for color in colors]
+        color_objects = [hex_to_rgb(color) for color in colors]
         stop_pacer_runtime()
         web_lighting_manager.start_pattern(pattern_name, color_objects, speed=speed)
         pi_state["mode"] = "lighting"

@@ -1,8 +1,6 @@
 import math
 import random
 
-from pacer.pacer_pattern import Color
-
 
 def color_to_rgb(color):
     if isinstance(color, (tuple, list)):
@@ -16,14 +14,14 @@ def color_to_rgb(color):
 def scale_color(color, scale):
     scale = max(0.0, min(1.0, scale))
     r, g, b = color_to_rgb(color)
-    return Color(int(r * scale), int(g * scale), int(b * scale))
+    return int(r * scale), int(g * scale), int(b * scale)
 
 
 def blend_color(a, b, t):
     t = max(0.0, min(1.0, t))
     ar, ag, ab = color_to_rgb(a)
     br, bg, bb = color_to_rgb(b)
-    return Color(
+    return (
         int(ar + (br - ar) * t),
         int(ag + (bg - ag) * t),
         int(ab + (bb - ab) * t),
@@ -33,12 +31,12 @@ def blend_color(a, b, t):
 def wheel(pos):
     pos = int(pos) & 255
     if pos < 85:
-        return Color(pos * 3, 255 - pos * 3, 0)
+        return pos * 3, 255 - pos * 3, 0
     if pos < 170:
         pos -= 85
-        return Color(255 - pos * 3, 0, pos * 3)
+        return 255 - pos * 3, 0, pos * 3
     pos -= 170
-    return Color(0, pos * 3, 255 - pos * 3)
+    return 0, pos * 3, 255 - pos * 3
 
 
 class LightingPattern:
@@ -46,7 +44,7 @@ class LightingPattern:
     label = "Pattern"
 
     def __init__(self, colors=None, speed=1.0):
-        self.colors = colors or [Color(255, 255, 255)]
+        self.colors = [color_to_rgb(color) for color in (colors or [(255, 255, 255)])]
         self.speed = max(0.1, float(speed or 1.0))
 
     def frame(self, led_count, elapsed):
@@ -77,7 +75,7 @@ class TheaterChasePattern(LightingPattern):
 
     def frame(self, led_count, elapsed):
         offset = int(elapsed * self.speed * 12) % 3
-        off = Color(0, 0, 0)
+        off = (0, 0, 0)
         return [self.colors[0] if (i + offset) % 3 == 0 else off for i in range(led_count)]
 
 
@@ -87,7 +85,7 @@ class RainbowPattern(LightingPattern):
 
     def frame(self, led_count, elapsed):
         offset = int(elapsed * self.speed * 60)
-        return [wheel((i * 256 / max(1, led_count) + offset) & 255) for i in range(led_count)]
+        return [wheel(int(i * 256 / max(1, led_count) + offset)) for i in range(led_count)]
 
 
 class PulsePattern(LightingPattern):
@@ -107,7 +105,7 @@ class CometPattern(LightingPattern):
         if led_count <= 0:
             return []
         head = int(elapsed * self.speed * 35) % led_count
-        frame = [Color(0, 0, 0)] * led_count
+        frame = [(0, 0, 0)] * led_count
         tail = min(18, led_count)
         for j in range(tail):
             idx = (head - j) % led_count
@@ -138,7 +136,7 @@ class ScannerPattern(LightingPattern):
         span = (led_count - 1) * 2
         raw = int(elapsed * self.speed * 40) % span
         pos = raw if raw < led_count else span - raw
-        frame = [Color(0, 0, 0)] * led_count
+        frame = [(0, 0, 0)] * led_count
         width = min(10, led_count)
         for j in range(width):
             for idx in (pos - j, pos + j):
