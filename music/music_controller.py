@@ -222,7 +222,8 @@ class MusicController:
         startup_test=False,
         pulse_color=None,
         pulse_color_hex="#ffffff",
-        beat_timeout_seconds=2.5,
+        beat_timeout_seconds=8.0,
+        fade_seconds=0.22,
     ):
         self.num_leds = num_leds
         self.pin = pin
@@ -238,6 +239,7 @@ class MusicController:
         self.pulse_color = pulse_color or Color(255, 255, 255)
         self.pulse_color_hex = pulse_color_hex
         self.beat_timeout_seconds = beat_timeout_seconds
+        self.fade_seconds = fade_seconds
 
         self.strip = strip
         self.process = None
@@ -263,6 +265,8 @@ class MusicController:
         self.beat_candidates = 0
         self.accepted_beats = 0
         self.last_audio_time = None
+        self.visual_pulse_started_at = None
+        self.visual_pulse_intensity = 0.0
         self.high_bpm_count = 0
         self.half_time_threshold = 140
 
@@ -291,6 +295,8 @@ class MusicController:
         self.beat_candidates = 0
         self.accepted_beats = 0
         self.last_audio_time = None
+        self.visual_pulse_started_at = None
+        self.visual_pulse_intensity = 0.0
         self.active = True
 
         self.audio_thread = threading.Thread(target=self._track_audio, daemon=True)
@@ -510,7 +516,15 @@ class MusicController:
         with self.lock:
             self.bpm = self.tracker.bpm
             self.beat_interval = self._display_interval(self.bpm, self.tracker.interval)
-            self.next_beat_time = wall_time
+            if self.next_beat_time is None:
+                self.next_beat_time = wall_time
+            else:
+                phase_error = wall_time - self.next_beat_time
+                while phase_error > self.beat_interval / 2:
+                    phase_error -= self.beat_interval
+                while phase_error < -self.beat_interval / 2:
+                    phase_error += self.beat_interval
+                self.next_beat_time += phase_error * 0.15
             self.last_beat_wall_time = wall_time
             self.accepted_beats += 1
             rounded_bpm = round(self.bpm, 1) if self.bpm is not None else None
@@ -524,13 +538,15 @@ class MusicController:
             log_event("USB BPM updated", category="music", bpm=rounded_bpm)
 
     def _blink_loop(self):
-        """Flash white at the current beat grid."""
+        """Render a steady beat grid with smooth audio-scaled pulses."""
         while self.active:
             with self.lock:
                 beat_interval = self.beat_interval
                 next_beat_time = self.next_beat_time
                 last_beat_wall_time = self.last_beat_wall_time
                 pulse_color = self.pulse_color
+                pulse_started_at = self.visual_pulse_started_at
+                pulse_intensity = self.visual_pulse_intensity
 
             if last_beat_wall_time is not None and time.time() - last_beat_wall_time > self.beat_timeout_seconds:
                 self._reset_beat_lock()
@@ -543,17 +559,26 @@ class MusicController:
                 continue
 
             now = time.time()
-            if now < next_beat_time:
-                time.sleep(min(0.01, next_beat_time - now))
-                continue
+            beat_fired = False
+            while next_beat_time is not None and now >= next_beat_time:
+                beat_fired = True
+                next_beat_time += beat_interval
 
-            self._set_all(pulse_color)
-            time.sleep(self.pulse_seconds)
-            self.clear()
+            if beat_fired:
+                pulse_started_at = now
+                pulse_intensity = self._audio_intensity()
+                with self.lock:
+                    self.next_beat_time = next_beat_time
+                    self.visual_pulse_started_at = pulse_started_at
+                    self.visual_pulse_intensity = pulse_intensity
 
-            with self.lock:
-                while self.next_beat_time is not None and self.next_beat_time <= time.time():
-                    self.next_beat_time += self.beat_interval or beat_interval
+            brightness = self._fade_brightness(pulse_started_at, pulse_intensity, now)
+            if brightness > 0:
+                self._set_all(self._scale_color(pulse_color, brightness))
+            else:
+                self.clear()
+
+            time.sleep(0.02)
 
     def _make_strip(self):
         return make_strip(self.num_leds, self.pin)
@@ -574,6 +599,32 @@ class MusicController:
                 self.strip.setPixelColor(i, color)
             self.strip.show()
 
+    def _audio_intensity(self):
+        with self.lock:
+            level = self.last_audio_level
+            reference = max(self.min_audio_level * 4.0, self.music_level or self.min_audio_level)
+        return max(0.25, min(1.0, level / reference))
+
+    def _fade_brightness(self, pulse_started_at, pulse_intensity, now):
+        if pulse_started_at is None:
+            return 0.0
+        age = now - pulse_started_at
+        if age < 0 or age > self.fade_seconds:
+            return 0.0
+        fade = 1.0 - (age / self.fade_seconds)
+        return max(0.0, min(1.0, pulse_intensity * fade * fade))
+
+    def _scale_color(self, color, brightness):
+        if isinstance(color, (tuple, list)):
+            r, g, b = int(color[0]), int(color[1]), int(color[2])
+            return Color(int(r * brightness), int(g * brightness), int(b * brightness))
+        else:
+            value = int(color)
+            high = int(((value >> 16) & 255) * brightness)
+            mid = int(((value >> 8) & 255) * brightness)
+            low = int((value & 255) * brightness)
+            return (high << 16) | (mid << 8) | low
+
     def _reset_beat_lock(self):
         with self.lock:
             self.tracker = BeatGridTracker(min_bpm=self.min_bpm, max_bpm=self.max_bpm)
@@ -582,6 +633,8 @@ class MusicController:
             self.next_beat_time = None
             self.last_beat_wall_time = None
             self.last_logged_bpm = None
+            self.visual_pulse_started_at = None
+            self.visual_pulse_intensity = 0.0
 
     def _start_audio_process(self):
         command = [
