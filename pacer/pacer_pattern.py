@@ -51,6 +51,9 @@ def make_strip(num_leds, pin):
         ws.SK6812_STRIP_RGBW,
     )
     strip.begin()
+    for i in range(strip.numPixels()):
+        strip.setPixelColor(i, Color(0, 0, 0))
+    strip.show()
     return strip
 
 
