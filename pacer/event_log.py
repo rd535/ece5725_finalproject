@@ -7,6 +7,7 @@ from threading import Lock
 LOG_DIR = Path(__file__).resolve().parents[1] / "logs"
 LOG_FILE = LOG_DIR / "pacer_events.log"
 MAX_EVENTS = 500
+MAX_LOG_FILE_LINES = 200
 
 # fixed size in-memory event log with thread safety
 _events = deque(maxlen=MAX_EVENTS)
@@ -34,12 +35,24 @@ def log_event(message, level="INFO", category="system", **details):
     with _lock:
         # store in memory log
         _events.append(entry)
+<<<<<<< HEAD
         try:
             LOG_DIR.mkdir(exist_ok=True)
             with LOG_FILE.open("a", encoding="utf-8") as log_file:
                 log_file.write(line + "\n")
         except PermissionError:
             pass
+=======
+        # keep newest persisted entries at the top and cap file length
+        LOG_DIR.mkdir(exist_ok=True)
+        existing_lines = []
+        if LOG_FILE.exists():
+            existing_lines = LOG_FILE.read_text(encoding="utf-8").splitlines()
+        LOG_FILE.write_text(
+            "\n".join([line] + existing_lines[:MAX_LOG_FILE_LINES - 1]) + "\n",
+            encoding="utf-8",
+        )
+>>>>>>> lighting-mode
 
     print(line, flush=True)
     return entry

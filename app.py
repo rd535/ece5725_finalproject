@@ -3,12 +3,15 @@ import time
 import json
 import csv
 import io
+from pathlib import Path
 from functools import wraps
 from threading import Lock
 from pacer.event_log import get_events, log_event
 from pacer.state import NewPacerManager
 from pacer.pacer_pattern import Color, NewConstantPacer, NewDynamicPacer
 from pacer.settings_store import led_count_from_settings, load_settings, save_settings
+from lighting.lighting_manager import LightingManagerV2
+from lighting.lighting_patterns import pattern_metadata
 
 app = Flask(__name__)
 
@@ -16,8 +19,16 @@ pacer = None
 pacer_instances = {}  # Dict to store pacer instances by name: {"Pacer 1": <pacer_object>, ...}
 app_settings = load_settings()
 web_pacer_manager = NewPacerManager(num_leds=led_count_from_settings(app_settings), pin=app_settings["led_strip"]["pin"])
+web_lighting_manager = None
 DEFAULT_PACER_COLOR = "#00ff00"
 pacer_state_lock = Lock()
+
+
+@app.context_processor
+def static_versions():
+    css_path = Path(app.static_folder) / "pacer_style.css"
+    css_version = int(css_path.stat().st_mtime) if css_path.exists() else int(time.time())
+    return {"css_version": css_version}
 
 # Shared State for down and upload
 # New structure with per-pacer configurations
@@ -139,6 +150,43 @@ def clean_presets():
 
     return presets
 
+def create_lighting_manager():
+    return LightingManagerV2(
+        num_leds=led_count_from_settings(app_settings),
+        pin=app_settings["led_strip"]["pin"],
+        color_order=app_settings["led_strip"].get("color_order", "RGB"),
+        strip=web_pacer_manager.strip,
+    )
+
+def ensure_lighting_manager():
+    global web_lighting_manager
+    if web_lighting_manager is None:
+        web_lighting_manager = create_lighting_manager()
+    return web_lighting_manager
+
+def stop_lighting_manager(destroy=False):
+    global web_lighting_manager
+    if web_lighting_manager is None:
+        return
+    web_lighting_manager.stop()
+    if destroy:
+        web_lighting_manager = None
+
+def stop_pacer_runtime(clear_strip=True):
+    for config in pi_state["pacers"].values():
+        config["running"] = False
+        config["finished"] = False
+        config["current_split"] = 0.0
+    pacer_instances.clear()
+    web_pacer_manager.stop()
+    pacer_thread = getattr(web_pacer_manager, "thread", None)
+    if pacer_thread and pacer_thread.is_alive():
+        pacer_thread.join(timeout=1.0)
+    web_pacer_manager.clear_pacers()
+    if clear_strip:
+        web_pacer_manager.clear()
+    pi_state["status"] = "idle"
+
 def with_pacer_lock(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
@@ -196,6 +244,7 @@ def status():
 
 # Mode selection endpoint
 @app.route("/api/mode", methods=["POST"])
+@with_pacer_lock
 def set_mode():
     data = request.get_json()
 
@@ -209,6 +258,14 @@ def set_mode():
     if mode not in valid_modes:
         log_event("Mode request rejected: invalid mode", level="ERROR", category="api", mode=mode)
         return jsonify({"ok": False, "error": f"Invalid mode. Must be one of: {', '.join(valid_modes)}"}), 400
+
+    if mode != "pacer":
+        stop_pacer_runtime()
+
+    if mode == "lighting":
+        ensure_lighting_manager().start()
+    else:
+        stop_lighting_manager(destroy=True)
 
     pi_state["mode"] = mode
     pi_state["last_update"] = time.strftime("%H:%M:%S")
@@ -267,9 +324,64 @@ def save_led_settings():
         config["running"] = False
     pi_state["status"] = "idle"
     web_pacer_manager.configure_strip(num_leds=led_count_from_settings(app_settings), pin=pin)
+    if web_lighting_manager is not None:
+        web_lighting_manager.configure_strip(
+            num_leds=led_count_from_settings(app_settings),
+            pin=pin,
+            color_order=color_order,
+            strip=web_pacer_manager.strip,
+        )
     log_event("LED settings saved", category="settings", led_count=led_count_from_settings(app_settings), color_order=color_order)
 
     return jsonify({"ok": True, "settings": app_settings, "led_count": led_count_from_settings(app_settings)})
+
+@app.route("/api/lighting/patterns", methods=["GET"])
+def lighting_patterns():
+    return jsonify({"ok": True, "patterns": pattern_metadata()})
+
+@app.route("/api/lighting/status", methods=["GET"])
+def lighting_status():
+    if web_lighting_manager is None:
+        return jsonify({"ok": True, "lighting": {"active": False, "running": False, "pattern": None, "started_at": None}})
+    return jsonify({"ok": True, "lighting": web_lighting_manager.status()})
+
+@app.route("/api/lighting/start", methods=["POST"])
+@with_pacer_lock
+def lighting_start():
+    data = request.get_json() or {}
+    pattern_name = data.get("pattern")
+    colors = data.get("colors", [])
+    speed = data.get("speed", 1.0)
+
+    if not pattern_name:
+        return jsonify({"ok": False, "error": "Lighting pattern is required."}), 400
+
+    try:
+        color_objects = [hex_to_rgb(color) for color in colors]
+        stop_pacer_runtime()
+        manager = ensure_lighting_manager()
+        manager.start()
+        manager.start_pattern(pattern_name, color_objects, speed=speed)
+        pi_state["mode"] = "lighting"
+        pi_state["last_update"] = time.strftime("%H:%M:%S")
+    except ValueError as exc:
+        log_event("Lighting start rejected", level="ERROR", category="lighting", pattern=pattern_name, error=str(exc))
+        return jsonify({"ok": False, "error": str(exc)}), 400
+    except Exception as exc:
+        log_event("Lighting start failed", level="ERROR", category="lighting", pattern=pattern_name, error=repr(exc))
+        return jsonify({"ok": False, "error": f"Failed to start lighting pattern: {exc}"}), 500
+
+    return jsonify({"ok": True, "lighting": manager.status()})
+
+@app.route("/api/lighting/stop", methods=["POST"])
+@with_pacer_lock
+def lighting_stop():
+    if web_lighting_manager is not None:
+        web_lighting_manager.stop_pattern()
+    pi_state["last_update"] = time.strftime("%H:%M:%S")
+    if web_lighting_manager is None:
+        return jsonify({"ok": True, "lighting": {"active": False, "running": False, "pattern": None, "started_at": None}})
+    return jsonify({"ok": True, "lighting": web_lighting_manager.status()})
 
 @app.route("/api/presets", methods=["GET"])
 def list_presets():
@@ -371,6 +483,7 @@ def submit_pacers():
             return jsonify({"ok": False, "error": f"Row {i + 1}: {exc}"}), 400
 
     # All validation passed, store pacers in pi_state, clear old dict
+    stop_lighting_manager(destroy=True)
     pi_state["pacers"] = {}
     pacer_instances.clear()
     web_pacer_manager.stop()
@@ -413,6 +526,8 @@ def submit_pacers():
 @with_pacer_lock
 def pacer_start(pacer_name):
     """Start a specific pacer by name"""
+    stop_lighting_manager(destroy=True)
+
     if pacer_name not in pi_state["pacers"]:
         log_event("Start rejected: pacer not found", level="ERROR", category="pacer", pacer_name=pacer_name)
         return jsonify({"ok": False, "error": f"Pacer '{pacer_name}' not found"}), 404
