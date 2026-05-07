@@ -57,11 +57,11 @@ class BeatGridTracker:
         if current_bpm is not None and current_bpm >= 135:
             phase_window = min(0.08, self.interval * 0.20)
             phase_gain = 0.45
-            tempo_gain = 0.13
+            tempo_gain = 0.20
         else:
             phase_window = min(0.12, self.interval * 0.28)
             phase_gain = 0.35
-            tempo_gain = 0.08
+            tempo_gain = 0.14
 
         if abs(error) <= phase_window:
             corrected_anchor = predicted_time + phase_gain * error
@@ -100,7 +100,7 @@ class BeatGridTracker:
         if current_bpm is None:
             return False
 
-        if abs(new_bpm - current_bpm) < max(12.0, current_bpm * 0.14):
+        if abs(new_bpm - current_bpm) < max(5.0, current_bpm * 0.05):
             return False
 
         self.interval = interval
@@ -121,7 +121,7 @@ class BeatGridTracker:
 
         new_bpm = 60.0 / interval
 
-        if current_bpm is not None and abs(new_bpm - current_bpm) < max(9.0, current_bpm * 0.09):
+        if current_bpm is not None and abs(new_bpm - current_bpm) < max(3.0, current_bpm * 0.03):
             return False
 
         self.interval = interval
@@ -268,7 +268,6 @@ class MusicController:
         self.visual_pulse_started_at = None
         self.visual_pulse_intensity = 0.0
         self.high_bpm_count = 0
-        self.half_time_threshold = 140
 
     def start(self):
         """Start audio tracking and LED blinking."""
@@ -516,8 +515,6 @@ class MusicController:
         return max(self.min_audio_level, self.music_level * 0.30)
 
     def _display_interval(self, bpm, interval):
-        if bpm is not None and bpm >= self.half_time_threshold:
-            return interval * 2.0
         return interval
 
     def _accept_tracked_beat(self, wall_time):
