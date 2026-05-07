@@ -442,6 +442,7 @@
 
         const musicPulseColorInput = document.getElementById("musicPulseColor");
         if (musicPulseColorInput) {
+            musicPulseColorInput.addEventListener("input", updateMusicColor);
             musicPulseColorInput.addEventListener("change", updateMusicColor);
         }
 
@@ -472,9 +473,6 @@
                 }
                 if (beatStats) {
                     beatStats.textContent = `${music?.accepted_beats || 0} / ${music?.beat_candidates || 0}`;
-                }
-                if (music?.color && document.getElementById("musicPulseColor")) {
-                    document.getElementById("musicPulseColor").value = music.color;
                 }
             } catch (error) {
                 console.error("Error updating music status:", error);
