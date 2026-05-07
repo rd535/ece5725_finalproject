@@ -67,6 +67,7 @@ class NewPacerManager:
         log_event("All pacers cleared from manager", category="manager")
         self.wake_event.set()
 
+    # Make a safe copy of current pacers list so adding/removing doesn't cause issues
     def snapshot_pacers(self):
         with self.lock:
             return list(self.pacers)
@@ -90,6 +91,7 @@ class NewPacerManager:
             self.clear()
             log_event("Pacer manager update loop stopped", category="manager")
 
+    # Collect LED updates from all active pacers, returning a list of (position, color, type) tuples for rendering
     def collect_led_updates(self):
         led_updates = []
 
@@ -106,16 +108,20 @@ class NewPacerManager:
         self.render(led_updates)
         self.log_frame(led_updates)
 
+    # actual drawing step
     def render(self, led_updates):
         with self.render_lock:
+            # clear strip first
             for i in range(self.num_leds):
                 self.strip.setPixelColor(i, Color(0, 0, 0))
 
+            # render paces first then segments, so segments win overlaps with pacers
             for position, color, pacer_type in led_updates:
                 if pacer_type == "pacer":
                     for k in range(self.PACER_SEG_LENGTH):
                         pacer_idx = int((position + k) % self.num_leds)
-                        self.strip.setPixelColor(pacer_idx, color)
+                        # just make it white by default
+                        self.strip.setPixelColor(pacer_idx, Color(255, 255, 255))
 
                 for j in range(self.SEGMENT_LENGTH):
                     idx_init = position - j
@@ -164,6 +170,8 @@ class NewPacerManager:
 
         log_event("LED strip configured", category="settings", num_leds=self.num_leds, pin=self.pin)
 
+
+    # For debugging
     def flash_startup(self, color=None, duration=0.5):
         color = color or Color(0, 0, 255)
         width = min(12, self.num_leds)
