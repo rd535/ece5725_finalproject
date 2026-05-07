@@ -802,6 +802,7 @@
             return colors[(rowNum - 1) % colors.length];
         }
 
+        // Makes sure pace value is alwats returned as an array, even with single pace or empty value
         function normalizePaces(rawPaces) {
             if (Array.isArray(rawPaces)) {
                 return rawPaces;
@@ -811,7 +812,8 @@
             }
             return [rawPaces];
         }
-
+        
+        // handles json parsing of the preset pacers and returns array data
         function normalizePresetPacers(rawPacers) {
             if (typeof rawPacers === "string") {
                 try {
@@ -821,14 +823,17 @@
                 }
             }
 
+            // If it's already an array, assume it's in the correct format
             if (Array.isArray(rawPacers)) {
                 return rawPacers;
             }
 
+            // Handle object format, either with "pacers" key or direct pacer definitions
             if (rawPacers && Object.prototype.hasOwnProperty.call(rawPacers, "pacers")) {
                 return normalizePresetPacers(rawPacers.pacers);
             }
 
+            // Handle object with pacer names as keys and config as values
             if (rawPacers && typeof rawPacers === "object") {
                 return Object.entries(rawPacers).map(([pacerName, config]) => {
                     if (config && typeof config === "object" && !Array.isArray(config)) {
@@ -842,6 +847,7 @@
                         };
                     }
 
+                    // If config is not an object, treat it as a single pace value for a constant pacer
                     return {
                         pacer_name: pacerName,
                         pacer_type: "constant",
@@ -856,6 +862,7 @@
             return [];
         }
 
+        // Takes pacer data from a preset and populates the table, normalizing different possible formats and handling missing fields with defaults
         function populatePacerTable(pacers) {
             const normalizedPacers = normalizePresetPacers(pacers);
             console.log("Populating pacer table from preset", normalizedPacers);
@@ -886,6 +893,7 @@
             }
         }
 
+        // Collects pacer data from the table, validates it, and returns an array of pacer objects for submission or preset saving
         function collectPacerRows() {
             errorMessage.textContent = "";
             const rows = tableBody.querySelectorAll("tr");
@@ -926,6 +934,7 @@
             return data;
         }
 
+        // Save preset data to the json file
         async function saveCurrentPreset() {
             const name = document.getElementById("presetName").value.trim();
             if (!name) {
@@ -956,6 +965,7 @@
             showSuccessMessage(`Preset "${name}" saved!`);
         }
 
+        // Load preset data from the json file and populate the table with it
         async function loadSelectedPreset() {
             const name = document.getElementById("presetSelect").value;
             if (!name) {
@@ -979,6 +989,7 @@
             console.log(`Preset "${name}" loaded successfully`);
         }
 
+        // Delete preset from the json file and remove it from the select options
         async function deleteSelectedPreset() {
             const select = document.getElementById("presetSelect");
             const name = select.value;
@@ -1003,6 +1014,7 @@
             showSuccessMessage(`Preset "${name}" deleted!`);
         }
 
+        // Functions to start/stop pacers, both individual and all at once, with error handling and status updates
         function startAllPacers() {
             fetch("/api/pacer/start_all", { method: "POST" })
                 .then(response => response.json())
@@ -1045,6 +1057,7 @@
                 .catch(() => showErrorMessage("Failed to stop all pacers"));
         }
 
+        // Updates the pacer status table based on the current pacerState object, including calculating elapsed time for running pacers and updating button states
         function updateStatusTable() {
             const statusTableBody = document.getElementById("statusTableBody");
             statusTableBody.innerHTML = "";
@@ -1148,6 +1161,8 @@
         loadAppSettings();
         loadLightingPatterns();
         updateStatus();
+
+        // Set intervals to periodically update lighting status and pacer running times
         setInterval(updateStatus, 1000);
         setInterval(updateRunningTimes, 250);
 
