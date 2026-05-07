@@ -3,6 +3,7 @@ import time
 import json
 import csv
 import io
+from pathlib import Path
 from functools import wraps
 from threading import Lock
 from pacer.event_log import get_events, log_event
@@ -21,6 +22,13 @@ web_pacer_manager = NewPacerManager(num_leds=led_count_from_settings(app_setting
 web_lighting_manager = None
 DEFAULT_PACER_COLOR = "#00ff00"
 pacer_state_lock = Lock()
+
+
+@app.context_processor
+def static_versions():
+    css_path = Path(app.static_folder) / "pacer_style.css"
+    css_version = int(css_path.stat().st_mtime) if css_path.exists() else int(time.time())
+    return {"css_version": css_version}
 
 # Shared State for down and upload
 # New structure with per-pacer configurations
