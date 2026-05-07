@@ -72,6 +72,12 @@ def hex_to_color(color_hex):
     # print("Color values before reordering:", values)
     return Color(values[order[0]], values[order[1]], values[order[2]])
 
+def hex_to_ordered_rgb(color_hex):
+    r, g, b = hex_to_rgb(color_hex)
+    order = app_settings["led_strip"].get("color_order", "RGB").upper()
+    values = {"R": r, "G": g, "B": b}
+    return tuple(values[channel] for channel in order)
+
 def pacer_dict_to_list():
     return [
         {
@@ -181,7 +187,7 @@ def create_music_controller():
         num_leds=led_count_from_settings(app_settings),
         pin=app_settings["led_strip"]["pin"],
         strip=web_pacer_manager.strip,
-        pulse_color=hex_to_color(DEFAULT_MUSIC_COLOR),
+        pulse_color=hex_to_ordered_rgb(DEFAULT_MUSIC_COLOR),
         pulse_color_hex=DEFAULT_MUSIC_COLOR,
     )
 
@@ -201,7 +207,7 @@ def stop_music_controller(destroy=False):
 
 def set_music_color(color_hex):
     controller = ensure_music_controller()
-    controller.set_pulse_color(hex_to_color(color_hex), color_hex)
+    controller.set_pulse_color(hex_to_ordered_rgb(color_hex), color_hex)
     return controller
 
 def stop_pacer_runtime(clear_strip=True):
@@ -302,12 +308,11 @@ def set_mode():
         try:
             color_hex = data.get("music_color", DEFAULT_MUSIC_COLOR)
             hex_to_rgb(color_hex)
-            controller = set_music_color(color_hex)
-            controller.start()
+            set_music_color(color_hex)
         except Exception as exc:
             stop_music_controller(destroy=True)
-            log_event("Music mode start failed", level="ERROR", category="music", error=repr(exc))
-            return jsonify({"ok": False, "error": f"Failed to start music mode: {exc}"}), 500
+            log_event("Music mode setup failed", level="ERROR", category="music", error=repr(exc))
+            return jsonify({"ok": False, "error": f"Failed to set up music mode: {exc}"}), 500
     else:
         stop_lighting_manager(destroy=True)
         stop_music_controller(destroy=True)

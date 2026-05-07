@@ -222,7 +222,7 @@ class MusicController:
         startup_test=False,
         pulse_color=None,
         pulse_color_hex="#ffffff",
-        beat_timeout_seconds=8.0,
+        beat_timeout_seconds=3.0,
         fade_seconds=0.22,
     ):
         self.num_leds = num_leds
@@ -602,8 +602,9 @@ class MusicController:
     def _audio_intensity(self):
         with self.lock:
             level = self.last_audio_level
-            reference = max(self.min_audio_level * 4.0, self.music_level or self.min_audio_level)
-        return max(0.25, min(1.0, level / reference))
+            reference = max(self.min_audio_level * 2.0, (self.music_level or self.min_audio_level) * 0.65)
+        normalized = max(0.0, min(1.0, level / reference))
+        return max(0.12, min(1.0, normalized * normalized))
 
     def _fade_brightness(self, pulse_started_at, pulse_intensity, now):
         if pulse_started_at is None:
