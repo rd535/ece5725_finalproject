@@ -147,6 +147,7 @@ def create_lighting_manager():
         num_leds=led_count_from_settings(app_settings),
         pin=app_settings["led_strip"]["pin"],
         color_order=app_settings["led_strip"].get("color_order", "RGB"),
+        strip=web_pacer_manager.strip,
     )
 
 def ensure_lighting_manager():
@@ -316,7 +317,12 @@ def save_led_settings():
     pi_state["status"] = "idle"
     web_pacer_manager.configure_strip(num_leds=led_count_from_settings(app_settings), pin=pin)
     if web_lighting_manager is not None:
-        web_lighting_manager.configure_strip(num_leds=led_count_from_settings(app_settings), pin=pin, color_order=color_order)
+        web_lighting_manager.configure_strip(
+            num_leds=led_count_from_settings(app_settings),
+            pin=pin,
+            color_order=color_order,
+            strip=web_pacer_manager.strip,
+        )
     log_event("LED settings saved", category="settings", led_count=led_count_from_settings(app_settings), color_order=color_order)
 
     return jsonify({"ok": True, "settings": app_settings, "led_count": led_count_from_settings(app_settings)})

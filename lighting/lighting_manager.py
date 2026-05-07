@@ -9,11 +9,11 @@ from lighting.lighting_patterns import PATTERN_REGISTRY, pattern_metadata
 class LightingManagerV2:
     UPDATE_INTERVAL = 0.03
 
-    def __init__(self, num_leds=300, pin=12, color_order="RGB"):
+    def __init__(self, num_leds=300, pin=12, color_order="RGB", strip=None):
         self.num_leds = num_leds
         self.pin = pin
         self.color_order = color_order
-        self.strip = make_strip(num_leds, pin)
+        self.strip = strip or make_strip(num_leds, pin)
         self.lock = threading.Lock()
         self.render_lock = threading.Lock()
         self.thread = None
@@ -26,13 +26,13 @@ class LightingManagerV2:
     def metadata(self):
         return pattern_metadata()
 
-    def configure_strip(self, num_leds=None, pin=None, color_order=None):
+    def configure_strip(self, num_leds=None, pin=None, color_order=None, strip=None):
         self.stop()
         with self.lock:
             self.num_leds = num_leds or self.num_leds
             self.pin = pin or self.pin
             self.color_order = color_order or self.color_order
-            self.strip = make_strip(self.num_leds, self.pin)
+            self.strip = strip or make_strip(self.num_leds, self.pin)
         self.clear_strip()
         log_event("Lighting strip configured", category="lighting", num_leds=self.num_leds, pin=self.pin, color_order=self.color_order)
 
