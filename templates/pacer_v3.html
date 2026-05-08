@@ -1095,6 +1095,7 @@
         }
 
         function startPacer(pacerName) {
+            const startTime = performance.now();
             fetch(`/api/pacer/start/${encodeURIComponent(pacerName)}`, {
                 method: 'POST',
                 headers: {
@@ -1113,6 +1114,8 @@
                 } else {
                     showErrorMessage(data.error || "Failed to start pacer");
                 }
+                const latency = performance.now() - startTime;
+                console.log(`End-to-end latency: ${latency}ms`);
             })
             .catch(error => {
                 console.error('Error starting pacer:', error);
