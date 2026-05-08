@@ -1,0 +1,22 @@
+# to be placed in /etc/systemd/system/pipacer.service
+
+[Unit]
+Description=ECE5725 Pacer Flask App
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/ece5725_finalproject
+Environment=PATH=/home/pi/ece5725_finalproject/.venv/bin
+ExecStart=/usr/bin/chrt -f 1 /home/pi/ece5725_finalproject/.venv/bin/python /home/pi/ece5725_finalproject/app.py
+Restart=on-failure
+RestartSec=5
+AmbientCapabilities=CAP_SYS_NICE
+CapabilityBoundingSet=CAP_SYS_NICE
+Nice=-10
+LimitNOFILE=4096
+
+[Install]
+WantedBy=multi-user.target
