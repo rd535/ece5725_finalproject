@@ -79,12 +79,21 @@ class NewPacerManager:
 
         try:
             while self.active:
-                frame_start = time.perf_counter()
+                frame_start = collect_start = time.perf_counter()
                 dt = frame_start - self.last_frame_time
                 self.frame_times.append(dt)
 
                 led_updates = self.collect_led_updates()
+
+                render_start = time.perf_counter()
                 self.render(led_updates)
+                render_end = time.perf_counter()
+
+                log_event("LED update latency",
+                          collect_ms=(render_start - collect_start)*1000,
+                          render_ms=(render_end - render_start)*1000,
+                          total_ms=(render_end - collect_start)*1000)
+                
                 self.log_frame(led_updates)
                 self.wake_event.wait(self.UPDATE_INTERVAL)
                 self.wake_event.clear()
