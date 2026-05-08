@@ -35,14 +35,6 @@ def log_event(message, level="INFO", category="system", **details):
     with _lock:
         # store in memory log
         _events.append(entry)
-<<<<<<< HEAD
-        try:
-            LOG_DIR.mkdir(exist_ok=True)
-            with LOG_FILE.open("a", encoding="utf-8") as log_file:
-                log_file.write(line + "\n")
-        except PermissionError:
-            pass
-=======
         # keep newest persisted entries at the top and cap file length
         LOG_DIR.mkdir(exist_ok=True)
         existing_lines = []
@@ -52,7 +44,6 @@ def log_event(message, level="INFO", category="system", **details):
             "\n".join([line] + existing_lines[:MAX_LOG_FILE_LINES - 1]) + "\n",
             encoding="utf-8",
         )
->>>>>>> lighting-mode
 
     print(line, flush=True)
     return entry
