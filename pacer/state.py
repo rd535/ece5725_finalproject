@@ -1,9 +1,9 @@
 import threading
 import time
+from collections import deque
 
 from pacer.event_log import log_event
 from pacer.pacer_pattern import Color, make_strip
-
 
 class NewPacerManager:
     PACER_SEG_LENGTH = 3
@@ -22,6 +22,8 @@ class NewPacerManager:
         self._next_order = 0
         self._last_frame_log = 0
         self.strip = make_strip(num_leds, pin)
+        self.last_frame_time = time.perf_counter()
+        self.frame_times = deque(maxlen=100)  # Rolling window
 
     def add_pacer(self, pacer, log=True):
         with self.lock:
@@ -77,11 +79,21 @@ class NewPacerManager:
 
         try:
             while self.active:
+                frame_start = time.perf_counter()
+                dt = frame_start - self.last_frame_time
+                self.frame_times.append(dt)
+
                 led_updates = self.collect_led_updates()
                 self.render(led_updates)
                 self.log_frame(led_updates)
                 self.wake_event.wait(self.UPDATE_INTERVAL)
                 self.wake_event.clear()
+
+                if len(self.frame_times) >= 50:
+                    avg = sum(self.frame_times) / len(self.frame_times)
+                    jitter = max(self.frame_times) - min(self.frame_times)
+                    log_event("Frame timing", avg_ms=avg*1000, jitter_ms=jitter*1000)
+                    
         except Exception as exc:
             self.active = False
             log_event("Pacer manager update loop crashed", level="ERROR", category="manager", error=repr(exc))
