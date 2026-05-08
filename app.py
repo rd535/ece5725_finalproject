@@ -1,4 +1,4 @@
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, g
 import time
 import json
 import csv
@@ -29,6 +29,26 @@ def static_versions():
     css_path = Path(app.static_folder) / "pacer_style.css"
     css_version = int(css_path.stat().st_mtime) if css_path.exists() else int(time.time())
     return {"css_version": css_version}
+
+# API request timing
+@app.before_request
+def start_timer():
+    g.start = time.perf_counter()
+
+@app.after_request
+def log_request_time(response):
+    if hasattr(g, 'start'):
+        duration = time.perf_counter() - g.start
+        log_event(
+            "API request",
+            category="api",
+            endpoint=request.endpoint,
+            method=request.method,
+            path=request.path,
+            status_code=response.status_code,
+            latency_ms=round(duration * 1000, 2)
+        )
+    return response
 
 # Shared State for down and upload
 # New structure with per-pacer configurations
