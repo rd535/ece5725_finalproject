@@ -424,18 +424,6 @@ class MusicController:
             
             chunk_duration = self.chunk_size / self.sample_rate  # Expected chunk time
             
-            # Log to event log
-            log_event(
-                "Music audio performance",
-                category="music_perf",
-                avg_chunk_proc_ms=round(avg_chunk_proc * 1000, 2),
-                avg_audio_read_ms=round(avg_audio_read * 1000, 2),
-                chunk_duration_ms=round(chunk_duration * 1000, 2),
-                realtime_ratio=round(avg_chunk_proc / chunk_duration, 2),
-                chunks_processed=len(self.chunk_processing_times)
-            )
-            
-            # Log to CSV for analysis
             perf_logger.log_music_audio_performance(
                 avg_chunk_proc_ms=avg_chunk_proc * 1000,
                 avg_audio_read_ms=avg_audio_read * 1000,
@@ -448,17 +436,6 @@ class MusicController:
             avg_audio_to_led = (sum(self.audio_to_led_latencies) / len(self.audio_to_led_latencies) * 1000) if self.audio_to_led_latencies else 0
             avg_blink_delay = (sum(self.blink_scheduling_delays) / len(self.blink_scheduling_delays) * 1000) if self.blink_scheduling_delays else 0
             
-            # Log to event log
-            log_event(
-                "Music beat detection performance",
-                category="music_perf",
-                avg_beat_detect_ms=round(avg_beat_detect * 1000, 2),
-                beats_detected=self.beat_count,
-                avg_audio_to_led_ms=round(avg_audio_to_led, 2),
-                avg_blink_delay_ms=round(avg_blink_delay, 2)
-            )
-            
-            # Log to CSV for analysis
             perf_logger.log_music_beat_performance(
                 avg_beat_detect_ms=avg_beat_detect * 1000,
                 beats_detected=self.beat_count,

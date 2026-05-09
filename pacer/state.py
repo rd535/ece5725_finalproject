@@ -102,9 +102,6 @@ class NewPacerManager:
                     avg = sum(self.frame_times) / len(self.frame_times)
                     jitter = max(self.frame_times) - min(self.frame_times)
                     
-                    # Log to both event log and CSV
-                    log_event("Frame timing", avg_ms=round(avg*1000, 2), jitter_ms=round(jitter*1000, 2))
-                    
                     # Log to CSV for analysis
                     perf_logger = get_performance_logger()
                     perf_logger.log_pacer_performance(

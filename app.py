@@ -42,18 +42,6 @@ def log_request_time(response):
         duration = time.perf_counter() - g.start
         latency_ms = round(duration * 1000, 2)
         
-        # Log to event log
-        log_event(
-            "API request",
-            category="api",
-            endpoint=request.endpoint,
-            method=request.method,
-            path=request.path,
-            status_code=response.status_code,
-            latency_ms=latency_ms
-        )
-        
-        # Log to CSV for analysis
         perf_logger = get_performance_logger()
         perf_logger.log_api_performance(
             endpoint=request.endpoint or "unknown",

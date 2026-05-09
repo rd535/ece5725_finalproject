@@ -193,20 +193,6 @@ class LightingManagerV2:
             
             total_frame_time = avg_frame_gen + avg_render
             
-            # Log to event log
-            log_event(
-                "Lighting performance metrics",
-                category="lighting_perf",
-                frame_interval_ms=round(avg_frame_interval * 1000, 2),
-                frame_jitter_ms=round(frame_jitter * 1000, 2),
-                frame_gen_ms=round(avg_frame_gen * 1000, 2),
-                render_ms=round(avg_render * 1000, 2),
-                lock_wait_ms=round(avg_lock_wait * 1000, 2),
-                total_frame_ms=round(total_frame_time * 1000, 2),
-                target_interval_ms=self.UPDATE_INTERVAL * 1000,
-                frames_collected=len(self.frame_times)
-            )
-            
             # Log to CSV for analysis
             perf_logger = get_performance_logger()
             perf_logger.log_lighting_performance(
