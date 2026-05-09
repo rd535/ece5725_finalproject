@@ -3,6 +3,7 @@ import subprocess
 import sys
 import threading
 import time
+from collections import deque
 from pathlib import Path
 
 import aubio
@@ -242,6 +243,17 @@ class MusicController:
         self.high_bpm_count = 0
         self.half_time_threshold = 140
 
+        # Performance metrics
+        self.chunk_processing_times = deque(maxlen=100)
+        self.audio_read_times = deque(maxlen=100)
+        self.beat_detection_latencies = deque(maxlen=100)
+        self.blink_scheduling_delays = deque(maxlen=100)
+        self.audio_to_led_latencies = deque(maxlen=100)
+        self.beat_count = 0
+        self.missed_beats = 0
+        self.false_beats = 0
+        self.last_beat_time = None
+
     def start(self):
         """Start audio tracking and LED blinking."""
         if self.active:
@@ -255,6 +267,9 @@ class MusicController:
         self.last_sound_time = time.time()
         self.started_time = self.last_sound_time
         self.active = True
+
+        # Reset performance stats on start
+        self.reset_performance_stats()
 
         self.audio_thread = threading.Thread(target=self._track_audio, daemon=True)
         self.blink_thread = threading.Thread(target=self._blink_loop, daemon=True)
@@ -310,7 +325,14 @@ class MusicController:
 
         try:
             while self.active:
+                chunk_start = time.perf_counter()
+                
+                # Measure audio read time
+                audio_read_start = time.perf_counter()
                 samples = self._read_audio_chunk()
+                audio_read_end = time.perf_counter()
+                self.audio_read_times.append(audio_read_end - audio_read_start)
+                
                 if samples is None:
                     continue
 
@@ -346,20 +368,81 @@ class MusicController:
                         candidate_time = previous_time
                         if last_candidate_time is None or candidate_time - last_candidate_time >= min_candidate_gap:
                             last_candidate_time = candidate_time
+                            
+                            # Measure beat detection latency
+                            beat_detect_start = time.perf_counter()
                             accepted = self.tracker.update(candidate_time)
+                            beat_detect_end = time.perf_counter()
+                            
                             if accepted:
                                 self.last_sound_time = now
+                                detection_latency = beat_detect_end - beat_detect_start
+                                self.beat_detection_latencies.append(detection_latency)
+                                self.beat_count += 1
+                                
+                                # Measure end-to-end audio-to-LED latency
+                                audio_to_led_start = time.perf_counter()
                                 self._accept_tracked_beat(now)
+                                audio_to_led_end = time.perf_counter()
+                                self.audio_to_led_latencies.append(audio_to_led_end - audio_to_led_start)
 
                 before_previous_level = previous_level
                 previous_level = level
                 previous_time = audio_time
                 previous_aubio_onset = aubio_onset
+                
+                # Record total chunk processing time
+                chunk_end = time.perf_counter()
+                self.chunk_processing_times.append(chunk_end - chunk_start)
+                
+                # Log performance metrics periodically
+                self._log_music_performance_metrics()
+                
         except Exception as exc:
             self.active = False
             self.clear()
             log_event("USB music controller crashed", level="ERROR", category="music", error=repr(exc))
             raise
+
+    def _log_music_performance_metrics(self):
+        """Log music performance metrics every 10 seconds."""
+        now = time.time()
+        if not hasattr(self, '_last_music_metrics_log'):
+            self._last_music_metrics_log = now
+            return
+        
+        if now - self._last_music_metrics_log < 10.0:
+            return
+        
+        self._last_music_metrics_log = now
+        
+        if len(self.chunk_processing_times) >= 5:
+            avg_chunk_proc = sum(self.chunk_processing_times) / len(self.chunk_processing_times)
+            avg_audio_read = sum(self.audio_read_times) / len(self.audio_read_times)
+            
+            chunk_duration = self.chunk_size / self.sample_rate  # Expected chunk time
+            
+            log_event(
+                "Music audio performance",
+                category="music_perf",
+                avg_chunk_proc_ms=round(avg_chunk_proc * 1000, 2),
+                avg_audio_read_ms=round(avg_audio_read * 1000, 2),
+                chunk_duration_ms=round(chunk_duration * 1000, 2),
+                realtime_ratio=round(avg_chunk_proc / chunk_duration, 2),
+                chunks_processed=len(self.chunk_processing_times)
+            )
+        
+        if len(self.beat_detection_latencies) >= 3:
+            avg_beat_detect = sum(self.beat_detection_latencies) / len(self.beat_detection_latencies)
+            
+            log_event(
+                "Music beat detection performance",
+                category="music_perf",
+                avg_beat_detect_ms=round(avg_beat_detect * 1000, 2),
+                beats_detected=self.beat_count,
+                avg_audio_to_led_ms=round((sum(self.audio_to_led_latencies) / len(self.audio_to_led_latencies)) * 1000, 2) if self.audio_to_led_latencies else 0,
+                avg_blink_delay_ms=round((sum(self.blink_scheduling_delays) / len(self.blink_scheduling_delays)) * 1000, 2) if self.blink_scheduling_delays else 0
+            )
 
     def _update_sound_state(self, level, now):
         if self.music_level is None and level >= self.min_audio_level:
@@ -433,6 +516,12 @@ class MusicController:
                 time.sleep(min(0.01, next_beat_time - now))
                 continue
 
+            # Measure blink scheduling delay (how late we are)
+            scheduled_time = next_beat_time
+            actual_blink_time = time.perf_counter()
+            blink_delay = actual_blink_time - scheduled_time
+            self.blink_scheduling_delays.append(blink_delay)
+
             self._set_all(Color(255, 255, 255))
             time.sleep(self.pulse_seconds)
             self.clear()
@@ -492,12 +581,43 @@ class MusicController:
             self.process.terminate()
             self.process = None
 
-    def _read_audio_chunk(self):
-        bytes_to_read = self.chunk_size * 2
-        raw_audio = self.process.stdout.read(bytes_to_read)
-        if len(raw_audio) < bytes_to_read:
-            return None
-        return np.frombuffer(raw_audio, dtype=np.int16).astype(np.float32) / 32768.0
+    def get_performance_stats(self):
+        """Get current performance statistics."""
+        stats = {
+            "beats_detected": self.beat_count,
+            "current_bpm": round(self.bpm, 1) if self.bpm else None,
+        }
+        
+        if len(self.chunk_processing_times) >= 3:
+            stats["audio_performance"] = {
+                "avg_chunk_proc_ms": round(sum(self.chunk_processing_times) / len(self.chunk_processing_times) * 1000, 2),
+                "avg_audio_read_ms": round(sum(self.audio_read_times) / len(self.audio_read_times) * 1000, 2),
+                "chunk_duration_ms": round(self.chunk_size / self.sample_rate * 1000, 2),
+                "realtime_ratio": round((sum(self.chunk_processing_times) / len(self.chunk_processing_times)) / (self.chunk_size / self.sample_rate), 2),
+                "samples": len(self.chunk_processing_times)
+            }
+        
+        if len(self.beat_detection_latencies) >= 2:
+            stats["beat_performance"] = {
+                "avg_beat_detect_ms": round(sum(self.beat_detection_latencies) / len(self.beat_detection_latencies) * 1000, 2),
+                "avg_audio_to_led_ms": round(sum(self.audio_to_led_latencies) / len(self.audio_to_led_latencies) * 1000, 2) if self.audio_to_led_latencies else 0,
+                "avg_blink_delay_ms": round(sum(self.blink_scheduling_delays) / len(self.blink_scheduling_delays) * 1000, 2) if self.blink_scheduling_delays else 0,
+                "samples": len(self.beat_detection_latencies)
+            }
+        
+        return stats
+
+    def reset_performance_stats(self):
+        """Reset all performance statistics."""
+        self.chunk_processing_times.clear()
+        self.audio_read_times.clear()
+        self.beat_detection_latencies.clear()
+        self.blink_scheduling_delays.clear()
+        self.audio_to_led_latencies.clear()
+        self.beat_count = 0
+        self.missed_beats = 0
+        self.false_beats = 0
+        self.last_beat_time = None
 
 
 if __name__ == "__main__":
