@@ -561,6 +561,7 @@ def pacer_start(pacer_name):
     color_hex = pacer_config.get("color", DEFAULT_PACER_COLOR)
 
     try:
+        start_trigger = time.perf_counter()
         existing_pacer = pacer_instances.get(pacer_name)
         if existing_pacer:
             web_pacer_manager.remove_pacer_by_name(pacer_name)
@@ -590,6 +591,16 @@ def pacer_start(pacer_name):
         web_pacer_manager.add_pacer(pacer_instance, log=False)
         web_pacer_manager.start(log=False)
         web_pacer_manager.render_active_frame()
+
+        start_latency_ms = round((time.perf_counter() - start_trigger) * 1000, 2)
+        log_event(
+            "Pacer start latency",
+            category="pacer_latency",
+            pacer_name=pacer_name,
+            latency_ms=start_latency_ms,
+            action="start"
+        )
+
         pi_state["pacers"][pacer_name]["running"] = True
         pi_state["pacers"][pacer_name]["finished"] = False
         pi_state["status"] = "running"
@@ -618,6 +629,7 @@ def pacer_stop(pacer_name):
         log_event("Stop rejected: pacer not found", level="ERROR", category="pacer", pacer_name=pacer_name)
         return jsonify({"ok": False, "error": f"Pacer '{pacer_name}' not found"}), 404
 
+    stop_trigger = time.perf_counter()
     if pacer_name in pacer_instances and pacer_instances[pacer_name]:
         web_pacer_manager.remove_pacer_by_name(pacer_name)
         del pacer_instances[pacer_name]
@@ -631,6 +643,18 @@ def pacer_stop(pacer_name):
     if not any_running:
         pi_state["status"] = "idle"
         web_pacer_manager.stop()
+        web_pacer_manager.clear()
+    else:
+        web_pacer_manager.render_active_frame()
+
+    stop_latency_ms = round((time.perf_counter() - stop_trigger) * 1000, 2)
+    log_event(
+        "Pacer stop latency",
+        category="pacer_latency",
+        pacer_name=pacer_name,
+        latency_ms=stop_latency_ms,
+        action="stop"
+    )
 
     pi_state["last_update"] = time.strftime("%H:%M:%S")
     log_event("Pacer stopped", category="pacer", pacer_name=pacer_name)
