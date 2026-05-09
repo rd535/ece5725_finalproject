@@ -1,0 +1,42 @@
+LED startup blink test
+[2026-05-09T16:53:44] [INFO] [music] USB music LED startup blink test
+startup blink 1
+startup blink 2
+startup blink 3
+[2026-05-09T16:53:45] [INFO] [music] USB music controller started mode=beat_grid_tracker min_bpm=80 max_bpm=180 pulse_seconds=0.05 silence_seconds=5.0 device=plughw:CARD=Device,DEV=0
+[2026-05-09T16:53:47] [INFO] [music] USB BPM updated bpm=126.0
+[2026-05-09T16:53:48] [INFO] [music] USB BPM updated bpm=127.4
+[2026-05-09T16:53:50] [INFO] [music] USB BPM updated bpm=126.4
+[2026-05-09T16:54:14] [INFO] [music] USB BPM updated bpm=127.4
+[2026-05-09T16:54:20] [INFO] [music] USB BPM updated bpm=125.2
+[2026-05-09T16:54:22] [INFO] [music] USB BPM updated bpm=126.2
+[2026-05-09T16:54:25] [INFO] [music] USB BPM updated bpm=124.9
+[2026-05-09T16:54:27] [INFO] [music] USB BPM updated bpm=123.9
+[2026-05-09T16:54:28] [INFO] [music] USB BPM updated bpm=125.0
+[2026-05-09T16:54:39] [INFO] [music] USB BPM updated bpm=126.1
+[2026-05-09T16:54:45] [INFO] [music] USB BPM updated bpm=127.6
+[2026-05-09T16:54:51] [INFO] [music] USB BPM updated bpm=128.9
+[2026-05-09T16:54:53] [INFO] [music] USB BPM updated bpm=127.6
+[2026-05-09T16:54:53] [INFO] [music] USB BPM updated bpm=129.7
+[2026-05-09T16:54:56] [INFO] [music] USB BPM updated bpm=128.5
+[2026-05-09T16:55:01] [INFO] [music] USB BPM updated bpm=131.1
+[2026-05-09T16:55:05] [INFO] [music] USB BPM updated bpm=130.0
+[2026-05-09T16:55:06] [INFO] [music] USB BPM updated bpm=131.2
+[2026-05-09T16:55:10] [INFO] [music] USB BPM updated bpm=129.9
+[2026-05-09T16:55:11] [INFO] [music] USB BPM updated bpm=131.4
+[2026-05-09T16:55:13] [INFO] [music] USB BPM updated bpm=130.2
+[2026-05-09T16:55:16] [INFO] [music] USB BPM updated bpm=128.8
+[2026-05-09T16:55:19] [INFO] [music] USB BPM updated bpm=127.8
+[2026-05-09T16:55:19] [INFO] [music] USB BPM updated bpm=129.8
+[2026-05-09T16:55:23] [INFO] [music] USB BPM updated bpm=126.9
+[2026-05-09T16:55:23] [INFO] [music] USB BPM updated bpm=128.3
+[2026-05-09T16:55:25] [INFO] [music] USB BPM updated bpm=86.1
+[2026-05-09T16:55:34] [INFO] [music] USB BPM updated bpm=112.3
+[2026-05-09T16:55:37] [INFO] [music] USB BPM updated bpm=126.0
+[2026-05-09T16:55:39] [INFO] [music] USB BPM updated bpm=127.4
+[2026-05-09T16:55:46] [INFO] [music] USB BPM updated bpm=125.6
+[2026-05-09T16:55:56] [INFO] [music] USB BPM updated bpm=128.2
+[2026-05-09T16:55:57] [INFO] [music] USB BPM updated bpm=126.4
+[2026-05-09T16:56:06] [INFO] [music] USB BPM updated bpm=124.9
+[2026-05-09T16:56:10] [INFO] [music] USB BPM updated bpm=122.7
+[2026-05-09T16:56:20] [INFO] [music] USB music stopped; turning lights off audio_level=0.006324 silence_level=0.01688

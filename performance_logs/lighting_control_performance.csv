@@ -1,0 +1,17 @@
+timestamp,action,latency_ms,pattern,colors,speed
+1778359372.0558376,start,114.74,color_fade,"['#00ff00', '#ff0000']",1
+1778359372.9945195,stop,44.39,color_fade,,
+1778359373.7734559,start,118.87,comet,['#ff0000'],1
+1778359374.2145178,stop,54.17,comet,,
+1778359374.7642882,start,117.64,pulse,['#0088ff'],1
+1778359375.1110055,stop,48.44,pulse,,
+1778359375.526864,start,117.08,rainbow,[],1
+1778359375.8411207,stop,48.86,rainbow,,
+1778359376.3890843,start,116.93,scanner,['#ff00ff'],1
+1778359376.8425164,stop,46.07,scanner,,
+1778359378.7942135,start,115.39,sparkle,"['#00ffff', '#00ff00']",1
+1778359379.2761009,stop,54.59,sparkle,,
+1778359379.8090823,start,115.63,static_color,['#00ff00'],1
+1778359380.249794,stop,51.95,static_color,,
+1778359381.1049068,start,113.77,theater_lighting,['#ff0000'],1
+1778359381.5062928,stop,50.7,theater_lighting,,
