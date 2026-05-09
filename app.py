@@ -170,7 +170,8 @@ def ensure_music_controller():
     if web_music_controller is None:
         web_music_controller = MusicController(
             num_leds=led_count_from_settings(app_settings),
-            pin=app_settings["led_strip"]["pin"]
+            pin=app_settings["led_strip"]["pin"],
+            strip=web_pacer_manager.strip
         )
     return web_music_controller
 
@@ -342,6 +343,12 @@ def save_led_settings():
             num_leds=led_count_from_settings(app_settings),
             pin=pin,
             color_order=color_order,
+            strip=web_pacer_manager.strip,
+        )
+    if web_music_controller is not None:
+        web_music_controller.configure_strip(
+            num_leds=led_count_from_settings(app_settings),
+            pin=pin,
             strip=web_pacer_manager.strip,
         )
     log_event("LED settings saved", category="settings", led_count=led_count_from_settings(app_settings), color_order=color_order)
