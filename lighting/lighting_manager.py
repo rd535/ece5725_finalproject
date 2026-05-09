@@ -5,6 +5,7 @@ from collections import deque
 from pacer.event_log import log_event
 from pacer.pacer_pattern import Color, make_strip
 from lighting.lighting_patterns import PATTERN_REGISTRY, pattern_metadata
+from performance_logger import get_performance_logger
 
 
 class LightingManagerV2:
@@ -192,6 +193,7 @@ class LightingManagerV2:
             
             total_frame_time = avg_frame_gen + avg_render
             
+            # Log to event log
             log_event(
                 "Lighting performance metrics",
                 category="lighting_perf",
@@ -203,6 +205,17 @@ class LightingManagerV2:
                 total_frame_ms=round(total_frame_time * 1000, 2),
                 target_interval_ms=self.UPDATE_INTERVAL * 1000,
                 frames_collected=len(self.frame_times)
+            )
+            
+            # Log to CSV for analysis
+            perf_logger = get_performance_logger()
+            perf_logger.log_lighting_performance(
+                frame_interval_ms=avg_frame_interval * 1000,
+                frame_jitter_ms=frame_jitter * 1000,
+                frame_gen_ms=avg_frame_gen * 1000,
+                render_ms=avg_render * 1000,
+                lock_wait_ms=avg_lock_wait * 1000,
+                total_frame_ms=total_frame_time * 1000
             )
 
     def render(self, colors):

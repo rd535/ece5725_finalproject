@@ -12,6 +12,7 @@ from pacer.pacer_pattern import Color, NewConstantPacer, NewDynamicPacer
 from pacer.settings_store import led_count_from_settings, load_settings, save_settings
 from lighting.lighting_manager import LightingManagerV2
 from lighting.lighting_patterns import pattern_metadata
+from performance_logger import get_performance_logger
 
 app = Flask(__name__)
 
@@ -39,6 +40,9 @@ def start_timer():
 def log_request_time(response):
     if hasattr(g, 'start'):
         duration = time.perf_counter() - g.start
+        latency_ms = round(duration * 1000, 2)
+        
+        # Log to event log
         log_event(
             "API request",
             category="api",
@@ -46,7 +50,16 @@ def log_request_time(response):
             method=request.method,
             path=request.path,
             status_code=response.status_code,
-            latency_ms=round(duration * 1000, 2)
+            latency_ms=latency_ms
+        )
+        
+        # Log to CSV for analysis
+        perf_logger = get_performance_logger()
+        perf_logger.log_api_performance(
+            endpoint=request.endpoint or "unknown",
+            method=request.method,
+            latency_ms=latency_ms,
+            status_code=response.status_code
         )
     return response
 

@@ -4,6 +4,7 @@ from collections import deque
 
 from pacer.event_log import log_event
 from pacer.pacer_pattern import Color, make_strip
+from performance_logger import get_performance_logger
 
 class NewPacerManager:
     PACER_SEG_LENGTH = 3
@@ -82,6 +83,7 @@ class NewPacerManager:
                 frame_start = collect_start = time.perf_counter()
                 dt = frame_start - self.last_frame_time
                 self.frame_times.append(dt)
+                self.last_frame_time = frame_start
 
                 led_updates = self.collect_led_updates()
 
@@ -89,10 +91,8 @@ class NewPacerManager:
                 self.render(led_updates)
                 render_end = time.perf_counter()
 
-                log_event("LED update latency",
-                          collect_ms=(render_start - collect_start)*1000,
-                          render_ms=(render_end - render_start)*1000,
-                          total_ms=(render_end - collect_start)*1000)
+                collect_ms = (render_start - collect_start) * 1000
+                render_ms = (render_end - render_start) * 1000
                 
                 self.log_frame(led_updates)
                 self.wake_event.wait(self.UPDATE_INTERVAL)
@@ -101,7 +101,21 @@ class NewPacerManager:
                 if len(self.frame_times) >= 50:
                     avg = sum(self.frame_times) / len(self.frame_times)
                     jitter = max(self.frame_times) - min(self.frame_times)
-                    log_event("Frame timing", avg_ms=avg*1000, jitter_ms=jitter*1000)
+                    
+                    # Log to both event log and CSV
+                    log_event("Frame timing", avg_ms=round(avg*1000, 2), jitter_ms=round(jitter*1000, 2))
+                    
+                    # Log to CSV for analysis
+                    perf_logger = get_performance_logger()
+                    perf_logger.log_pacer_performance(
+                        frame_interval_ms=avg * 1000,
+                        frame_jitter_ms=jitter * 1000,
+                        collect_ms=collect_ms,
+                        render_ms=render_ms,
+                        lock_wait_ms=0,  # Not measured in pacer
+                        total_ms=collect_ms + render_ms
+                    )
+                    self.frame_times.clear()
                     
         except Exception as exc:
             self.active = False

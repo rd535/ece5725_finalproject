@@ -15,6 +15,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from pacer.event_log import log_event
+from performance_logger import get_performance_logger
 
 
 class BeatGridTracker:
@@ -415,6 +416,7 @@ class MusicController:
             return
         
         self._last_music_metrics_log = now
+        perf_logger = get_performance_logger()
         
         if len(self.chunk_processing_times) >= 5:
             avg_chunk_proc = sum(self.chunk_processing_times) / len(self.chunk_processing_times)
@@ -422,6 +424,7 @@ class MusicController:
             
             chunk_duration = self.chunk_size / self.sample_rate  # Expected chunk time
             
+            # Log to event log
             log_event(
                 "Music audio performance",
                 category="music_perf",
@@ -431,17 +434,36 @@ class MusicController:
                 realtime_ratio=round(avg_chunk_proc / chunk_duration, 2),
                 chunks_processed=len(self.chunk_processing_times)
             )
+            
+            # Log to CSV for analysis
+            perf_logger.log_music_audio_performance(
+                avg_chunk_proc_ms=avg_chunk_proc * 1000,
+                avg_audio_read_ms=avg_audio_read * 1000,
+                chunk_duration_ms=chunk_duration * 1000,
+                realtime_ratio=avg_chunk_proc / chunk_duration
+            )
         
         if len(self.beat_detection_latencies) >= 3:
             avg_beat_detect = sum(self.beat_detection_latencies) / len(self.beat_detection_latencies)
+            avg_audio_to_led = (sum(self.audio_to_led_latencies) / len(self.audio_to_led_latencies) * 1000) if self.audio_to_led_latencies else 0
+            avg_blink_delay = (sum(self.blink_scheduling_delays) / len(self.blink_scheduling_delays) * 1000) if self.blink_scheduling_delays else 0
             
+            # Log to event log
             log_event(
                 "Music beat detection performance",
                 category="music_perf",
                 avg_beat_detect_ms=round(avg_beat_detect * 1000, 2),
                 beats_detected=self.beat_count,
-                avg_audio_to_led_ms=round((sum(self.audio_to_led_latencies) / len(self.audio_to_led_latencies)) * 1000, 2) if self.audio_to_led_latencies else 0,
-                avg_blink_delay_ms=round((sum(self.blink_scheduling_delays) / len(self.blink_scheduling_delays)) * 1000, 2) if self.blink_scheduling_delays else 0
+                avg_audio_to_led_ms=round(avg_audio_to_led, 2),
+                avg_blink_delay_ms=round(avg_blink_delay, 2)
+            )
+            
+            # Log to CSV for analysis
+            perf_logger.log_music_beat_performance(
+                avg_beat_detect_ms=avg_beat_detect * 1000,
+                beats_detected=self.beat_count,
+                avg_audio_to_led_ms=avg_audio_to_led,
+                avg_blink_delay_ms=avg_blink_delay
             )
 
     def _update_sound_state(self, level, now):
