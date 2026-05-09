@@ -1,5 +1,6 @@
 import threading
 import time
+from collections import deque
 
 from pacer.event_log import log_event
 from pacer.pacer_pattern import Color, make_strip
@@ -23,6 +24,13 @@ class LightingManagerV2:
         self.current_pattern = None
         self.current_pattern_name = None
         self.started_at = None
+        
+        # Performance metrics
+        self.last_frame_time = time.perf_counter()
+        self.frame_times = deque(maxlen=100)
+        self.frame_generation_times = deque(maxlen=100)
+        self.render_times = deque(maxlen=100)
+        self.lock_wait_times = deque(maxlen=100)
 
     def metadata(self):
         return pattern_metadata()
@@ -59,6 +67,8 @@ class LightingManagerV2:
             log_event("Lighting manager stopped", category="lighting")
 
     def start_pattern(self, pattern_name, colors=None, speed=1.0):
+        pattern_start_time = time.perf_counter()
+        
         pattern_class = PATTERN_REGISTRY.get(pattern_name)
         if pattern_class is None:
             raise ValueError(f"Unknown lighting pattern: {pattern_name}")
@@ -82,7 +92,20 @@ class LightingManagerV2:
             self.thread = threading.Thread(target=self.update_loop, daemon=True)
             self.thread.start()
 
-        log_event("Lighting pattern started", category="lighting", pattern=pattern_name, colors=len(colors), speed=speed)
+        # Measure pattern switch latency (time to first frame)
+        first_frame_start = time.perf_counter()
+        # Wait for first frame to be rendered
+        time.sleep(0.05)  # Give it a moment to start
+        pattern_switch_latency = time.perf_counter() - pattern_start_time
+        
+        log_event(
+            "Lighting pattern started",
+            category="lighting",
+            pattern=pattern_name,
+            colors=len(colors),
+            speed=speed,
+            switch_latency_ms=round(pattern_switch_latency * 1000, 2)
+        )
 
     def stop_pattern(self, log=True):
         with self.lock:
@@ -106,17 +129,81 @@ class LightingManagerV2:
 
     def update_loop(self):
         while not self.stop_event.is_set():
+            frame_start = time.perf_counter()
+            
+            # Measure frame interval (jitter)
+            dt = frame_start - self.last_frame_time
+            self.frame_times.append(dt)
+            self.last_frame_time = frame_start
+            
+            # Measure lock acquisition time
+            lock_start = time.perf_counter()
             with self.lock:
+                lock_acquired = time.perf_counter()
                 pattern = self.current_pattern
                 started_at = self.started_at
                 led_count = self.num_leds
+            lock_wait = lock_acquired - lock_start
+            self.lock_wait_times.append(lock_wait)
 
             if pattern is None or started_at is None:
                 break
 
             elapsed = time.time() - started_at
-            self.render(pattern.frame(led_count, elapsed))
+            
+            # Measure pattern frame generation time
+            frame_gen_start = time.perf_counter()
+            colors = pattern.frame(led_count, elapsed)
+            frame_gen_end = time.perf_counter()
+            frame_gen_time = frame_gen_end - frame_gen_start
+            self.frame_generation_times.append(frame_gen_time)
+            
+            # Measure render time
+            render_start = time.perf_counter()
+            self.render(colors)
+            render_end = time.perf_counter()
+            render_time = render_end - render_start
+            self.render_times.append(render_time)
+            
+            # Log performance metrics periodically
+            self._log_performance_metrics()
+            
             self.stop_event.wait(self.UPDATE_INTERVAL)
+
+    def _log_performance_metrics(self):
+        """Log performance metrics every 3 seconds."""
+        now = time.time()
+        if not hasattr(self, '_last_metrics_log'):
+            self._last_metrics_log = now
+            return
+        
+        if now - self._last_metrics_log < 3.0:
+            return
+        
+        self._last_metrics_log = now
+        
+        if len(self.frame_times) >= 10:
+            avg_frame_interval = sum(self.frame_times) / len(self.frame_times)
+            frame_jitter = max(self.frame_times) - min(self.frame_times)
+            
+            avg_frame_gen = sum(self.frame_generation_times) / len(self.frame_generation_times)
+            avg_render = sum(self.render_times) / len(self.render_times)
+            avg_lock_wait = sum(self.lock_wait_times) / len(self.lock_wait_times)
+            
+            total_frame_time = avg_frame_gen + avg_render
+            
+            log_event(
+                "Lighting performance metrics",
+                category="lighting_perf",
+                frame_interval_ms=round(avg_frame_interval * 1000, 2),
+                frame_jitter_ms=round(frame_jitter * 1000, 2),
+                frame_gen_ms=round(avg_frame_gen * 1000, 2),
+                render_ms=round(avg_render * 1000, 2),
+                lock_wait_ms=round(avg_lock_wait * 1000, 2),
+                total_frame_ms=round(total_frame_time * 1000, 2),
+                target_interval_ms=self.UPDATE_INTERVAL * 1000,
+                frames_collected=len(self.frame_times)
+            )
 
     def render(self, colors):
         with self.render_lock:
@@ -149,12 +236,25 @@ class LightingManagerV2:
 
     def status(self):
         with self.lock:
-            return {
+            status_dict = {
                 "active": self.active,
                 "running": self.thread is not None and self.thread.is_alive(),
                 "pattern": self.current_pattern_name,
                 "started_at": self.started_at,
             }
+        
+        # Add performance metrics if we have data
+        if len(self.frame_times) >= 5:
+            status_dict["performance"] = {
+                "avg_frame_interval_ms": round(sum(self.frame_times) / len(self.frame_times) * 1000, 2),
+                "frame_jitter_ms": round((max(self.frame_times) - min(self.frame_times)) * 1000, 2),
+                "avg_frame_gen_ms": round(sum(self.frame_generation_times) / len(self.frame_generation_times) * 1000, 2),
+                "avg_render_ms": round(sum(self.render_times) / len(self.render_times) * 1000, 2),
+                "avg_lock_wait_ms": round(sum(self.lock_wait_times) / len(self.lock_wait_times) * 1000, 2),
+                "samples": len(self.frame_times)
+            }
+        
+        return status_dict
 
 
 LightingManager = LightingManagerV2
