@@ -377,12 +377,22 @@ def lighting_start():
     if not pattern_name:
         return jsonify({"ok": False, "error": "Lighting pattern is required."}), 400
 
+    start_trigger = time.perf_counter()
     try:
         color_objects = [hex_to_rgb(color) for color in colors]
         stop_pacer_runtime()
         manager = ensure_lighting_manager()
         manager.start()
         manager.start_pattern(pattern_name, color_objects, speed=speed)
+        lighting_latency_ms = round((time.perf_counter() - start_trigger) * 1000, 2)
+        perf_logger = get_performance_logger()
+        perf_logger.log_lighting_control_performance(
+            action="start",
+            latency_ms=lighting_latency_ms,
+            pattern=pattern_name,
+            colors=colors,
+            speed=speed
+        )
         pi_state["mode"] = "lighting"
         pi_state["last_update"] = time.strftime("%H:%M:%S")
     except ValueError as exc:
@@ -397,8 +407,22 @@ def lighting_start():
 @app.route("/api/lighting/stop", methods=["POST"])
 @with_pacer_lock
 def lighting_stop():
+    stop_trigger = time.perf_counter()
+    pattern_name = None
     if web_lighting_manager is not None:
+        pattern_name = web_lighting_manager.current_pattern_name
         web_lighting_manager.stop_pattern()
+
+    lighting_latency_ms = round((time.perf_counter() - stop_trigger) * 1000, 2)
+    perf_logger = get_performance_logger()
+    perf_logger.log_lighting_control_performance(
+        action="stop",
+        latency_ms=lighting_latency_ms,
+        pattern=pattern_name,
+        colors=None,
+        speed=None
+    )
+
     pi_state["last_update"] = time.strftime("%H:%M:%S")
     if web_lighting_manager is None:
         return jsonify({"ok": True, "lighting": {"active": False, "running": False, "pattern": None, "started_at": None}})
@@ -600,6 +624,15 @@ def pacer_start(pacer_name):
             latency_ms=start_latency_ms,
             action="start"
         )
+        perf_logger = get_performance_logger()
+        perf_logger.log_pacer_control_performance(
+            action="start",
+            latency_ms=start_latency_ms,
+            pacer_name=pacer_name,
+            pacer_type=pacer_type,
+            pace=pace,
+            distance=distance
+        )
 
         pi_state["pacers"][pacer_name]["running"] = True
         pi_state["pacers"][pacer_name]["finished"] = False
@@ -629,6 +662,10 @@ def pacer_stop(pacer_name):
         log_event("Stop rejected: pacer not found", level="ERROR", category="pacer", pacer_name=pacer_name)
         return jsonify({"ok": False, "error": f"Pacer '{pacer_name}' not found"}), 404
 
+    pacer_config = pi_state["pacers"][pacer_name]
+    pacer_type = pacer_config.get("pacer_type", "constant")
+    pace = pacer_config["paces"][0] if pacer_config.get("paces") else 60
+    distance = pacer_config.get("rep_distance", 400)
     stop_trigger = time.perf_counter()
     if pacer_name in pacer_instances and pacer_instances[pacer_name]:
         web_pacer_manager.remove_pacer_by_name(pacer_name)
@@ -654,6 +691,15 @@ def pacer_stop(pacer_name):
         pacer_name=pacer_name,
         latency_ms=stop_latency_ms,
         action="stop"
+    )
+    perf_logger = get_performance_logger()
+    perf_logger.log_pacer_control_performance(
+        action="stop",
+        latency_ms=stop_latency_ms,
+        pacer_name=pacer_name,
+        pacer_type=pacer_type,
+        pace=pace,
+        distance=distance
     )
 
     pi_state["last_update"] = time.strftime("%H:%M:%S")

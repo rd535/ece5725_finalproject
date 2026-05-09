@@ -17,7 +17,9 @@ class PerformanceLogger:
         # Define CSV files for each system
         self.files = {
             'pacer': self.log_dir / 'pacer_performance.csv',
+            'pacer_control': self.log_dir / 'pacer_control_performance.csv',
             'lighting': self.log_dir / 'lighting_performance.csv',
+            'lighting_control': self.log_dir / 'lighting_control_performance.csv',
             'music_audio': self.log_dir / 'music_audio_performance.csv',
             'music_beat': self.log_dir / 'music_beat_performance.csv',
             'api': self.log_dir / 'api_performance.csv'
@@ -36,6 +38,19 @@ class PerformanceLogger:
         }
         self._write_csv('pacer', data)
 
+    def log_pacer_control_performance(self, action, latency_ms, pacer_name=None, pacer_type=None, pace=None, distance=None):
+        """Log pacer start/stop control latency."""
+        data = {
+            'timestamp': time.time(),
+            'action': action,
+            'latency_ms': round(latency_ms, 2),
+            'pacer_name': pacer_name,
+            'pacer_type': pacer_type,
+            'pace': pace,
+            'distance': distance
+        }
+        self._write_csv('pacer_control', data)
+
     def log_lighting_performance(self, frame_interval_ms, frame_jitter_ms, frame_gen_ms, render_ms, 
                                   lock_wait_ms, total_frame_ms):
         """Log lighting frame timing metrics."""
@@ -49,6 +64,18 @@ class PerformanceLogger:
             'total_frame_ms': round(total_frame_ms, 2)
         }
         self._write_csv('lighting', data)
+
+    def log_lighting_control_performance(self, action, latency_ms, pattern=None, colors=None, speed=None):
+        """Log lighting start/stop control latency."""
+        data = {
+            'timestamp': time.time(),
+            'action': action,
+            'latency_ms': round(latency_ms, 2),
+            'pattern': pattern,
+            'colors': str(colors) if colors is not None else None,
+            'speed': speed
+        }
+        self._write_csv('lighting_control', data)
 
     def log_music_audio_performance(self, avg_chunk_proc_ms, avg_audio_read_ms, chunk_duration_ms, realtime_ratio):
         """Log music audio processing metrics."""
