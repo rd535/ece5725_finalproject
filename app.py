@@ -423,12 +423,10 @@ def music_stop():
 def music_status():
     if web_music_controller is None:
         return jsonify({"ok": True, "music": {"active": False, "running": False}})
-    stats = web_music_controller.get_performance_stats()
     return jsonify({"ok": True, "music": {
         "active": web_music_controller.active,
         "running": web_music_controller.audio_thread is not None and web_music_controller.audio_thread.is_alive(),
-        "bpm": stats.get("current_bpm"),
-        "beats_detected": stats.get("beats_detected")
+        "bpm": web_music_controller.bpm
     }})
 
 @app.route("/api/music/events", methods=["GET"])
