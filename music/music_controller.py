@@ -488,7 +488,7 @@ class MusicController:
         with self.lock:
             self.bpm = self.tracker.bpm
             self.beat_interval = self._display_interval(self.bpm, self.tracker.interval)
-            self.next_beat_time = wall_time
+            self.next_beat_time = time.perf_counter()  # Use monotonic clock for scheduling
             rounded_bpm = round(self.bpm, 1) if self.bpm is not None else None
             should_log = rounded_bpm is not None and (
                 self.last_logged_bpm is None or abs(rounded_bpm - self.last_logged_bpm) >= 1.0
@@ -510,7 +510,7 @@ class MusicController:
                 time.sleep(0.01)
                 continue
 
-            now = time.time()
+            now = time.perf_counter()  # Use monotonic clock
             if now < next_beat_time:
                 time.sleep(min(0.01, next_beat_time - now))
                 continue
@@ -526,7 +526,7 @@ class MusicController:
             self.clear()
 
             with self.lock:
-                while self.next_beat_time is not None and self.next_beat_time <= time.time():
+                while self.next_beat_time is not None and self.next_beat_time <= time.perf_counter():
                     self.next_beat_time += self.beat_interval or beat_interval
 
     def _make_strip(self):
