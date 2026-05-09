@@ -575,6 +575,27 @@ class MusicController:
         ]
         return subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
+    def _read_audio_chunk(self):
+        """Read one raw audio chunk from the arecord subprocess."""
+        if not self.process or self.process.stdout is None:
+            return None
+
+        bytes_needed = self.chunk_size * 2
+        raw_bytes = bytearray()
+
+        while len(raw_bytes) < bytes_needed:
+            chunk = self.process.stdout.read(bytes_needed - len(raw_bytes))
+            if not chunk:
+                return None
+            raw_bytes.extend(chunk)
+
+        try:
+            samples = np.frombuffer(raw_bytes, dtype=np.int16).astype(np.float32) / 32768.0
+            return samples
+        except Exception as exc:
+            log_event("Failed to decode audio chunk", level="ERROR", category="music", error=repr(exc))
+            return None
+
     def _stop_audio_process(self):
         if self.process:
             self.process.terminate()
