@@ -57,3 +57,7 @@ timestamp,action,latency_ms,pacer_name,pacer_type,pace,distance
 1778362717.1226747,start,3.8,x,dynamic,8,5
 1778362863.7195594,stop,21.65,Adam 200 at 30,constant,4,5
 1778362863.7341058,stop,6.25,x,dynamic,8,5
+1778369312.930338,start,34.21,Adam 200 at 30,constant,4,5
+1778369312.9538162,start,4.39,x,dynamic,8,5
+1778369344.2706,stop,32.01,Adam 200 at 30,constant,4,5
+1778369344.2867796,stop,6.12,x,dynamic,8,5

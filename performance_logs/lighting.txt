@@ -1,0 +1,13 @@
+
+ Performance counter stats for process id '3838':
+
+          3,588.18 msec task-clock                #    0.179 CPUs utilized          
+     2,729,541,982      cycles                    #    0.761 GHz                    
+     2,907,323,090      instructions              #    1.07  insn per cycle         
+        44,404,356      cache-misses                                                
+        12,046,117      branch-misses                                               
+             2,315      context-switches          #    0.645 K/sec                  
+               431      cpu-migrations            #    0.120 K/sec                  
+
+      20.003906647 seconds time elapsed
+

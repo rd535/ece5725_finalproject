@@ -15,3 +15,6 @@ timestamp,action,latency_ms,pattern,colors,speed
 1778359380.249794,stop,51.95,static_color,,
 1778359381.1049068,start,113.77,theater_lighting,['#ff0000'],1
 1778359381.5062928,stop,50.7,theater_lighting,,
+1778369354.6960711,start,117.62,color_fade,"['#00ff00', '#ff0000']",1
+1778369382.7852316,stop,46.04,color_fade,,
+1778369384.0549452,stop,45.37,,,
