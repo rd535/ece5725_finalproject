@@ -653,6 +653,20 @@ def pacer_stop(pacer_name):
         "pacer_name": pacer_name
     })
 
+import socket
+
+def get_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+    except:
+        ip = "No IP"
+    finally:
+        s.close()
+    return ip
+
 if __name__ == '__main__':
+    print("Actual IP:", get_ip())
     app.run(debug=True, host='0.0.0.0', port=5000)
     
