@@ -1,4 +1,5 @@
 
+<<<<<<< Updated upstream
  Performance counter stats for process id '3838':
 
           2,912.13 msec task-clock                #    0.146 CPUs utilized          
@@ -10,4 +11,17 @@
                355      cpu-migrations            #    0.122 K/sec                  
 
       20.002571017 seconds time elapsed
+=======
+ Performance counter stats for process id '4766':
+
+          3,047.70 msec task-clock                #    0.152 CPUs utilized          
+     2,689,223,869      cycles                    #    0.882 GHz                    
+     2,804,350,457      instructions              #    1.04  insn per cycle         
+        40,297,269      cache-misses                                                
+        10,629,217      branch-misses                                               
+             3,636      context-switches          #    0.001 M/sec                  
+               391      cpu-migrations            #    0.128 K/sec                  
+
+      20.002528610 seconds time elapsed
+>>>>>>> Stashed changes
 

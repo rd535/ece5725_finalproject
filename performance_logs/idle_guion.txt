@@ -1,0 +1,13 @@
+
+ Performance counter stats for process id '4766':
+
+            899.01 msec task-clock                #    0.045 CPUs utilized          
+       588,243,971      cycles                    #    0.654 GHz                    
+       410,313,153      instructions              #    0.70  insn per cycle         
+         7,085,047      cache-misses                                                
+         3,596,188      branch-misses                                               
+               790      context-switches          #    0.879 K/sec                  
+               147      cpu-migrations            #    0.164 K/sec                  
+
+      20.003610332 seconds time elapsed
+
