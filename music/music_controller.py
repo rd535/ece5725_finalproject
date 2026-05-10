@@ -4,7 +4,7 @@ import sys
 import threading
 import time
 from pathlib import Path
-import csv   # <-- added
+import csv
 
 import aubio
 import numpy as np
@@ -18,10 +18,10 @@ from pacer.event_log import log_event
 
 
 # -----------------------------
-# CSV LOGGING HELPER (added)
+# CSV LOGGING HELPER
 # -----------------------------
 def write_bpm_to_csv(current_bpm, average_bpm, beat_count):
-    with open("performance_logs/music_bpm.csv", "a", newline="") as f:
+    with open("music_bpm.csv", "a", newline="") as f:
         writer = csv.writer(f)
         writer.writerow([time.time(), round(current_bpm, 2), round(average_bpm, 2), beat_count])
 
@@ -47,7 +47,6 @@ class BeatGridTracker:
         return 60.0 / self.interval
 
     def update(self, beat_time):
-        """Return True when this candidate fits, initializes, or re-locks the beat grid."""
         if self.interval is None:
             return self._try_initial_lock(beat_time)
 
@@ -58,6 +57,7 @@ class BeatGridTracker:
         predicted_time = self.anchor_time + beats_since_anchor * self.interval
         error = beat_time - predicted_time
         current_bpm = self.bpm
+
         if current_bpm is not None and current_bpm >= 135:
             phase_window = min(0.08, self.interval * 0.20)
             phase_gain = 0.45
@@ -244,11 +244,9 @@ class MusicController:
         self.music_level = None
         self.last_logged_bpm = None
         self.started_time = None
-        self.high_bpm_count = 0
-        self.half_time_threshold = 140
 
-        # NEW: rolling BPM history for CSV
         self.bpm_history = []
+        self.beat_count = 0
 
     def configure_strip(self, num_leds=None, pin=None, strip=None):
         self.stop()
@@ -340,10 +338,6 @@ class MusicController:
                 if self._music_stopped(level, now):
                     return
 
-                if self.bpm is not None and self.last_logged_bpm is not None:
-                    if not self.last_sound_time or now - self.last_sound_time >= self.silence_seconds:
-                        continue
-
                 max_abs = float(np.max(np.abs(centered)))
                 normalized = centered / max_abs if max_abs > 0 else centered
                 aubio_onset = bool(onset(normalized.astype(np.float32))[0])
@@ -366,12 +360,14 @@ class MusicController:
                             accepted = self.tracker.update(candidate_time)
                             if accepted:
                                 self.last_sound_time = now
+                                self.beat_count += 1
                                 self._accept_tracked_beat(now)
 
                 before_previous_level = previous_level
                 previous_level = level
                 previous_time = audio_time
                 previous_aubio_onset = aubio_onset
+
         except Exception as exc:
             self.active = False
             self.clear()
@@ -415,7 +411,7 @@ class MusicController:
         return max(self.min_audio_level, self.music_level * 0.30)
 
     def _display_interval(self, bpm, interval):
-        if bpm is not None and bpm >= self.half_time_threshold:
+        if bpm is not None and bpm >= 140:
             return interval * 2.0
         return interval
 
@@ -434,13 +430,10 @@ class MusicController:
         if should_log:
             log_event("USB BPM updated", category="music", bpm=rounded_bpm)
 
-        # -----------------------------
-        # CSV LOGGING ADDED HERE
-        # -----------------------------
         if self.bpm is not None:
             self.bpm_history.append(self.bpm)
             average_bpm = sum(self.bpm_history) / len(self.bpm_history)
-            write_bpm_to_csv(self.bpm, average_bpm, len(self.bpm_history))
+            write_bpm_to_csv(self.bpm, average_bpm, self.beat_count)
 
     def _blink_loop(self):
         while self.active:
@@ -509,19 +502,39 @@ class MusicController:
             "-t",
             "raw",
         ]
-        return subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        return subprocess.Popen(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+        )
 
     def _stop_audio_process(self):
         if self.process:
-            self.process.terminate()
-            self.process = None
+            try:
+                self.process.terminate()
+                self.process.wait(timeout=1.0)
+            except Exception:
+                try:
+                    self.process.kill()
+                except Exception:
+                    pass
+            finally:
+                self.process = None
 
     def _read_audio_chunk(self):
+        if not self.process or self.process.stdout is None:
+            return None
+
         bytes_to_read = self.chunk_size * 2
         raw_audio = self.process.stdout.read(bytes_to_read)
-        if len(raw_audio) < bytes_to_read:
+        if not raw_audio or len(raw_audio) < bytes_to_read:
             return None
-        return np.frombuffer(raw_audio, dtype=np.int16).astype(np.float32) / 32768.0
+
+        try:
+            return np.frombuffer(raw_audio, dtype=np.int16).astype(np.float32) / 32768.0
+        except Exception as exc:
+            log_event("Failed to decode audio chunk", level="ERROR", category="music", error=repr(exc))
+            return None
 
 
 if __name__ == "__main__":
