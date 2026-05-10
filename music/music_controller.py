@@ -479,4 +479,56 @@ class MusicController:
         strip.begin()
         return strip
 
-    def _startup_blink_test
+    def _startup_blink_test(self):
+        print("LED startup blink test", flush=True)
+        log_event("USB music LED startup blink test", category="music")
+        for blink in range(3):
+            print(f"startup blink {blink + 1}", flush=True)
+            self._set_all(Color(255, 255, 255))
+            time.sleep(0.12)
+            self.clear()
+            time.sleep(0.12)
+
+    def _set_all(self, color):
+        for i in range(self.num_leds):
+            self.strip.setPixelColor(i, color)
+        self.strip.show()
+
+    def _start_audio_process(self):
+        command = [
+            "arecord",
+            "-q",
+            "-D",
+            self.device,
+            "-f",
+            "S16_LE",
+            "-c",
+            "1",
+            "-r",
+            str(self.sample_rate),
+            "-t",
+            "raw",
+        ]
+        return subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    def _stop_audio_process(self):
+        if self.process:
+            self.process.terminate()
+            self.process = None
+
+    def _read_audio_chunk(self):
+        bytes_to_read = self.chunk_size * 2
+        raw_audio = self.process.stdout.read(bytes_to_read)
+        if len(raw_audio) < bytes_to_read:
+            return None
+        return np.frombuffer(raw_audio, dtype=np.int16).astype(np.float32) / 32768.0
+
+
+if __name__ == "__main__":
+    controller = MusicController()
+    try:
+        controller.start()
+        while controller.active:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        controller.stop()
