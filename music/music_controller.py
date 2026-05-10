@@ -214,6 +214,7 @@ class MusicController:
         pulse_seconds=0.05,
         silence_seconds=5.0,
         min_audio_level=0.0008,
+        strip=None,
     ):
         self.num_leds = num_leds
         self.pin = pin
@@ -225,8 +226,8 @@ class MusicController:
         self.pulse_seconds = pulse_seconds
         self.silence_seconds = silence_seconds
         self.min_audio_level = min_audio_level
+        self.strip = strip
 
-        self.strip = None
         self.process = None
         self.audio_thread = None
         self.blink_thread = None
@@ -260,7 +261,8 @@ class MusicController:
         if self.active:
             return
 
-        self.strip = self._make_strip()
+        if self.strip is None:
+            self.strip = self._make_strip()
         self.clear()
         self._startup_blink_test()
 
@@ -287,6 +289,18 @@ class MusicController:
             silence_seconds=self.silence_seconds,
             device=self.device,
         )
+
+    def configure_strip(self, num_leds=None, pin=None, strip=None):
+        """Configure the LED strip for the music controller."""
+        self.stop()
+        with self.lock:
+            if num_leds is not None:
+                self.num_leds = num_leds
+            if pin is not None:
+                self.pin = pin
+            if strip is not None:
+                self.strip = strip
+        log_event("Music controller strip configured", category="music", num_leds=self.num_leds, pin=self.pin)
 
     def stop(self):
         """Stop audio capture and turn the LEDs off."""

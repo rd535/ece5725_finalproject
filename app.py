@@ -12,6 +12,7 @@ from pacer.pacer_pattern import Color, NewConstantPacer, NewDynamicPacer
 from pacer.settings_store import led_count_from_settings, load_settings, save_settings
 from lighting.lighting_manager import LightingManagerV2
 from lighting.lighting_patterns import pattern_metadata
+from music.music_controller import MusicController
 from performance_logger import get_performance_logger
 
 app = Flask(__name__)
@@ -21,6 +22,7 @@ pacer_instances = {}  # Dict to store pacer instances by name: {"Pacer 1": <pace
 app_settings = load_settings()
 web_pacer_manager = NewPacerManager(num_leds=led_count_from_settings(app_settings), pin=app_settings["led_strip"]["pin"])
 web_lighting_manager = None
+web_music_controller = None
 DEFAULT_PACER_COLOR = "#00ff00"
 pacer_state_lock = Lock()
 
@@ -185,6 +187,16 @@ def ensure_lighting_manager():
         web_lighting_manager = create_lighting_manager()
     return web_lighting_manager
 
+def ensure_music_controller():
+    global web_music_controller
+    if web_music_controller is None:
+        web_music_controller = MusicController(
+            num_leds=led_count_from_settings(app_settings),
+            pin=app_settings["led_strip"]["pin"],
+            strip=web_pacer_manager.strip
+        )
+    return web_music_controller
+
 def stop_lighting_manager(destroy=False):
     global web_lighting_manager
     if web_lighting_manager is None:
@@ -285,6 +297,9 @@ def set_mode():
 
     if mode == "lighting":
         ensure_lighting_manager().start()
+    elif mode == "music":
+        # Music mode doesn't need to start here, user starts it manually
+        pass
     else:
         stop_lighting_manager(destroy=True)
 
@@ -350,6 +365,12 @@ def save_led_settings():
             num_leds=led_count_from_settings(app_settings),
             pin=pin,
             color_order=color_order,
+            strip=web_pacer_manager.strip,
+        )
+    if web_music_controller is not None:
+        web_music_controller.configure_strip(
+            num_leds=led_count_from_settings(app_settings),
+            pin=pin,
             strip=web_pacer_manager.strip,
         )
     log_event("LED settings saved", category="settings", led_count=led_count_from_settings(app_settings), color_order=color_order)
@@ -427,6 +448,64 @@ def lighting_stop():
     if web_lighting_manager is None:
         return jsonify({"ok": True, "lighting": {"active": False, "running": False, "pattern": None, "started_at": None}})
     return jsonify({"ok": True, "lighting": web_lighting_manager.status()})
+
+@app.route("/api/music/start", methods=["POST"])
+@with_pacer_lock
+def music_start():
+    start_trigger = time.perf_counter()
+    stop_lighting_manager(destroy=True)
+    stop_pacer_runtime()
+    try:
+        controller = ensure_music_controller()
+        controller.start()
+        music_latency_ms = round((time.perf_counter() - start_trigger) * 1000, 2)
+        perf_logger = get_performance_logger()
+        perf_logger.log_api_performance(
+            endpoint="/api/music/start",
+            method="POST",
+            latency_ms=music_latency_ms,
+            status_code=200
+        )
+        pi_state["mode"] = "music"
+        pi_state["last_update"] = time.strftime("%H:%M:%S")
+        return jsonify({"ok": True, "music": {"active": True, "running": True}})
+    except Exception as exc:
+        log_event("Music start failed", level="ERROR", category="music", error=repr(exc))
+        return jsonify({"ok": False, "error": f"Failed to start music controller: {exc}"}), 500
+
+@app.route("/api/music/stop", methods=["POST"])
+@with_pacer_lock
+def music_stop():
+    stop_trigger = time.perf_counter()
+    if web_music_controller is not None:
+        web_music_controller.stop()
+    music_latency_ms = round((time.perf_counter() - stop_trigger) * 1000, 2)
+    perf_logger = get_performance_logger()
+    perf_logger.log_api_performance(
+        endpoint="/api/music/stop",
+        method="POST",
+        latency_ms=music_latency_ms,
+        status_code=200
+    )
+    pi_state["last_update"] = time.strftime("%H:%M:%S")
+    return jsonify({"ok": True, "music": {"active": False, "running": False}})
+
+@app.route("/api/music/status", methods=["GET"])
+def music_status():
+    if web_music_controller is None:
+        return jsonify({"ok": True, "music": {"active": False, "running": False}})
+    return jsonify({"ok": True, "music": {
+        "active": web_music_controller.active,
+        "running": web_music_controller.audio_thread is not None and web_music_controller.audio_thread.is_alive(),
+        "bpm": web_music_controller.bpm
+    }})
+
+@app.route("/api/music/events", methods=["GET"])
+def music_events():
+    # Filter events for music category
+    all_events = get_events(limit=100)
+    music_events = [e for e in all_events if e.get("category") == "music"]
+    return jsonify({"ok": True, "events": music_events})
 
 @app.route("/api/presets", methods=["GET"])
 def list_presets():

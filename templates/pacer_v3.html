@@ -182,11 +182,25 @@
         <div id="music" class="tab">
             <div class="content-area">
                 <div class="card">
-                    <div class="empty-state">
-                        <div class="empty-state-icon">🎵</div>
-                        <p>Music Mode - Coming Soon!</p>
-                        <p style="color: #ccc; font-size: 0.95em;">Music synchronization features will be available here
-                        </p>
+                    <h2>Music Controller</h2>
+                    <div class="music-status">
+                        <div class="status-item">
+                            <strong>Status:</strong> <span id="musicStatus">Stopped</span>
+                        </div>
+                        <div class="status-item">
+                            <strong>Current BPM:</strong> <span id="musicBPM">--</span>
+                        </div>
+                    </div>
+                    <div class="button-group">
+                        <button type="button" class="btn-success" onclick="startMusic()">Start Music Sync</button>
+                        <button type="button" class="btn-danger" onclick="stopMusic()">Stop Music Sync</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h2>Music Event Log</h2>
+                    <div id="musicEventLog" class="event-log">
+                        <div class="log-entry muted">Waiting for music events...</div>
                     </div>
                 </div>
             </div>
@@ -1160,6 +1174,71 @@
             }, 3000);
         }
 
+        // Music functions
+        function startMusic() {
+            fetch("/api/music/start", { method: "POST" })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.ok) {
+                        document.getElementById("musicStatus").textContent = "Running";
+                        showSuccessMessage("Music sync started!");
+                    } else {
+                        showErrorMessage(data.error || "Failed to start music sync");
+                    }
+                })
+                .catch(() => showErrorMessage("Failed to start music sync"));
+        }
+
+        function stopMusic() {
+            fetch("/api/music/stop", { method: "POST" })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.ok) {
+                        document.getElementById("musicStatus").textContent = "Stopped";
+                        document.getElementById("musicBPM").textContent = "--";
+                        showSuccessMessage("Music sync stopped!");
+                    } else {
+                        showErrorMessage(data.error || "Failed to stop music sync");
+                    }
+                })
+                .catch(() => showErrorMessage("Failed to stop music sync"));
+        }
+
+        function updateMusicStatus() {
+            fetch("/api/music/status")
+                .then(response => response.json())
+                .then(data => {
+                    if (data.ok && data.music) {
+                        document.getElementById("musicStatus").textContent = data.music.running ? "Running" : "Stopped";
+                        document.getElementById("musicBPM").textContent = data.music.bpm || "--";
+                    }
+                })
+                .catch(error => console.error('Error updating music status:', error));
+        }
+
+        function updateMusicEventLog() {
+            fetch("/api/music/events")
+                .then(response => response.json())
+                .then(data => {
+                    if (data.ok && data.events) {
+                        const logDiv = document.getElementById("musicEventLog");
+                        logDiv.innerHTML = "";
+                        if (data.events.length === 0) {
+                            logDiv.innerHTML = '<div class="log-entry muted">Waiting for music events...</div>';
+                            return;
+                        }
+                        data.events.slice(0, 50).forEach(event => {
+                            const entry = document.createElement("div");
+                            entry.className = "log-entry";
+                            const timestamp = new Date(event.timestamp).toLocaleTimeString();
+                            entry.innerHTML = `<strong>${timestamp}</strong> ${event.message}`;
+                            logDiv.appendChild(entry);
+                        });
+                    }
+                })
+                .catch(error => console.error('Error updating music event log:', error));
+        }
+
         loadAppSettings();
         loadLightingPatterns();
         updateStatus();
@@ -1167,6 +1246,8 @@
         // Set intervals to periodically update lighting status and pacer running times
         setInterval(updateStatus, 1000);
         setInterval(updateRunningTimes, 250);
+        setInterval(updateMusicStatus, 1000);
+        setInterval(updateMusicEventLog, 2000);
 
         // Initialize add lap button states
         updateAddLapButtons();
