@@ -80,12 +80,21 @@ class NewConstantPacer:
         self.curr_lap = 0
         self.last_time = None
         self.pos = 0.0
+        
+        # Lap timing instrumentation
+        self.lap_start_time = None
+        self.last_lap_count = 0
 
     def start(self):
         self.active = True
         self.pos = 0.0
         self.curr_lap = 0
         self.last_time = time.time()
+        
+        # Initialize lap timing
+        self.lap_start_time = time.time()
+        self.last_lap_count = 0
+        log_event("Starting pacer", category="pacer", pace=self.pace)
 
     def stop(self):
         self.active = False
@@ -108,6 +117,23 @@ class NewConstantPacer:
 
         if self.pos >= self.num_leds:
             self.curr_lap += int(self.pos // self.num_leds)
+
+        # Check for completed laps and log timing
+        if self.curr_lap > self.last_lap_count and self.lap_start_time is not None:
+            t_end = time.time()
+            T_measured = t_end - self.lap_start_time
+            lap_number = self.last_lap_count + 1
+            log_event("Lap completed", 
+                     category="pacer_timing", 
+                     lap_number=lap_number,
+                     measured_time_s=round(T_measured, 3),
+                     target_pace_s=self.pace[0],
+                     t_start=self.lap_start_time,
+                     t_end=t_end)
+            
+            # Start timing for next lap
+            self.lap_start_time = t_end
+            self.last_lap_count = self.curr_lap
 
         if self.curr_lap >= self.lap_count:
             self.active = False
@@ -164,6 +190,23 @@ class NewDynamicPacer(NewConstantPacer):
         if self.pos < previous_pos:
             self.curr_lap += 1
             self.pace_index += 1
+            
+            # Log lap timing
+            if self.lap_start_time is not None:
+                t_end = time.time()
+                T_measured = t_end - self.lap_start_time
+                lap_number = self.curr_lap
+                current_pace = self.pace[min(self.pace_index - 1, len(self.pace) - 1)]
+                log_event("Lap completed", 
+                         category="pacer_timing", 
+                         lap_number=lap_number,
+                         measured_time_s=round(T_measured, 3),
+                         target_pace_s=current_pace,
+                         t_start=self.lap_start_time,
+                         t_end=t_end)
+                
+                # Start timing for next lap
+                self.lap_start_time = t_end
 
         if self.curr_lap >= self.lap_count or self.pace_index >= len(self.pace):
             self.active = False
