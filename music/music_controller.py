@@ -251,6 +251,7 @@ class MusicController:
         self.beat_detection_latencies = deque(maxlen=100)
         self.blink_scheduling_delays = deque(maxlen=100)
         self.audio_to_led_latencies = deque(maxlen=100)
+        self.bpm_history = deque(maxlen=100)
         self.beat_count = 0
         self.missed_beats = 0
         self.false_beats = 0
@@ -513,6 +514,17 @@ class MusicController:
         if should_log:
             log_event("USB BPM updated", category="music", bpm=rounded_bpm)
 
+        # Track rolling BPM history and write average BPM to CSV.
+        if self.bpm is not None:
+            self.bpm_history.append(self.bpm)
+            average_bpm = sum(self.bpm_history) / len(self.bpm_history)
+            perf_logger = get_performance_logger()
+            perf_logger.log_music_bpm_average(
+                current_bpm=rounded_bpm,
+                average_bpm=average_bpm,
+                beat_count=self.beat_count,
+            )
+
     def _blink_loop(self):
         """Flash white at the current beat grid."""
         while self.active:
@@ -648,6 +660,7 @@ class MusicController:
         self.beat_detection_latencies.clear()
         self.blink_scheduling_delays.clear()
         self.audio_to_led_latencies.clear()
+        self.bpm_history.clear()
         self.beat_count = 0
         self.missed_beats = 0
         self.false_beats = 0

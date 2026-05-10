@@ -22,6 +22,7 @@ class PerformanceLogger:
             'lighting_control': self.log_dir / 'lighting_control_performance.csv',
             'music_audio': self.log_dir / 'music_audio_performance.csv',
             'music_beat': self.log_dir / 'music_beat_performance.csv',
+            'music_bpm': self.log_dir / 'music_bpm.csv',
             'api': self.log_dir / 'api_performance.csv'
         }
 
@@ -98,6 +99,16 @@ class PerformanceLogger:
             'avg_blink_delay_ms': round(avg_blink_delay_ms, 2)
         }
         self._write_csv('music_beat', data)
+
+    def log_music_bpm_average(self, current_bpm, average_bpm, beat_count):
+        """Log average detected BPM over time to CSV."""
+        data = {
+            'timestamp': time.time(),
+            'current_bpm': round(current_bpm, 1) if current_bpm is not None else None,
+            'average_bpm': round(average_bpm, 1) if average_bpm is not None else None,
+            'beat_count': beat_count
+        }
+        self._write_csv('music_bpm', data)
 
     def log_api_performance(self, endpoint, method, latency_ms, status_code):
         """Log API endpoint response times."""
