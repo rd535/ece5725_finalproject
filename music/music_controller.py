@@ -510,20 +510,28 @@ class MusicController:
             )
             if should_log:
                 self.last_logged_bpm = rounded_bpm
+            
+            # Capture BPM value inside lock for safe access
+            current_bpm = self.bpm
+            beat_count = self.beat_count
 
         if should_log:
             log_event("USB BPM updated", category="music", bpm=rounded_bpm)
 
         # Track rolling BPM history and write average BPM to CSV.
-        if self.bpm is not None:
-            self.bpm_history.append(self.bpm)
+        if current_bpm is not None:
+            self.bpm_history.append(current_bpm)
             average_bpm = sum(self.bpm_history) / len(self.bpm_history)
-            perf_logger = get_performance_logger()
-            perf_logger.log_music_bpm_average(
-                current_bpm=rounded_bpm,
-                average_bpm=average_bpm,
-                beat_count=self.beat_count,
-            )
+            try:
+                perf_logger = get_performance_logger()
+                perf_logger.log_music_bpm_average(
+                    current_bpm=rounded_bpm,
+                    average_bpm=average_bpm,
+                    beat_count=beat_count,
+                )
+            except Exception as exc:
+                # Log CSV write errors but don't block beat updates
+                log_event("Error writing BPM to CSV", level="ERROR", category="music", error=repr(exc))
 
     def _blink_loop(self):
         """Flash white at the current beat grid."""
