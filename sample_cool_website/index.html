@@ -603,6 +603,16 @@
       even under load.
     </p>
 
+    <h3 style="text-align: center;padding: 0px 30px;">Cyclictests</h3>
+    <p style="text-align: left;padding: 0px 30px;">
+      Cyclictest measures the wake-up latency of a thread, allowing us to get pure measurements of real-time performance
+      and understand how long the kernel takes to respond. In pacer mode, the latency profile is quite close to the idle
+      latencies, where most wake ups only occur within 7-12 microseconds. Thus, the real-time control loop does not
+      introduce jitter and the scheduler is prioritizing the FIFO thread. The same is shown for the lighting mode and
+      the music mode, even under load. This shows that the system works pretty well under the PREEMPT_RT kernel and the
+      application is able to maintain predictable timing even under load.
+    </p>
+
   </div>
 
   <hr id='conclusions'>
