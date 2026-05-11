@@ -157,6 +157,45 @@ iframe {
   height: auto;
 }
 
+.three-img-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  align-items: start;
+  margin: 22px 30px;
+  max-width: calc(100% - 60px);
+}
+
+.three-img-row figure {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+}
+
+.three-img-row img {
+  display: block;
+  width: 100%;
+  height: 150px;
+  object-fit: contain;
+  background: #ffffff;
+  border-radius: 10px;
+}
+
+.three-img-row figcaption {
+  margin-top: 0;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.equation {
+  margin: 18px 0;
+  color: #111827;
+  font-size: 22px;
+  font-style: italic;
+  text-align: center;
+}
+
 .row {
   margin-top: 28px;
 }
@@ -264,6 +303,17 @@ pre {
     padding-right: 0 !important;
     padding-left: 0 !important;
   }
+
+  .three-img-row {
+    grid-template-columns: 1fr;
+    margin-right: 0;
+    margin-left: 0;
+    max-width: 640px;
+  }
+
+  .three-img-row img {
+    height: auto;
+  }
 }
 
 @media (max-width: 520px) {
@@ -308,4 +358,21 @@ pre {
   font-size: 14px;
   margin-top: 6px;
   color: #555;
+}
+
+.image-row {
+  display: flex;       /* Aligns children in a row */
+  gap: 10px;           /* Adds space between images */
+  justify-content: center; /* Centers the row of images */
+}
+
+.image-row figure {
+  margin: 0;              /* Removes default figure margins */
+  flex: 1;                /* Forces each figure to take equal space */
+  text-align: center;     /* Centers the figcaption */
+}
+
+.image-row img {
+  width: auto;       /* Forces 3 images to fit exactly in one row */
+  height: auto;        /* Maintains aspect ratio */
 }

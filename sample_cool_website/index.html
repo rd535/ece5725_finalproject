@@ -18,7 +18,7 @@
   <!-- <link href="../../assets/css/ie10-viewport-bug-workaround.css" rel="stylesheet"> -->
 
   <!-- Custom styles for this template -->
-  <link href="starter-template.css" rel="stylesheet">
+  <link href="dist/starter-template.css" rel="stylesheet">
 
   <!-- Just for debugging purposes. Don't actually copy these 2 lines! -->
   <!--[if lt IE 9]><script src="../../assets/js/ie8-responsive-file-warning.js"></script><![endif]-->
@@ -134,9 +134,9 @@
         stack is summarized in the figure below.
       </p>
       <div style="text-align:center;">
-        <img src="pics/stack.png" alt="Tech Stack" width="640" height="360">
+        <img src="pics/block.png" alt="Tech Stack" width="640" height="360">
         <figcaption style="text-align:center;">Figure 1- System Architecture Stack</figcaption>
-        <h4 style="text-align:center;">Tech Stack</h4>
+      </div>
 
 
         <h3>Methodology</h3>
@@ -207,7 +207,12 @@
           After getting a baseline understanding of the process flow, the HTML-based user interface (pacer_v3.html) was
           iteratively created and provides a table-driven system for configuring pacers. Each row corresponds directly
           to a pacer object and allows the user to define parameters such as pace, lap count, color, and pacer type.
-          <br><br>
+          <br></p>
+          <div style="text-align:center;">
+            <img src="pics/pacer_table_input.png" alt="Tech Stack" width="640" height="360">
+            <figcaption style="text-align:center;">Figure 1- System Architecture Stack</figcaption>
+          </div>
+          <br><p style="text-align: left;padding: 0px 30px;">
           Over time, the UI evolved from a simple input form into a fully interactive system supporting multiple
           simultaneous pacers, preset management, LED strip configuration, and an integrated event log. To improve
           usability, constant pacers allow users to define a lap pace and total laps, while dynamic pacers expand the
@@ -401,6 +406,24 @@
         guaranteed
         threshold. However, the LED seemed to work fine and no noticeable LED rendering issues could be seen physically,
         even though the level-shifted control signal was not being generated correctly.
+
+        <div class="image-row">
+          <figure>
+            <img src="pics/3.3V_ctrl.JPG" alt="Raw Signal">
+            <figcaption>Figure-7: Raw 3.3V Control Signal</figcaption>
+          </figure>
+
+          <figure>
+            <img src="pics/5V_ctrl.JPG" alt="5V unloaded">
+            <figcaption>Figure-8: 5V Control Signal (unloaded)</figcaption>
+          </figure>
+
+          <figure>
+            <img src="pics/5V_ctrl_ld.JPG" alt="5V loaded">
+            <figcaption>Figure-9: 5V Control Signal (loaded)</figcaption>
+          </figure>
+        </div>
+
         </p>
         
 
