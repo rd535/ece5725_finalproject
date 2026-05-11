@@ -543,30 +543,36 @@
       “Living on a Prayer” has a tempo of 123 BPM, and the statistics tell us that this song has an average BPM of 121.8
       BPM, which is quite close to the true tempo. This song has a pretty consistent kick drum and bass energy, which
       allowed for the BPM detector to catch on to the tempo of the song pretty well.
-      <br></p>
-      <div style="text-align:center;">
-        <img src="pics/bpm_livingonaprayer.png" alt="Tech Stack" width="640" height="360">
-        <figcaption style="text-align:center;">Figure x- Living on a Prayer BPM</figcaption>
-      </div>
-      <br><p style="text-align: left;padding: 0px 30px;"></p>
+      <br>
+    </p>
+    <div style="text-align:center;">
+      <img src="pics/bpm_livingonaprayer.png" alt="Tech Stack" width="640" height="360">
+      <figcaption style="text-align:center;">Figure x- Living on a Prayer BPM</figcaption>
+    </div>
+    <br>
+    <p style="text-align: left;padding: 0px 30px;">
       “I Like to Move It” has a tempo of 127 BPM, whereas the average measured BPM was 125.4BPM, which is pretty close
       to the true BPM. Like “Living on a Prayer,” the bass energy is pretty strong and thus the BPM detector is able to
       catch on pretty easily.
-      <br></p>
-      <div style="text-align:center;">
-        <img src="pics/bpm_iliketomoveit.png" alt="Tech Stack" width="640" height="360">
-        <figcaption style="text-align:center;">Figure x- I Like To Move It BPM</figcaption>
-      </div>
-      <br><p style="text-align: left;padding: 0px 30px;"></p>
+      <br>
+    </p>
+    <div style="text-align:center;">
+      <img src="pics/bpm_iliketomoveit.png" alt="Tech Stack" width="640" height="360">
+      <figcaption style="text-align:center;">Figure x- I Like To Move It BPM</figcaption>
+    </div>
+    <br>
+    <p style="text-align: left;padding: 0px 30px;">
       “Love Me Like You Do” has a tempo of 95 BPM, and the average measured BPM was 109.4 BPM, which is kind of far from
       the true BPM. This is likely due to the fact that the song is not necessarily stable in the bass energy, as there
       are certain parts of the song which are less instrumentally intense as opposed to the other two songs.
-      <br></p>
-      <div style="text-align:center;">
-        <img src="pics/bpm_lovemelikeyoudo.png" alt="Tech Stack" width="640" height="360">
-        <figcaption style="text-align:center;">Figure x- Love Me Like You Do BPM</figcaption>
-      </div>
-      <br><p style="text-align: left;padding: 0px 30px;"></p>
+      <br>
+    </p>
+    <div style="text-align:center;">
+      <img src="pics/bpm_lovemelikeyoudo.png" alt="Tech Stack" width="640" height="360">
+      <figcaption style="text-align:center;">Figure x- Love Me Like You Do BPM</figcaption>
+    </div>
+    <br>
+    <p style="text-align: left;padding: 0px 30px;">
       On top of seeing whether the BPM detector is able to detect a BPM close to the true BPM, we also analyze the
       detection time, detection windows, audio-to-LED latencies, and blink delays. This is helpful in understanding the
       delay between the time the music hits the microphone and when the beats pop out on the LEDs. The average beat
@@ -578,8 +584,25 @@
       results in a realtime ratio of 1.02, as the chunk processing time is only slightly greater than the chunk
       duration. Thus, the system processes audio about 2% slower than realtime, which is fine as this delay can be
       accounted for by having the LEDs blink a little ahead of this delay.
-
+      <br>
     </p>
+    <h3 style="text-align: center;padding: 0px 30px;">Perf Tests</h3>
+    <p style="text-align: left;padding: 0px 30px;">
+      Another important analytical tool is perf, which is a Linux tool designed to give insight on how code performs on
+      the CPU, including cycles, instructions, context switches, kernel time, and much more. This allows us to analyze
+      where latency, jitter, or slowdowns might come from. To run this test, various different experiments were
+      performed where perf was run over 20 seconds: idle, pacer running, lighting running, music running, and each of
+      these tests with all four cores loaded with a csort file from Lab 4. Across all the scenarios, we saw the CPU
+      utilization remaining low (5-20% of a core) except for the music-loaded case, which ended up saturating one of the
+      cores due to continuous audio processing. 1.021 CPUs were used in the case where the processor was loaded as the
+      beat detection algorithm was active, which is the higher number of CPUs used as opposed to the other tasks
+      (lighting, pacing) under load, which only went up to 0.1 CPUs. Even under load, the context switch and CPU
+      migration rates were pretty low, which showed that the realtime scheduler applied to the program provided
+      predictable timing and didn’t preempt the program too much. Overall, we can see that the system maintains a
+      stable, predictable performance across all of the modes, with minimal jitter and no evidence of CPU starvation
+      even under load.
+    </p>
+
   </div>
 
   <hr id='conclusions'>
@@ -587,6 +610,34 @@
   <div style="text-align:center;">
     <h2>Conclusions</h2>
     <p style="text-align: left;padding: 0px 30px;">
+      In terms of the music detection and light reaction system, we believe that our final implementation met our
+      expectations. Our goal was to have a system which detected audio, divided it into segments, detected beats within
+      each of those segments, calculated the BPM, and had the lights flash white accordingly. We tested it with many
+      different songs of different BPMs ranging from 80 to 160. Based on the BPM tests, the BPM detector did pretty well
+      in catching the beat of a song except for when the song had quieter moments or a more complex low-end pattern.
+      Overall, we met these goals, with the small change that if the detected BPM was above 140 bpm, then the recorded
+      BPM was halved, and the lights flashed twice as slowly. This was important to maintain stability and reliability
+      by reducing the range of BPM that the lights could flash at.
+      <br><br>
+
+      Based on the performance tests, the PiPacer meets our expectations of falling within pretty low end-to-end
+      latency, with an average of less than 40ms from the time the user presses the start button on the pacer to when
+      the first LED lights up on the strip. In addition, the system performs surprisingly well under load, as the
+      program is running on a FIFO scheduler with priority 1, preventing other processes and the scheduler from
+      preempting the prorgam.
+      <br><br>
+
+      With the pacer, the project was a complete success across all fronts. The pacing lights were highly accurate,
+      supporting a wide range of paces, pacing types, and jobs. The user interface proved to be both intuitive and
+      robust, contributing to a smooth overall experience. Testing also demonstrated that backend latency remained low,
+      ensuring reliable real-time performance. Additionally, developing and working through the full architecture stack
+      was both engaging and valuable from a learning perspective.
+      <br><br>
+
+      From a production-ready standpoint, the application can be considered a success. The frontend presents a
+      professional appearance and incorporates strong safeguards and features that enhance usability while minimizing
+      the risk of runtime errors that cause application crashes.
+
 
     </p>
   </div>
@@ -597,7 +648,10 @@
     <h2>Future Work</h2>
     <ul style="text-align: left;padding: 0px 30px;">
       <li>
-        Touchscreen usage - minimal UI on touchscreen to control paces / different modes / reset?
+        Touchscreen usage - minimal UI on touchscreen to control paces / different modes / reset? Basically a backup
+        control system in case the web interface is not accessible for some reason. This would also be helpful for
+        Barton Hall usage, as the user would not need to connect to the web interface to control the system and could
+        just use the touchscreen to start/stop paces and switch modes.
       </li>
       <li>
         Expand lighting patterns and allow for customization of patterns / timers on LEDs / integration with LightKey or
@@ -629,10 +683,6 @@
 
   <div class="row" style="text-align:center;">
     <h2>Work Distribution</h2>
-    <div style="text-align:center;">
-      <img class="img-rounded" src="pics/group.jpg" alt="Generic placeholder image" style="width:80%;">
-      <h4>Project group picture</h4>
-    </div>
     <div class="col-md-4" style="font-size:16px">
       <img class="img-rounded" src="pics/Tyler_Headshot.png" alt="Generic placeholder image" width="240" height="240">
       <h3>Tyler Tisinger</h3>
