@@ -284,3 +284,28 @@ pre {
     font-size: 22px;
   }
 }
+
+.two-img-row {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;        /* stacks on small screens */
+  margin: 20px 0;
+}
+
+.two-img-row figure {
+  width: 45%;             /* two per row */
+  text-align: center;
+}
+
+.two-img-row img {
+  width: 100%;
+  height: auto;
+  max-width: 400px;       /* cap size */
+}
+
+.two-img-row figcaption {
+  font-size: 14px;
+  margin-top: 6px;
+  color: #555;
+}
