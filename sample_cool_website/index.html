@@ -18,7 +18,7 @@
   <!-- <link href="../../assets/css/ie10-viewport-bug-workaround.css" rel="stylesheet"> -->
 
   <!-- Custom styles for this template -->
-  <link href="starter-template.css" rel="stylesheet">
+  <link href="dist/starter-template.css" rel="stylesheet">
 
   <!-- Just for debugging purposes. Don't actually copy these 2 lines! -->
   <!--[if lt IE 9]><script src="../../assets/js/ie8-responsive-file-warning.js"></script><![endif]-->
@@ -395,34 +395,31 @@
         have a high rising edge, falls back down to near 3.3V, and then slopes upward to near 5V at the falling edge of
         the signal. This is questionable for integrity of communication from the Pi to the LED chip, especially with the
         strict timing protocol required of the SK6812 chip. That is,
-        <br><p style="text-align: left;padding: 0px 30px;"></p><i>V<sub>IH</sub> = 0.7 &middot; V<sub>DD</sub></i></p>
-        <p style="text-align: left;padding: 0px 30px;">
-          according to the datasheet. That means the input signal must be at least 3.5V. A 3.3V signal is thus below the
+      </p>
+      <p class="equation">V<sub>IH</sub> = 0.7 &middot; V<sub>DD</sub></p>
+      <p style="text-align: left;padding: 0px 30px;">
+        according to the datasheet. That means the input signal must be at least 3.5V. A 3.3V signal is thus below the
         guaranteed
         threshold. However, the LED seemed to work fine and no noticeable LED rendering issues could be seen physically,
         even though the level-shifted control signal was not being generated correctly.
-
-        <div class="three-img-row">
-          <figure>
-            <img src="pics/3.3V_ctrl.JPG" alt="Raw Signal">
-            <figcaption>Raw 3.3V Control Signal</figcaption>
-          </figure>
-
-          <figure>
-            <img src="pics/5V_ctrl.JPG" alt="5V unloaded">
-            <figcaption>5V Control Signal (unloaded)</figcaption>
-          </figure>
-
-          <figure>
-            <img src="pics/5V_ctrl_ld.JPG" alt="5V loaded">
-            <figcaption>5V Control Signal (loaded)</figcaption>
-          </figure>
-        </div>
-
-        </p>
-        
-
       </p>
+
+      <div class="three-img-row">
+        <figure>
+          <img src="pics/3.3V_ctrl.JPG" alt="Raw Signal">
+          <figcaption>Raw 3.3V Control Signal</figcaption>
+        </figure>
+
+        <figure>
+          <img src="pics/5V_ctrl.JPG" alt="5V unloaded">
+          <figcaption>5V Control Signal (unloaded)</figcaption>
+        </figure>
+
+        <figure>
+          <img src="pics/5V_ctrl_ld.JPG" alt="5V loaded">
+          <figcaption>5V Control Signal (loaded)</figcaption>
+        </figure>
+      </div>
 
       <p style="text-align: left;padding: 0px 30px;">
 
