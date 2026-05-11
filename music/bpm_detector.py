@@ -83,12 +83,16 @@ class BeatDetector:
         return float(np.mean(np.abs(spectrum[bass_bins]) ** 2))
 
     def _average_energy(self):
+        """Calculate average energy from energy_history for comparison with current audio sample
+        to detect possible beats
+        """
         if not self.energy_history:
             return 0.0
-            #average energies in energy_history for comparison with current audio sample possible beat
         return sum(self.energy_history) / len(self.energy_history)  
-
+    
     def _remember_energy(self, energy):
-        self.energy_history.append(energy) #append new audio sample bass energy to history
-        if len(self.energy_history) > self.history_size: #if energy history beyond capacity, pop last-used one
+        """Store energy value in energy_history and keep history window size constant
+        """
+        self.energy_history.append(energy) 
+        if len(self.energy_history) > self.history_size: 
             self.energy_history.pop(0)
