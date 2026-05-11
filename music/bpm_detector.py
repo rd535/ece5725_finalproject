@@ -34,8 +34,6 @@ class BeatDetector:
     def detect(self, samples):
         """
         Return True when this audio chunk has a bass-energy spike.
-
-        samples can be a list or numpy array. Stereo input is averaged to mono.
         """
 
         #baseline edge case
