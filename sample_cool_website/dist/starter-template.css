@@ -158,6 +158,13 @@ iframe {
   height: auto;
 }
 
+.compact-media video,
+.compact-media img {
+  width: auto;
+  max-width: 100%;
+  max-height: 320px;
+}
+
 .three-img-row {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -177,7 +184,7 @@ iframe {
 .three-img-row img {
   display: block;
   width: 100%;
-  height: auto;
+  height: 160px;
   object-fit: contain;
   background: #ffffff;
   border-radius: 10px;

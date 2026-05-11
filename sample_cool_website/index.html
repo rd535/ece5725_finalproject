@@ -139,463 +139,548 @@
       </div>
 
 
-        <h3>Methodology</h3>
-        <p style="text-align: left;padding: 0px 30px;">
-          The pacer stack is organized as a full, Flask-based control pipeline that evolved significantly throughout the
-          development process. The design and test process that was utilized by the team was a Git workflow alongside
-          frequent, isolated testing of individual features. A shared Github repository was established early on and
-          used by the team to organize and share files between members, as well as streamlining deployment of the latest
-          project version onto the Raspberry Pi for testing.
-          <br><br>
-          For most of the features that were important to the project and required a more thoughtful approach - such as
-          the lighting manager, pattern classes, and the HTML and JS front end - isolated testing was done with test
-          files that could validate each component independently. This was beneficial since it allowed the team to start
-          with implementing the most basic features and understanding their interactions first, before then slowly
-          expanding the implementation toward a full feature implementation.
-          <br><br>
-          Once this testing phase was complete, full process integration began. Git branching was used during this
-          portion so that new features could be developed, while still maintaining a clean and working application on
-          the main branch. Many of the features were incrementally added through this method. After a feature was
-          implemented, it was pushed to the Github repository and then pulled onto the Pi for real world testing and
-          user validation.
-          <br><br>
-          The main regret is not looking into a better pipeline for testing frontend features. The current workflow of
-          having to sync repositories on the web and then the Pi, along with running the program, and then user
-          debugging, slowed iteration speed. Having local frontend simulation or automated testing tools would have
-          improved development efficiency, and would have increased the speed of the test pipeline
-        </p>
-
-        <h3>External Libraries</h3>
-        <p style="text-align: left;padding: 0px 30px;">
-          The rpi_ws281x library - licensed to the git user jgarff, but credit to all other contributors - was chosen to
-          drive the LED strip since it was the most capable and flexible open source LED strip library. This library
-          provides a reliable Python wrapper of the C library to generate the waveforms required to drive the wavelight
-          strip. The strip is required to be driven at 800 kHz to meet its timing requirement, and this library ensures
-          that the bit rate is precisely maintained, enabling correct color transmission while preventing flickering and
-          data corruption. Not only does this library allow precise GPIO control for the data line to the strip, it also
-          provided an API to allow easy control of specific LED indecies and brightnss. The GPIO method used to drive
-          the LED strip was chosen to be PWM as it would offload the majority of the load to a Pi hardware peripheral
-          and decrease CPU usage. This required the team to disable certain Linux features, such as onboard Pi audio,
-          that could conflict with PWM usage.
-        </p>
-
-        <h3>Pacer Implementation Details</h3>
-        <p style="text-align: left;padding: 0px 30px;">
-          The pacer implemenation started with an isolated test directory with 3 simple files - manager, pattern, test.
-          This provided a minimal framework to test the rpi_ws281x library along with exploring initial design ideas for
-          how a pacer should behave. In this first approach, each pacer pattern owned its own LED strip object and
-          independently controlled which LEDs were updated each cycle, as dictated by set pace speed. The manager was
-          made to be a basic scheduler and would determine when each activ pacer object would run.
-          <br><br>
-          However, once most features were implemented and tested for both dynamic and constant pacer classes, the
-          system was tested with multiple concurrent pacers, and a major architectural issue emerged. Allowing each
-          pattern object to own its own LED strp instance caused conflicts at the hardware interface level and led to
-          corrupted data signals and frozen strip behavior.
-          <br><br>
-          To resolve this, the architecture was redesigned around a centralized Pacer Manager, which is now the sole
-          owner of the LED strip interface object. All pacer objects register with this manager, which collects
-          positional data from each active pacer, resolves index conflicts (prioritizing faster pacers when overlap
-          occurs), and performs a single strip update after all patterns have been iterated through. This updated
-          approach ensures predictable behavior and eliminates race conditions that were apparent in the initial
-          implementation.
-          <br><br>
-          Further up in the pacer stack is the front end portion, implemented through HTML and JavaScript. Since HTML
-          and JS are unfamiliar for web app UI development along with their integration with Flask routes, a few hours
-          were spent slowly creating and testing with an isolated test directory similar to the pacer manager and
-          patterns.
-          <br><br>
-          After getting a baseline understanding of the process flow, the HTML-based user interface (pacer_v3.html) was
-          iteratively created and provides a table-driven system for configuring pacers. Each row corresponds directly
-          to a pacer object and allows the user to define parameters such as pace, lap count, color, and pacer type.
-          <br></p>
-          <div style="text-align:center;">
-            <img src="pics/pacer_table_input.png" alt="Tech Stack" width="640" height="360">
-            <figcaption style="text-align:center;">Figure 1- System Architecture Stack</figcaption>
-          </div>
-          <br><p style="text-align: left;padding: 0px 30px;">
-          Over time, the UI evolved from a simple input form into a fully interactive system supporting multiple
-          simultaneous pacers, preset management, LED strip configuration, and an integrated event log. To improve
-          usability, constant pacers allow users to define a lap pace and total laps, while dynamic pacers expand the
-          interface to accept per-lap pace inputs when additional laps are added.
-          <br><br>
-          The biggest challenge was maintaining a consistent UI look and feel across the entire application, which
-          required incremental CSS, HTML, and JavaScript logic with each new feature addition. This also slowed down the
-          development process, as forgetting to change any of the above layers would require revisiting the code,
-          implementing the fix, and then rerunning the entire test pipeline for a simple frontend feature. However,
-          investing the time to refine the frontend is critical for achieving a production-level product, as was the
-          goal with this final project.
-          <br><br>
-          Now moving down a layer, the JavaScript that is integrated within the HTML handles all browser-side logic and
-          acts as the translation layer between the UI and backend system. It dynamically updates the pacer table, loads
-          saved presets, converts user inputs into structured JSON, and sends requests to backend endpoints using
-          asynchronous fetch calls. It also continuously polls the backend through Flask routes to update pacer status,
-          runtime information, and event logs, ensuring the UI reflects real-time system behavior.
-          <br></p>
-          <div style="text-align:center;">
-            <img src="pics/pacer_table_control.png" alt="Tech Stack" width="640" height="360">
-            <figcaption style="text-align:center;">Figure x- Pacer Control Table</figcaption>
-          </div>
-          <br><p style="text-align: left;padding: 0px 30px;">
-          On the backend, the Flask application (app.py) maintains system state using structured dictionary data
-          structurs. pi_state["pacers"] stores user-defined configuration and UI state, while pacer_instances holds the
-          active Python pacer objects. Flask routes update these structures when users modify pacers, start or stop
-          execution, adjust LED settings, or load presets. The backend also manages mode switching (Pacer, Lighting,
-          Music) to prevent multiple managers from attempting to control the LED strip simultaneously, as was found to
-          be detrimental during the early pacer testing.
-          <br><br>
-          To improve flexibility and reach a production-level implementation, the system transitioned from hardcoded LED
-          strip parameters (for our current 5m strip, 60 LED/m) to a shared JSON-based state model, allowing
-          user-defined LED strip configurations to be saved and loaded across sessions. Pacer presets were also added to
-          this data structure to improve usability by allowing the user to only have to define pacer configurations once
-          and then reuse infinitely. The preset functionality was redesigned to eliminate the need for external file
-          uploads, which had been initially considered in the project proposal. Instead, users can save and load
-          configurations directly within the application, allowing them to save and load as many configured pacers they
-          want and then easily load them in. Additionally, the system automatically reloads the most recent
-          configuration on startup, further streamlining the user experience and reducing setup time.
-          <br></p>
-          <div style="text-align:center;">
-            <img src="pics/app_settings_dict.png" alt="Tech Stack" width="640" height="360">
-            <figcaption style="text-align:center;">Figure x- Application Settings Dictionary</figcaption>
-          </div>
-          <br><p style="text-align: left;padding: 0px 30px;">
-          The final major feature implemented is an integrated event logging system to improve debugging and user
-          feedback. Events such as pacer creation, updates, errors, and mode transitions are recorded both in the UI and
-          in a rolling log file capped at the 200 most recent entries to prevent excessive storage usage. This ensures
-          that users can monitor system behavior in real time without relying on terminal output, making the system more
-          robust for demonstrations and eventual real world deployment.
-          <br></p>
-          <div style="text-align:center;">
-            <img src="pics/pacer_log_file.png" alt="Tech Stack" width="640" height="360">
-            <figcaption style="text-align:center;">Figure x- Event Log .log</figcaption>
-          </div>
-          <br><p style="text-align: left;padding: 0px 30px;">
-          Several smaller, quality of life features were incrementally added to improve overall system interaction. One
-          key improvement was overhauling the input table to have more intuitive and flexible user controls. For
-          example, dynamic pacers allow users to set a different pace for each lap. Now, when the user chooses how many
-          laps the dynamic pacer will make, the interface will automatically genreate input fields for each of the laps.
-          This makes it clearer how data should be entered while reducing user error and hiding unnecessary fields.
-          <br><br>
-          Another important enhancement was the introduction of an “active pacer” table to only allow the user to
-          control pacers that are actively loaded onto the Pi and currently controlled by the pacer manager. Rather than
-          immediately treating all input table enterprise as active, the user must first send their configured pacers to
-          the Raspberry Pi, at which point the system validates and registers them as active pacers. This is returned as
-          feedback to the user through the event log along with an HTML banner display that will pop up with a success
-          or error message. Only these validated entries are then displayed on the active pacer table, ensuring that
-          outdated pacers or non-existent objects are not executed or displayed.
-          <br></p>
-          <div style="text-align:center;">
-            <img src="pics/pacer_log_file.png" alt="Tech Stack" width="640" height="360">
-            <figcaption style="text-align:center;">Figure x- Event Log .log</figcaption>
-          </div>
-          <br><p style="text-align: left;padding: 0px 30px;">
-          This design improves system robustness as needed for a production level application by separating
-          configuration from execution which reduces the chances of runtime errors. Once pacers are active, the user is
-          given fine tuned control over execution, with the ability to start of stop individual pacers independently or
-          launch all active pacers simultaneously. All these above features, along with many smaller but equally
-          important improvements to the user experience, were driven by extensive hands-on testing. Backend features
-          could validated using performance testing tools, but frontend functionality required direct, manual
-          interaction to discover bugs and come up with UI optimizations. Approaching the countless hours of system
-          testing from a consumer perspective allowed the application to be developed into a more complete and cohesive
-          package that can be deployed into Barton Hall and other real-world environments.
-        </p>
-
-        <h3>Lighting Implementation Details</h3>
-        <p style="text-align: left;padding: 0px 30px;">
-          The implementation of the Lighting mode aimed to extend the pacer system into a multimodal wavelight platform,
-          as was the goal to have this be used in Barton Hall. This flexible lighting system would reuse the core
-          architecture developed for the pacer mode while supporting a wide range of visual effect options.
-          <br><br>
-          At a high level, the lighting system was implemented using the same software class architecture as the pacer
-          system, consisting of a centralized manager and modular pattern classes. The lighting manager is responsible
-          for owning the LED strip object and polling updates from the active pattern classe, while each individual
-          lighting pattern defines how the LEDs should be updated at each time step and returns this data to the
-          manager.
-          <br>
-          <div style="text-align:center;">
-            <img src="pics/lighting_mode.png" alt="Tech Stack" width="640" height="360">
-            <figcaption style="text-align:center;">Figure x- Lighting Mode UI</figcaption>
-          </div>
-          <br>
-          However, since only a single lighting pattern is active at any given time, the data structures required for
-          lighting were a lot simpler than used in the pacer system. Rather than maintaining a dictionary of multiple
-          active pattern instance, which reduces complexity and inherently prevents race conditions between overlapping
-          patterns.
-          <br><br>
-          Despite the structural similarities, several challenges rose during implementation. One major issue involved
-          inconsistent behavior when starting and stopping lighting patterns. Through debugging, it was found that even
-          though each mode (Pacer, Lighting, Music) had its own manager which controlled its own LED strip object,
-          conflicts still occured at the hardware level. This was caused by multiple strip instances attempting to
-          interface and control the same hardware, even if they were not actively driving updates.
-          <br><br>
-          To resolve this, the architecture was refactored so that all managers share a single, global LED strip object.
-          This ensures that only one interface to the hardware exists at any time, reducing any funkiness with the
-          software handling of active pacer managers and strip object control.
-          <br><br>
-          Another issue was more subtle but involved color ordering. Although the LED strip is labeled as RGBx, it seems
-          to expect color data in GRB order, which was not clearly documented. This mismatch caused green to turn into
-          red and vice versa and required a system-wide adjustment to how color data is formatted for transmission to
-          the strip.
-          <br><br>
-          Additional features were also introduced to enhance the lighting mode’s usability and flexibility. These
-          included dynamic lighting patterns, adjustable speed and brightness controls, and consistent integration into
-          the frontend interface. The lighting mode was designed to match the production-level quality of the pacer
-          system, so a lot of thought went into system flow.
-          <br><br>
-          For example, mode transitions are handled cleanly, such that the LED strip is automatically cleared and the
-          previous manager is deactivated when switching modes. Within lighting mode, users can switch between patterns
-          without needing to manually stop the current pattern, as the system automatically updates the active pattern
-          instance. Similarly, parameter updates are applied dynamically when new settings are sent to the Raspberry Pi,
-          without requiring a full restart of the pattern.
-          <br><br>
-          Additionally, an event log is maintained and displayed to the user as was done in both the pacer and music
-          modes. The buffer and log files are shared between modes so all log messages are saved to a centralized
-          location.
-        </p>
-
-      </div>
-
-    </div>
-
-    <hr id='hardware'>
-
-    <div style="text-align:center;">
-      <h2>Hardware</h2>
+      <h3>Methodology</h3>
       <p style="text-align: left;padding: 0px 30px;">
-        The hardware was chosen specifically to meet the requirements of the project while allowing extra room for
-        expansion and versatility. The Raspberry Pi 4 is a suitable microprocessor which allows for GPIO expansion and
-        ease of user interface. Its processor is powerful enough to support a frontend web interface using Flask while
-        also interfacing with hardware like the LED strip and USB microphone. This microprocessor is preferred over the
-        Raspberry Pi Zero for its ability to handle USB connections directly over the stock hardware and for onboard
-        expansion with a touchscreen LCD and external GPIO cobbler. In fact, the USB ports proved useful for last-minute
-        expansion with the USB microphone, which was chosen over the initial analog microphone + ADC combo. The piTFT
-        LCD was also helpful in displaying the IP address of the Pi for web interface connection and could prove useful
-        in future as a minimal user interface for controlling the program (see Future Work section).
+        The pacer stack is organized as a full, Flask-based control pipeline that evolved significantly throughout the
+        development process. The design and test process that was utilized by the team was a Git workflow alongside
+        frequent, isolated testing of individual features. A shared Github repository was established early on and
+        used by the team to organize and share files between members, as well as streamlining deployment of the latest
+        project version onto the Raspberry Pi for testing.
         <br><br>
-        Initially, we went with the 12V LED strip which uses the WS2814 chip to drive the LEDs. We preferred the 12V
-        strip as we believed that a higher voltage strip would result in greater signal integrity and brightness
-        uniformity over long distances. However, we ran into many issues when using the rpi_ws281x python library to
-        communicate with the strip. Our initial experiments with the LED strip seemed to show functional behavior under
-        a 3.3V data line, although the LEDs would flicker quite a bit, as seen in the video below.
+        For most of the features that were important to the project and required a more thoughtful approach - such as
+        the lighting manager, pattern classes, and the HTML and JS front end - isolated testing was done with test
+        files that could validate each component independently. This was beneficial since it allowed the team to start
+        with implementing the most basic features and understanding their interactions first, before then slowly
+        expanding the implementation toward a full feature implementation.
         <br><br>
+        Once this testing phase was complete, full process integration began. Git branching was used during this
+        portion so that new features could be developed, while still maintaining a clean and working application on
+        the main branch. Many of the features were incrementally added through this method. After a feature was
+        implemented, it was pushed to the Github repository and then pulled onto the Pi for real world testing and
+        user validation.
+        <br><br>
+        The main regret is not looking into a better pipeline for testing frontend features. The current workflow of
+        having to sync repositories on the web and then the Pi, along with running the program, and then user
+        debugging, slowed iteration speed. Having local frontend simulation or automated testing tools would have
+        improved development efficiency, and would have increased the speed of the test pipeline
+      </p>
 
+      <h3>External Libraries</h3>
+      <p style="text-align: left;padding: 0px 30px;">
+        The rpi_ws281x library - licensed to the git user jgarff, but credit to all other contributors - was chosen to
+        drive the LED strip since it was the most capable and flexible open source LED strip library. This library
+        provides a reliable Python wrapper of the C library to generate the waveforms required to drive the wavelight
+        strip. The strip is required to be driven at 800 kHz to meet its timing requirement, and this library ensures
+        that the bit rate is precisely maintained, enabling correct color transmission while preventing flickering and
+        data corruption. Not only does this library allow precise GPIO control for the data line to the strip, it also
+        provided an API to allow easy control of specific LED indecies and brightnss. The GPIO method used to drive
+        the LED strip was chosen to be PWM as it would offload the majority of the load to a Pi hardware peripheral
+        and decrease CPU usage. This required the team to disable certain Linux features, such as onboard Pi audio,
+        that could conflict with PWM usage.
+      </p>
+
+      <h3>Pacer Implementation Details</h3>
+      <p style="text-align: left;padding: 0px 30px;">
+        The pacer implemenation started with an isolated test directory with 3 simple files - manager, pattern, test.
+        This provided a minimal framework to test the rpi_ws281x library along with exploring initial design ideas for
+        how a pacer should behave. In this first approach, each pacer pattern owned its own LED strip object and
+        independently controlled which LEDs were updated each cycle, as dictated by set pace speed. The manager was
+        made to be a basic scheduler and would determine when each activ pacer object would run.
+        <br><br>
+        However, once most features were implemented and tested for both dynamic and constant pacer classes, the
+        system was tested with multiple concurrent pacers, and a major architectural issue emerged. Allowing each
+        pattern object to own its own LED strp instance caused conflicts at the hardware interface level and led to
+        corrupted data signals and frozen strip behavior.
+        <br><br>
+        To resolve this, the architecture was redesigned around a centralized Pacer Manager, which is now the sole
+        owner of the LED strip interface object. All pacer objects register with this manager, which collects
+        positional data from each active pacer, resolves index conflicts (prioritizing faster pacers when overlap
+        occurs), and performs a single strip update after all patterns have been iterated through. This updated
+        approach ensures predictable behavior and eliminates race conditions that were apparent in the initial
+        implementation.
+        <br><br>
+        Further up in the pacer stack is the front end portion, implemented through HTML and JavaScript. Since HTML
+        and JS are unfamiliar for web app UI development along with their integration with Flask routes, a few hours
+        were spent slowly creating and testing with an isolated test directory similar to the pacer manager and
+        patterns.
+        <br><br>
+        After getting a baseline understanding of the process flow, the HTML-based user interface (pacer_v3.html) was
+        iteratively created and provides a table-driven system for configuring pacers. Each row corresponds directly
+        to a pacer object and allows the user to define parameters such as pace, lap count, color, and pacer type.
+        <br>
+      </p>
       <div style="text-align:center;">
-        <video width="640" height="360" controls>
-          <source src="pics/12V_strip.MOV" type="video/mp4">
-        </video>
-        <figcaption>Figure-5: 12V Strip Functionality</figcaption>
+        <img src="pics/pacer_table_input.png" alt="Tech Stack" width="640" height="360">
+        <figcaption style="text-align:center;">Figure 1- System Architecture Stack</figcaption>
       </div>
-
+      <br>
       <p style="text-align: left;padding: 0px 30px;">
-        We then predicted that the strip would likely perform better when driven with a 5V data line. Initially, a
-        3.3-5V level shifter was proposed to ensure signal integrity with the 5V data line that is expected of the chips
-        on the LED strip. However, we believed that the level shifter was faulty and would only drive the signal needed
-        for the WS2814 12V LED strip under the correct conditions. That is, when level shifted using the 5V reference
-        from the Raspberry Pi, the LED strip seemed to function. However, when level shifted using the 5V reference from
-        the power supply, the LED strip would not turn on at all. We tried linking the negative terminals of both 5V
-        references of the power supply and the Raspberry Pi together, but this did not help.
+        Over time, the UI evolved from a simple input form into a fully interactive system supporting multiple
+        simultaneous pacers, preset management, LED strip configuration, and an integrated event log. To improve
+        usability, constant pacers allow users to define a lap pace and total laps, while dynamic pacers expand the
+        interface to accept per-lap pace inputs when additional laps are added.
         <br><br>
-        While performing a test to see if all the LEDs on the strip would turn on using strandtest.py, we were met with
-        faulty results. The signal seemed to travel all the way to the last LED when tested with an oscilloscope, but
-        the LEDs would not turn on, despite putting a high number of LEDs in the test program. By simply tinkering with
-        the LED strip, the LEDs would travel farther, but then the LEDs would freeze and render control useless. Thus,
-        we were skeptical about the integrity of the strip as delicate touches would destroy control. In fact, it was
-        not until later on that we realized that the library probably does not support the WS2814 chip, as there was no
-        constant in the top-level of the library which referred to the WS2814 chip. Only WS2811, SK6812, and WS2812
-        constants were available.
+        The biggest challenge was maintaining a consistent UI look and feel across the entire application, which
+        required incremental CSS, HTML, and JavaScript logic with each new feature addition. This also slowed down the
+        development process, as forgetting to change any of the above layers would require revisiting the code,
+        implementing the fix, and then rerunning the entire test pipeline for a simple frontend feature. However,
+        investing the time to refine the frontend is critical for achieving a production-level product, as was the
+        goal with this final project.
         <br><br>
-        Thus, we resorted to using the 5V LED strip which uses the SK6812 chip instead. This seems to be a chip that is
-        officially supported by the LED driver library as mentioned earlier. As seen in the video below, the test
-        program runs much more seamlessly on the strip and does not have any glitches in lighting.
-
+        Now moving down a layer, the JavaScript that is integrated within the HTML handles all browser-side logic and
+        acts as the translation layer between the UI and backend system. It dynamically updates the pacer table, loads
+        saved presets, converts user inputs into structured JSON, and sends requests to backend endpoints using
+        asynchronous fetch calls. It also continuously polls the backend through Flask routes to update pacer status,
+        runtime information, and event logs, ensuring the UI reflects real-time system behavior.
+        <br>
+      </p>
       <div style="text-align:center;">
-        <video width="640" height="360" controls>
-          <source src="pics/5V_strip.MOV" type="video/mp4">
-        </video>
-        <figcaption>Figure-6: 5V Strip Functionality</figcaption>
+        <img src="pics/pacer_table_control.png" alt="Tech Stack" width="640" height="360">
+        <figcaption style="text-align:center;">Figure x- Pacer Control Table</figcaption>
       </div>
-
+      <br>
       <p style="text-align: left;padding: 0px 30px;">
-        In addition, the 5V LED strip better serves the project requirements as it is waterproof, though not initially
-        part of our design proposal. This would be a suitable design for outdoor track spaces as the strip would be
-        resistant to rainy weather conditions and allow for runners to practice in wetter conditions.
+        On the backend, the Flask application (app.py) maintains system state using structured dictionary data
+        structurs. pi_state["pacers"] stores user-defined configuration and UI state, while pacer_instances holds the
+        active Python pacer objects. Flask routes update these structures when users modify pacers, start or stop
+        execution, adjust LED settings, or load presets. The backend also manages mode switching (Pacer, Lighting,
+        Music) to prevent multiple managers from attempting to control the LED strip simultaneously, as was found to
+        be detrimental during the early pacer testing.
         <br><br>
-        Recalling the issues experienced with the level shifter, we decided to analyze the signal with an oscilloscope
-        to ensure that the signal is being translated from 3.3V to 5V properly. When shifting to 5V, however, we find
-        that the flatline of the raw 3.3V PWM signal is not maintained when shifted to 5V. In fact, the signal seems to
-        have a high rising edge, falls back down to near 3.3V, and then slopes upward to near 5V at the falling edge of
-        the signal. This is questionable for integrity of communication from the Pi to the LED chip, especially with the
-        strict timing protocol required of the SK6812 chip. That is,
-        <br><p style="text-align: left;padding: 0px 30px;"></p><i>V<sub>IH</sub> = 0.7 &middot; V<sub>DD</sub></i></p>
-        <p style="text-align: left;padding: 0px 30px;">
-          according to the datasheet. That means the input signal must be at least 3.5V. A 3.3V signal is thus below the
-        guaranteed
-        threshold. However, the LED seemed to work fine and no noticeable LED rendering issues could be seen physically,
-        even though the level-shifted control signal was not being generated correctly.
-
-        <div class="image-row">
-          <figure>
-            <img src="pics/3.3V_ctrl.JPG" alt="Raw Signal">
-            <figcaption>Figure-7: Raw 3.3V Control Signal</figcaption>
-          </figure>
-
-          <figure>
-            <img src="pics/5V_ctrl.JPG" alt="5V unloaded">
-            <figcaption>Figure-8: 5V Control Signal (unloaded)</figcaption>
-          </figure>
-
-          <figure>
-            <img src="pics/5V_ctrl_ld.JPG" alt="5V loaded">
-            <figcaption>Figure-9: 5V Control Signal (loaded)</figcaption>
-          </figure>
-        </div>
-
-        </p>
-        
-
+        To improve flexibility and reach a production-level implementation, the system transitioned from hardcoded LED
+        strip parameters (for our current 5m strip, 60 LED/m) to a shared JSON-based state model, allowing
+        user-defined LED strip configurations to be saved and loaded across sessions. Pacer presets were also added to
+        this data structure to improve usability by allowing the user to only have to define pacer configurations once
+        and then reuse infinitely. The preset functionality was redesigned to eliminate the need for external file
+        uploads, which had been initially considered in the project proposal. Instead, users can save and load
+        configurations directly within the application, allowing them to save and load as many configured pacers they
+        want and then easily load them in. Additionally, the system automatically reloads the most recent
+        configuration on startup, further streamlining the user experience and reducing setup time.
+        <br>
       </p>
-
-      <p style="text-align: left;padding: 0px 30px;">
-
-      </p>
-
-
-      </p>
-
-
-      </p>
-    </div>
-
-    <hr id='testing'>
-
-    <div style="text-align:center;">
-      <h2>Testing</h2>
-      <p style="text-align: left;padding: 0px 30px;">Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-        Vestibulum lorem nulla, consectetur at leo vel, pretium bibendum nisl. Cras blandit quam a enim ultrices, eu
-        convallis enim posuere. Donec eleifend enim sed purus consectetur, vitae cursus lectus varius. Vivamus
-        consectetur felis nec est venenatis posuere. Phasellus vitae aliquet erat. In laoreet lacinia mollis. Quisque
-        iaculis nisl fermentum pharetra lobortis. Donec rhoncus dui sem, ac molestie leo tristique vel. Phasellus in
-        nibh feugiat, fringilla lectus in, elementum magna. Etiam quis dui condimentum, tempus ex in, dapibus est.
-        Cras ut congue augue. Donec ac enim ex. Ut id tristique risus, vel porttitor quam. Sed ultricies enim eu nibh
-        porttitor, vel sodales enim feugiat. Fusce volutpat venenatis magna ac ultrices. Curabitur eget urna ut nulla
-        mattis convallis non eu diam.</p>
-    </div>
-
-    <hr id='results'>
-
-    <div style="text-align:center;">
-      <h2>Results</h2>
-      <p style="text-align: left;padding: 0px 30px;">Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-        Vestibulum lorem nulla, consectetur at leo vel, pretium bibendum nisl. Cras blandit quam a enim ultrices, eu
-        convallis enim posuere. Donec eleifend enim sed purus consectetur, vitae cursus lectus varius. Vivamus
-        consectetur felis nec est venenatis posuere. Phasellus vitae aliquet erat. In laoreet lacinia mollis. Quisque
-        iaculis nisl fermentum pharetra lobortis. Donec rhoncus dui sem, ac molestie leo tristique vel. Phasellus in
-        nibh feugiat, fringilla lectus in, elementum magna. Etiam quis dui condimentum, tempus ex in, dapibus est.
-        Cras ut congue augue. Donec ac enim ex. Ut id tristique risus, vel porttitor quam. Sed ultricies enim eu nibh
-        porttitor, vel sodales enim feugiat. Fusce volutpat venenatis magna ac ultrices. Curabitur eget urna ut nulla
-        mattis convallis non eu diam.</p>
-    </div>
-
-    <hr id='conlcusions'>
-
-    <div style="text-align:center;">
-      <h2>Conclusions</h2>
-      <p style="text-align: left;padding: 0px 30px;">Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-        Vestibulum lorem nulla, consectetur at leo vel, pretium bibendum nisl. Cras blandit quam a enim ultrices, eu
-        convallis enim posuere. Donec eleifend enim sed purus consectetur, vitae cursus lectus varius. Vivamus
-        consectetur felis nec est venenatis posuere. Phasellus vitae aliquet erat. In laoreet lacinia mollis. Quisque
-        iaculis nisl fermentum pharetra lobortis. Donec rhoncus dui sem, ac molestie leo tristique vel. Phasellus in
-        nibh feugiat, fringilla lectus in, elementum magna. Etiam quis dui condimentum, tempus ex in, dapibus est.
-        Cras ut congue augue. Donec ac enim ex. Ut id tristique risus, vel porttitor quam. Sed ultricies enim eu nibh
-        porttitor, vel sodales enim feugiat. Fusce volutpat venenatis magna ac ultrices. Curabitur eget urna ut nulla
-        mattis convallis non eu diam.</p>
-    </div>
-
-    <hr id='futurework'>
-
-    <div style="text-align:center;">
-      <h2>Future Work</h2>
-      <p style="text-align: left;padding: 0px 30px;">Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-        Vestibulum lorem nulla, consectetur at leo vel, pretium bibendum nisl. Cras blandit quam a enim ultrices, eu
-        convallis enim posuere. Donec eleifend enim sed purus consectetur, vitae cursus lectus varius. Vivamus
-        consectetur felis nec est venenatis posuere. Phasellus vitae aliquet erat. In laoreet lacinia mollis. Quisque
-        iaculis nisl fermentum pharetra lobortis. Donec rhoncus dui sem, ac molestie leo tristique vel. Phasellus in
-        nibh feugiat, fringilla lectus in, elementum magna. Etiam quis dui condimentum, tempus ex in, dapibus est.
-        Cras ut congue augue. Donec ac enim ex. Ut id tristique risus, vel porttitor quam. Sed ultricies enim eu nibh
-        porttitor, vel sodales enim feugiat. Fusce volutpat venenatis magna ac ultrices. Curabitur eget urna ut nulla
-        mattis convallis non eu diam.</p>
-    </div>
-
-    <hr>
-
-    <div class="row" style="text-align:center;">
-      <h2>Work Distribution</h2>
       <div style="text-align:center;">
-        <img class="img-rounded" src="pics/group.jpg" alt="Generic placeholder image" style="width:80%;">
-        <h4>Project group picture</h4>
+        <img src="pics/app_settings_dict.png" alt="Tech Stack" width="640" height="360">
+        <figcaption style="text-align:center;">Figure x- Application Settings Dictionary</figcaption>
       </div>
-      <div class="col-md-4" style="font-size:16px">
-        <img class="img-rounded" src="pics/a.png" alt="Generic placeholder image" width="240" height="240">
-        <h3>Tyler Tisinger</h3>
-        <p class="lead">tt549@cornell.edu</p>
-        <p>Designed the overall web interface, pacer, and lighting systems. <!--@Tyler-->
+      <br>
+      <p style="text-align: left;padding: 0px 30px;">
+        The final major feature implemented is an integrated event logging system to improve debugging and user
+        feedback. Events such as pacer creation, updates, errors, and mode transitions are recorded both in the UI and
+        in a rolling log file capped at the 200 most recent entries to prevent excessive storage usage. This ensures
+        that users can monitor system behavior in real time without relying on terminal output, making the system more
+        robust for demonstrations and eventual real world deployment.
+        <br>
+      </p>
+      <div style="text-align:center;">
+        <img src="pics/pacer_log_file.png" alt="Tech Stack" width="640" height="360">
+        <figcaption style="text-align:center;">Figure x- Event Log .log</figcaption>
       </div>
-      <div class="col-md-4" style="font-size:16px">
-        <img class="img-rounded" src="pics/b.png" alt="Generic placeholder image" width="240" height="240">
-        <h3>Rhea Desai</h3>
-        <p class="lead">rd535@cornell.edu</p>
-        <p>Implemented the music mode. <!--@Rhea-->
+      <br>
+      <p style="text-align: left;padding: 0px 30px;">
+        Several smaller, quality of life features were incrementally added to improve overall system interaction. One
+        key improvement was overhauling the input table to have more intuitive and flexible user controls. For
+        example, dynamic pacers allow users to set a different pace for each lap. Now, when the user chooses how many
+        laps the dynamic pacer will make, the interface will automatically genreate input fields for each of the laps.
+        This makes it clearer how data should be entered while reducing user error and hiding unnecessary fields.
+        <br><br>
+        Another important enhancement was the introduction of an “active pacer” table to only allow the user to
+        control pacers that are actively loaded onto the Pi and currently controlled by the pacer manager. Rather than
+        immediately treating all input table enterprise as active, the user must first send their configured pacers to
+        the Raspberry Pi, at which point the system validates and registers them as active pacers. This is returned as
+        feedback to the user through the event log along with an HTML banner display that will pop up with a success
+        or error message. Only these validated entries are then displayed on the active pacer table, ensuring that
+        outdated pacers or non-existent objects are not executed or displayed.
+        <br>
+      </p>
+      <div style="text-align:center;">
+        <img src="pics/pacer_log_file.png" alt="Tech Stack" width="640" height="360">
+        <figcaption style="text-align:center;">Figure x- Event Log .log</figcaption>
       </div>
-      <div class="col-md-4" style="font-size:16px">
-        <img class="img-rounded" src="pics/Andrew.JPG" alt="Generic placeholder image" width="240" height="240">
-        <h3>Andrew Lin</h3>
-        <p class="lead">ahl92@cornell.edu</p>
-        <p>Provided baseline backend architecture and tested the performance and reliability of the system.
-          <!--@Andrew-->
+      <br>
+      <p style="text-align: left;padding: 0px 30px;">
+        This design improves system robustness as needed for a production level application by separating
+        configuration from execution which reduces the chances of runtime errors. Once pacers are active, the user is
+        given fine tuned control over execution, with the ability to start of stop individual pacers independently or
+        launch all active pacers simultaneously. All these above features, along with many smaller but equally
+        important improvements to the user experience, were driven by extensive hands-on testing. Backend features
+        could validated using performance testing tools, but frontend functionality required direct, manual
+        interaction to discover bugs and come up with UI optimizations. Approaching the countless hours of system
+        testing from a consumer perspective allowed the application to be developed into a more complete and cohesive
+        package that can be deployed into Barton Hall and other real-world environments.
+      </p>
+
+      <h3>Lighting Implementation Details</h3>
+      <p style="text-align: left;padding: 0px 30px;">
+        The implementation of the Lighting mode aimed to extend the pacer system into a multimodal wavelight platform,
+        as was the goal to have this be used in Barton Hall. This flexible lighting system would reuse the core
+        architecture developed for the pacer mode while supporting a wide range of visual effect options.
+        <br><br>
+        At a high level, the lighting system was implemented using the same software class architecture as the pacer
+        system, consisting of a centralized manager and modular pattern classes. The lighting manager is responsible
+        for owning the LED strip object and polling updates from the active pattern classe, while each individual
+        lighting pattern defines how the LEDs should be updated at each time step and returns this data to the
+        manager.
+        <br>
+      </p>
+      <div style="text-align:center;">
+        <img src="pics/lighting_mode.png" alt="Tech Stack" width="640" height="360">
+        <figcaption style="text-align:center;">Figure x- Lighting Mode UI</figcaption>
       </div>
+      <br>
+      <p style="text-align: left;padding: 0px 30px;">
+        However, since only a single lighting pattern is active at any given time, the data structures required for
+        lighting were a lot simpler than used in the pacer system. Rather than maintaining a dictionary of multiple
+        active pattern instance, which reduces complexity and inherently prevents race conditions between overlapping
+        patterns.
+        <br><br>
+        Despite the structural similarities, several challenges rose during implementation. One major issue involved
+        inconsistent behavior when starting and stopping lighting patterns. Through debugging, it was found that even
+        though each mode (Pacer, Lighting, Music) had its own manager which controlled its own LED strip object,
+        conflicts still occured at the hardware level. This was caused by multiple strip instances attempting to
+        interface and control the same hardware, even if they were not actively driving updates.
+        <br><br>
+        To resolve this, the architecture was refactored so that all managers share a single, global LED strip object.
+        This ensures that only one interface to the hardware exists at any time, reducing any funkiness with the
+        software handling of active pacer managers and strip object control.
+        <br><br>
+        Another issue was more subtle but involved color ordering. Although the LED strip is labeled as RGBx, it seems
+        to expect color data in GRB order, which was not clearly documented. This mismatch caused green to turn into
+        red and vice versa and required a system-wide adjustment to how color data is formatted for transmission to
+        the strip.
+        <br><br>
+        Additional features were also introduced to enhance the lighting mode’s usability and flexibility. These
+        included dynamic lighting patterns, adjustable speed and brightness controls, and consistent integration into
+        the frontend interface. The lighting mode was designed to match the production-level quality of the pacer
+        system, so a lot of thought went into system flow.
+        <br><br>
+        For example, mode transitions are handled cleanly, such that the LED strip is automatically cleared and the
+        previous manager is deactivated when switching modes. Within lighting mode, users can switch between patterns
+        without needing to manually stop the current pattern, as the system automatically updates the active pattern
+        instance. Similarly, parameter updates are applied dynamically when new settings are sent to the Raspberry Pi,
+        without requiring a full restart of the pattern.
+        <br><br>
+        Additionally, an event log is maintained and displayed to the user as was done in both the pacer and music
+        modes. The buffer and log files are shared between modes so all log messages are saved to a centralized
+        location.
+      </p>
+
     </div>
 
-    <hr>
-    <div style="font-size:18px">
-      <h2>Parts List</h2>
-      <ul>
-        <li>Raspberry Pi 4 $35.00</li> <!--unknown prices for standard parts-->
-        <li>piTFT</li>
-        <li>piCobbler expansion</li>
-        <a href="https://www.sparkfun.com/sparkfun-logic-level-converter-bi-directional.html">
-          <li>Level Shifter $3.95</li>
-        </a>
-        <a
-          href="https://www.btf-lighting.com/products/1-sk6812-rgbw-4-in-1-pixels-individual-addressable-led-strip-dc5v?variant=46031799189730">
-          <li>LED Strip $58.65</li>
-        </a> <!--include link and price-->
-        <li>USB Microphone</li> <!--Rhea, please include link-->
-        <li>Wires - Provided in lab</li>
-      </ul>
-      <h3>Total: TBD</h3>
+  </div>
+
+  <hr id='hardware'>
+
+  <div style="text-align:center;">
+    <h2>Hardware</h2>
+    <p style="text-align: left;padding: 0px 30px;">
+      The hardware was chosen specifically to meet the requirements of the project while allowing extra room for
+      expansion and versatility. The Raspberry Pi 4 is a suitable microprocessor which allows for GPIO expansion and
+      ease of user interface. Its processor is powerful enough to support a frontend web interface using Flask while
+      also interfacing with hardware like the LED strip and USB microphone. This microprocessor is preferred over the
+      Raspberry Pi Zero for its ability to handle USB connections directly over the stock hardware and for onboard
+      expansion with a touchscreen LCD and external GPIO cobbler. In fact, the USB ports proved useful for last-minute
+      expansion with the USB microphone, which was chosen over the initial analog microphone + ADC combo. The piTFT
+      LCD was also helpful in displaying the IP address of the Pi for web interface connection and could prove useful
+      in future as a minimal user interface for controlling the program (see Future Work section).
+      <br><br>
+      Initially, we went with the 12V LED strip which uses the WS2814 chip to drive the LEDs. We preferred the 12V
+      strip as we believed that a higher voltage strip would result in greater signal integrity and brightness
+      uniformity over long distances. However, we ran into many issues when using the rpi_ws281x python library to
+      communicate with the strip. Our initial experiments with the LED strip seemed to show functional behavior under
+      a 3.3V data line, although the LEDs would flicker quite a bit, as seen in the video below.
+      <br><br>
+    </p>
+
+    <div style="text-align:center;">
+      <video width="640" height="360" controls>
+        <source src="pics/12V_strip.MOV" type="video/mp4">
+      </video>
+      <figcaption>Figure-5: 12V Strip Functionality</figcaption>
     </div>
-    <hr>
-    <div style="font-size:18px">
-      <h2>References</h2>
-      <a href="https://github.com/jgarff/rpi_ws281x/">rpi_ws821x LED Driver Library for Python</a><br>
-      <a href="https://flask.palletsprojects.com/en/stable/">Flask Web Framework</a><br>
-      <a href="https://aubio.org/">Aubio Beat Detection Library</a><br>
-      <a href="http://getbootstrap.com/">Bootstrap</a><br>
-      <a href="https://sourceforge.net/p/raspberry-gpio-python/wiki/Home/">R-Pi GPIO Document</a><br>
-      <a href="https://cdn.sparkfun.com/datasheets/BreakoutBoards/BSS138.pdf">BSS138 Level Shifter Datasheet</a><br>
 
+    <p style="text-align: left;padding: 0px 30px;">
+      We then predicted that the strip would likely perform better when driven with a 5V data line. Initially, a
+      3.3-5V level shifter was proposed to ensure signal integrity with the 5V data line that is expected of the chips
+      on the LED strip. However, we believed that the level shifter was faulty and would only drive the signal needed
+      for the WS2814 12V LED strip under the correct conditions. That is, when level shifted using the 5V reference
+      from the Raspberry Pi, the LED strip seemed to function. However, when level shifted using the 5V reference from
+      the power supply, the LED strip would not turn on at all. We tried linking the negative terminals of both 5V
+      references of the power supply and the Raspberry Pi together, but this did not help.
+      <br><br>
+      While performing a test to see if all the LEDs on the strip would turn on using strandtest.py, we were met with
+      faulty results. The signal seemed to travel all the way to the last LED when tested with an oscilloscope, but
+      the LEDs would not turn on, despite putting a high number of LEDs in the test program. By simply tinkering with
+      the LED strip, the LEDs would travel farther, but then the LEDs would freeze and render control useless. Thus,
+      we were skeptical about the integrity of the strip as delicate touches would destroy control. In fact, it was
+      not until later on that we realized that the library probably does not support the WS2814 chip, as there was no
+      constant in the top-level of the library which referred to the WS2814 chip. Only WS2811, SK6812, and WS2812
+      constants were available.
+      <br><br>
+      Thus, we resorted to using the 5V LED strip which uses the SK6812 chip instead. This seems to be a chip that is
+      officially supported by the LED driver library as mentioned earlier. As seen in the video below, the test
+      program runs much more seamlessly on the strip and does not have any glitches in lighting.
+
+    <div style="text-align:center;">
+      <video width="640" height="360" controls>
+        <source src="pics/5V_strip.MOV" type="video/mp4">
+      </video>
+      <figcaption>Figure-6: 5V Strip Functionality</figcaption>
     </div>
 
-    <hr>
+    <p style="text-align: left;padding: 0px 30px;">
+      In addition, the 5V LED strip better serves the project requirements as it is waterproof, though not initially
+      part of our design proposal. This would be a suitable design for outdoor track spaces as the strip would be
+      resistant to rainy weather conditions and allow for runners to practice in wetter conditions.
+      <br><br>
+      Recalling the issues experienced with the level shifter, we decided to analyze the signal with an oscilloscope
+      to ensure that the signal is being translated from 3.3V to 5V properly. When shifting to 5V, however, we find
+      that the flatline of the raw 3.3V PWM signal is not maintained when shifted to 5V. In fact, the signal seems to
+      have a high rising edge, falls back down to near 3.3V, and then slopes upward to near 5V at the falling edge of
+      the signal. This is questionable for integrity of communication from the Pi to the LED chip, especially with the
+      strict timing protocol required of the SK6812 chip. That is,
+      <br>
+    <p style="text-align: left;padding: 0px 30px;"></p><i>V<sub>IH</sub> = 0.7 &middot; V<sub>DD</sub></i></p>
+    <p style="text-align: left;padding: 0px 30px;">
+      according to the datasheet. That means the input signal must be at least 3.5V. A 3.3V signal is thus below the
+      guaranteed
+      threshold. However, the LED seemed to work fine and no noticeable LED rendering issues could be seen physically,
+      even though the level-shifted control signal was not being generated correctly.
 
-    <div class="row">
-      <h2>Code Appendix</h2>
-      <pre><code>
+    <div class="image-row">
+      <figure>
+        <img src="pics/3.3V_ctrl.JPG" alt="Raw Signal">
+        <figcaption>Figure-7: Raw 3.3V Control Signal</figcaption>
+      </figure>
+
+      <figure>
+        <img src="pics/5V_ctrl.JPG" alt="5V unloaded">
+        <figcaption>Figure-8: 5V Control Signal (unloaded)</figcaption>
+      </figure>
+
+      <figure>
+        <img src="pics/5V_ctrl_ld.JPG" alt="5V loaded">
+        <figcaption>Figure-9: 5V Control Signal (loaded)</figcaption>
+      </figure>
+    </div>
+
+    </p>
+
+
+    </p>
+
+    <p style="text-align: left;padding: 0px 30px;">
+
+    </p>
+
+
+    </p>
+
+
+    </p>
+  </div>
+
+  <hr id='testing'>
+
+  <div style="text-align:center;">
+    <h2>System Performance Analysis</h2>
+    <p style="text-align: left;padding: 0px 30px;">
+      Accurate pacing and rendering of the LED strip is essential for runners to rely on this system for training. The
+      system must reproduce the commanded pace with minimal deviation so that the cues from the LED strip remain
+      accurate. Because human reaction time is approximately 100 ms, any timing error larger than this threshold becomes
+      perceptible and degrades the utility of the LED pacing system. Any performance testing code was performed on the
+      perf branch of the github repo associated with this project (not included in the code appendix). In addition,
+      these tests were run with app.py run with chrt -f 1 which sets the app to be run under realtime scheduling
+      (SCHED_FIFO) with priority 1. This makes the process hard to preempt and will allow us to achieve the lowest
+      possible latencies on the stock Raspbian kernel.
+      <br><br>
+
+      To analyze the performance of the LED pacing system, we compare the commanded pace to the measured LED travel time
+      across multiple trials. We analyze timing accuracy, consistency, and sources of error to determine whether the
+      system meets the required performance specification. The experiment involves testing a 60 second pace around the
+      LED strip and analyzing the difference from when the LED strip turns off at the end of the split to when the first
+      LED turns on. The seven measured lap times were 60.012, 60.007, 60.014, 60.020, 60.014, 60.020, and 60.011. Thus,
+      the mean lap time is 60.014s, with an average error of +14ms from the commanded pace. The standard deviation is
+      5ms, and the max deviation is 20ms, which is nearly 5x better than the 100ms requirement. Thus, the pacing system
+      does meet the required timing accuracy for reliable runner feedback.
+      <br><br>
+
+      The next practical metric worth measuring is the latency between the web interface and the start/stop button of
+      the pacer. This is important, as a user should receive a realtime response with the LED pacer starting as soon as
+      the user presses the start button. To evaluate this metric, three start/stop experiments were performed: one pacer
+      called “Adam 200 at 30” which had a 1 lab 4s pace, another pacer called x which had a 8s pace of 4 laps, and a
+      third experiment which involved starting both of these paces at the same time. Across all trials, the pacer system
+      demonstrates stable and predictable timing behavior. For simultaneous pacer activations, combined start latencies
+      averaged 35.3 ms with a standard deviation of 1.7 ms, while combined stop latencies averaged 38.9 ms with a
+      standard deviation of 8.2 ms. These values indicate that concurrent pacer operation introduces only modest
+      overhead and remains well within acceptable timing limits.
+      <br><br>
+
+      When analyzed independently, the primary pacer (“Adam 200 at 30”) exhibited typical start latencies of 29–32 ms
+      and stop latencies of 20–35 ms, with two isolated outliers (220 ms start, 80 ms stop). This is probably due to OS
+      scheduling, despite the processes being run at realtime. The secondary pacer (“x”) showed consistently low start
+      latencies (~4 ms) and stop latencies (~6 ms). Overall, the system maintains timing accuracy and responsiveness
+      even under concurrent load, with no evidence of systemic drift or instability. This is pretty good, as the user
+      will barely notice any latency between the press of the start button and the first LED turning on.
+      <br><br>
+    </p>
+    <div class="two-img-row">
+      <figure>
+        <img src="pics/Adam Latency Scatter.png" alt="First image">
+        <figcaption>Single Pace Latency Scatter</figcaption>
+      </figure>
+
+      <figure>
+        <img src="pics/Paired Events Latency Scatter.png" alt="Second image">
+        <figcaption>Combined Latency Scatter</figcaption>
+      </figure>
+    </div>
+    <p style="text-align: left;padding: 0px 30px;">
+      Another practical metric to measure is the performance of the BPM detector with various songs. For this test, we
+      used three different songs and tested to see whether the detected BPM is stable across segments of the song and
+      how closely it matches the true BPM. The three songs that were tested are “Living on a Prayer” by Bon Jovi, “I
+      Like To Move It” by will.i.am, “Love Me Like You Do” by Ellie Goulding.
+      <br><br>
+      “Living on a Prayer” has a tempo of 123 BPM, and the statistics tell us that this song has an average BPM of 121.8
+      BPM, which is quite close to the true tempo. This song has a pretty consistent kick drum and bass energy, which
+      allowed for the BPM detector to catch on to the tempo of the song pretty well.
+      <br><br>
+      “I Like to Move It” has a tempo of 127 BPM, whereas the average measured BPM was 125.4BPM, which is pretty close
+      to the true BPM. Like “Living on a Prayer,” the bass energy is pretty strong and thus the BPM detector is able to
+      catch on pretty easily.
+      <br><br>
+      “Love Me Like You Do” has a tempo of 95 BPM, and the average measured BPM was 109.4 BPM, which is kind of far from
+      the true BPM. This is likely due to the fact that the song is not necessarily stable in the bass energy, as there
+      are certain parts of the song which are less instrumentally intense as opposed to the other two songs.
+      <br><br>
+      On top of seeing whether the BPM detector is able to detect a BPM close to the true BPM, we also analyze the
+      detection time, detection windows, audio-to-LED latencies, and blink delays. This is helpful in understanding the
+      delay between the time the music hits the microphone and when the beats pop out on the LEDs. The average beat
+      detection time was 100ms, which is pretty good as the algorithm is able to detect changes pretty quickly.
+      <br><br>
+      Audio pipeline performance is also important to observe in ensuring that this system can handle realtime audio
+      analysis. The audio read time is around 21.86ms average, which is pretty good considering that this is less than
+      the chunk/buffer duration determined by chunk size / samples rate which is 1024 / 44100 = 23.22ms. Thus, this
+      results in a realtime ratio of 1.02, as the chunk processing time is only slightly greater than the chunk
+      duration. Thus, the system processes audio about 2% slower than realtime, which is fine as this delay can be
+      accounted for by having the LEDs blink a little ahead of this delay.
+
+    </p>
+  </div>
+
+  <hr id='conclusions'>
+
+  <div style="text-align:center;">
+    <h2>Conclusions</h2>
+    <p style="text-align: left;padding: 0px 30px;">
+
+    </p>
+  </div>
+
+  <hr id='conlcusions'>
+
+  <div style="text-align:center;">
+    <h2>Future Work</h2>
+    <ul style="text-align: left;padding: 0px 30px;">
+      <li>
+        Touchscreen usage - minimal UI on touchscreen to control paces / different modes / reset?
+      </li>
+      <li>
+        Expand lighting patterns and allow for customization of patterns / timers on LEDs / integration with LightKey or
+        various lighting software used at large events.
+      </li>
+      <li>
+        Realtime connection with the track gun, allowing for millisecond response between the time the pace is started
+        and when the runner knows to begin.
+        <ul>
+          <li>
+            Reducing latency overhead between web interface and hardware - Wi-Fi is slow, might want to consider some
+            other more efficient wireless communication protocols and/or IR remotes if you care about realtime response
+          </li>
+        </ul>
+      </li>
+      <li>
+        A unidirectional buffer for level shifting from 3.3V to 5V using a 74HCT125/74AHCT125 might create a cleaner 5V
+        control signal for the LED strip if signal integrity is to be maintained over long distances
+      </li>
+      <li>
+        Scale up the sound system and test with a longer series of songs to see if it lasts. Also, make silence
+        monitoring more accurate by possibly adjusting variables and thresholds
+      </li>
+      <li>
+        Introduce more patterns in the LED music reaction system
+      </li>
+    </ul>
+  </div>
+
+  <div class="row" style="text-align:center;">
+    <h2>Work Distribution</h2>
+    <div style="text-align:center;">
+      <img class="img-rounded" src="pics/group.jpg" alt="Generic placeholder image" style="width:80%;">
+      <h4>Project group picture</h4>
+    </div>
+    <div class="col-md-4" style="font-size:16px">
+      <img class="img-rounded" src="pics/Tyler_Headshot.png" alt="Generic placeholder image" width="240" height="240">
+      <h3>Tyler Tisinger</h3>
+      <p class="lead">tt549@cornell.edu</p>
+      <p>Designed the overall web interface, pacer, and lighting systems. <!--@Tyler-->
+    </div>
+    <div class="col-md-4" style="font-size:16px">
+      <img class="img-rounded" src="pics/b.png" alt="Generic placeholder image" width="240" height="240">
+      <h3>Rhea Desai</h3>
+      <p class="lead">rd535@cornell.edu</p>
+      <p>Implemented the music mode. <!--@Rhea-->
+    </div>
+    <div class="col-md-4" style="font-size:16px">
+      <img class="img-rounded" src="pics/Andrew.JPG" alt="Generic placeholder image" width="240" height="240">
+      <h3>Andrew Lin</h3>
+      <p class="lead">ahl92@cornell.edu</p>
+      <p>Provided baseline backend architecture and tested the performance and reliability of the system.
+        <!--@Andrew-->
+    </div>
+  </div>
+
+  <hr>
+  <div style="font-size:18px">
+    <h2>Parts List</h2>
+    <ul>
+      <li>Raspberry Pi 4 $35.00</li> <!--unknown prices for standard parts-->
+      <li>piTFT $44.95</li>
+      <li>piCobbler expansion $8.00</li>
+      <a href="https://www.sparkfun.com/sparkfun-logic-level-converter-bi-directional.html">
+        <li>Level Shifter $3.95</li>
+      </a>
+      <a
+        href="https://www.btf-lighting.com/products/1-sk6812-rgbw-4-in-1-pixels-individual-addressable-led-strip-dc5v?variant=46031799189730">
+        <li>LED Strip $58.65</li>
+      </a> <!--include link and price-->
+      <li>USB Microphone $6.99</li> <!--Rhea, please include link-->
+      <li>Wires - Provided in lab</li>
+    </ul>
+    <h3>Total: $157.54</h3>
+  </div>
+  <hr>
+  <div style="font-size:18px">
+    <h2>References</h2>
+    <a href="https://github.com/jgarff/rpi_ws281x/">rpi_ws821x LED Driver Library for Python</a><br>
+    <a href="https://flask.palletsprojects.com/en/stable/">Flask Web Framework</a><br>
+    <a href="https://aubio.org/">Aubio Beat Detection Library</a><br>
+    <a href="http://getbootstrap.com/">Bootstrap</a><br>
+    <a href="https://sourceforge.net/p/raspberry-gpio-python/wiki/Home/">R-Pi GPIO Document</a><br>
+    <a href="https://cdn.sparkfun.com/datasheets/BreakoutBoards/BSS138.pdf">BSS138 Level Shifter Datasheet</a><br>
+
+  </div>
+
+  <hr>
+
+  <div class="row">
+    <h2>Code Appendix</h2>
+    <pre><code>
 // Hello World.c
 int main(){
   printf("Hello World.\n");
 }
               </code></pre>
-    </div>
+  </div>
 
   </div><!-- /.container -->
 
