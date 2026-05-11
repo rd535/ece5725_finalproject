@@ -1,4 +1,12 @@
-Error:
-The sys_perf_event_open() syscall returned with 3 (No such process) for event (task-clock).
-/bin/dmesg | grep -i perf may provide additional information.
+ Performance counter stats for process id '738':
 
+          2,508.46 msec task-clock                #    0.125 CPUs utilized
+             4,888      context-switches          #    0.002 M/sec
+               498      cpu-migrations            #    0.199 K/sec
+                 0      page-faults               #    0.000 K/sec
+     2,133,916,977      cycles                    #    0.851 GHz
+     1,560,741,388      instructions              #    0.73  insn per cycle
+   <not supported>      branches
+        16,520,759      branch-misses
+
+      20.008604844 seconds time elapsed
