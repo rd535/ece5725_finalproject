@@ -14,12 +14,12 @@ class MusicLightPattern:
         self.pulse_until = 0.0
 
     def on_beat(self):
-        """Call this when the beat detector finds a beat."""
+        """Call this when beat detector finds a beat."""
         import time
         self.pulse_until = time.time() + self.pulse_seconds
 
     def render(self, strip, num_leds):
-        """Draw full white during the pulse, otherwise turn the strip off."""
+        """Draw full white during the pulse, otherwise turn strip off."""
         import time
         pixel = Color(*self.color) if time.time() < self.pulse_until else 0
 
@@ -29,7 +29,7 @@ class MusicLightPattern:
         strip.show()
 
     def clear(self, strip, num_leds):
-        """Turn the strip off and reset pulse state."""
+        """Turn strip off and reset pulse state."""
         self.pulse_until = 0.0
         for i in range(num_leds):
             strip.setPixelColor(i, 0)
