@@ -359,3 +359,20 @@ pre {
   margin-top: 6px;
   color: #555;
 }
+
+.image-row {
+  display: flex;       /* Aligns children in a row */
+  gap: 10px;           /* Adds space between images */
+  justify-content: center; /* Centers the row of images */
+}
+
+.image-row figure {
+  margin: 0;              /* Removes default figure margins */
+  flex: 1;                /* Forces each figure to take equal space */
+  text-align: center;     /* Centers the figcaption */
+}
+
+.image-row img {
+  width: auto;       /* Forces 3 images to fit exactly in one row */
+  height: auto;        /* Maintains aspect ratio */
+}
