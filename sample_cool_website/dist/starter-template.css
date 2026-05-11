@@ -138,6 +138,7 @@ img,
 iframe,
 video {
   max-width: 100%;
+  height: auto;
   border-radius: 16px;
   box-shadow: 0 18px 46px rgba(28, 37, 49, 0.22);
 }
@@ -176,7 +177,7 @@ iframe {
 .three-img-row img {
   display: block;
   width: 100%;
-  height: 150px;
+  height: auto;
   object-fit: contain;
   background: #ffffff;
   border-radius: 10px;
@@ -344,14 +345,14 @@ pre {
 }
 
 .two-img-row figure {
-  width: 45%;             /* two per row */
+  flex: 0 1 45%;
   text-align: center;
 }
 
 .two-img-row img {
-  width: 100%;
+  width: auto;
   height: auto;
-  max-width: 400px;       /* cap size */
+  max-width: 100%;
 }
 
 .two-img-row figcaption {
@@ -368,11 +369,12 @@ pre {
 
 .image-row figure {
   margin: 0;              /* Removes default figure margins */
-  flex: 1;                /* Forces each figure to take equal space */
+  flex: 0 1 auto;
   text-align: center;     /* Centers the figcaption */
 }
 
 .image-row img {
-  width: auto;       /* Forces 3 images to fit exactly in one row */
-  height: auto;        /* Maintains aspect ratio */
+  width: auto;
+  height: auto;
+  max-width: 100%;
 }
