@@ -326,19 +326,95 @@
 
     </div>
 
-    <hr id='drawings'>
+    <hr id='hardware'>
 
     <div style="text-align:center;">
-      <h2>Drawings</h2>
-      <p style="text-align: left;padding: 0px 30px;">Lorem ipsum dolor sit amet, consectetur adipiscing elit.
-        Vestibulum lorem nulla, consectetur at leo vel, pretium bibendum nisl. Cras blandit quam a enim ultrices, eu
-        convallis enim posuere. Donec eleifend enim sed purus consectetur, vitae cursus lectus varius. Vivamus
-        consectetur felis nec est venenatis posuere. Phasellus vitae aliquet erat. In laoreet lacinia mollis. Quisque
-        iaculis nisl fermentum pharetra lobortis. Donec rhoncus dui sem, ac molestie leo tristique vel. Phasellus in
-        nibh feugiat, fringilla lectus in, elementum magna. Etiam quis dui condimentum, tempus ex in, dapibus est.
-        Cras ut congue augue. Donec ac enim ex. Ut id tristique risus, vel porttitor quam. Sed ultricies enim eu nibh
-        porttitor, vel sodales enim feugiat. Fusce volutpat venenatis magna ac ultrices. Curabitur eget urna ut nulla
-        mattis convallis non eu diam.</p>
+      <h2>Hardware</h2>
+      <p style="text-align: left;padding: 0px 30px;">
+        The hardware was chosen specifically to meet the requirements of the project while allowing extra room for
+        expansion and versatility. The Raspberry Pi 4 is a suitable microprocessor which allows for GPIO expansion and
+        ease of user interface. Its processor is powerful enough to support a frontend web interface using Flask while
+        also interfacing with hardware like the LED strip and USB microphone. This microprocessor is preferred over the
+        Raspberry Pi Zero for its ability to handle USB connections directly over the stock hardware and for onboard
+        expansion with a touchscreen LCD and external GPIO cobbler. In fact, the USB ports proved useful for last-minute
+        expansion with the USB microphone, which was chosen over the initial analog microphone + ADC combo. The piTFT
+        LCD was also helpful in displaying the IP address of the Pi for web interface connection and could prove useful
+        in future as a minimal user interface for controlling the program (see Future Work section).
+        <br><br>
+        Initially, we went with the 12V LED strip which uses the WS2814 chip to drive the LEDs. We preferred the 12V
+        strip as we believed that a higher voltage strip would result in greater signal integrity and brightness
+        uniformity over long distances. However, we ran into many issues when using the rpi_ws281x python library to
+        communicate with the strip. Our initial experiments with the LED strip seemed to show functional behavior under
+        a 3.3V data line, although the LEDs would flicker quite a bit, as seen in the video below.
+        <br><br>
+
+      <div style="text-align:center;">
+        <video width="640" height="360" controls>
+          <source src="pics/12V_strip.MOV" type="video/mp4">
+        </video>
+        <figcaption>Figure-5: 12V Strip Functionality</figcaption>
+      </div>
+
+      <p style="text-align: left;padding: 0px 30px;">
+        We then predicted that the strip would likely perform better when driven with a 5V data line. Initially, a
+        3.3-5V level shifter was proposed to ensure signal integrity with the 5V data line that is expected of the chips
+        on the LED strip. However, we believed that the level shifter was faulty and would only drive the signal needed
+        for the WS2814 12V LED strip under the correct conditions. That is, when level shifted using the 5V reference
+        from the Raspberry Pi, the LED strip seemed to function. However, when level shifted using the 5V reference from
+        the power supply, the LED strip would not turn on at all. We tried linking the negative terminals of both 5V
+        references of the power supply and the Raspberry Pi together, but this did not help.
+        <br><br>
+        While performing a test to see if all the LEDs on the strip would turn on using strandtest.py, we were met with
+        faulty results. The signal seemed to travel all the way to the last LED when tested with an oscilloscope, but
+        the LEDs would not turn on, despite putting a high number of LEDs in the test program. By simply tinkering with
+        the LED strip, the LEDs would travel farther, but then the LEDs would freeze and render control useless. Thus,
+        we were skeptical about the integrity of the strip as delicate touches would destroy control. In fact, it was
+        not until later on that we realized that the library probably does not support the WS2814 chip, as there was no
+        constant in the top-level of the library which referred to the WS2814 chip. Only WS2811, SK6812, and WS2812
+        constants were available.
+        <br><br>
+        Thus, we resorted to using the 5V LED strip which uses the SK6812 chip instead. This seems to be a chip that is
+        officially supported by the LED driver library as mentioned earlier. As seen in the video below, the test
+        program runs much more seamlessly on the strip and does not have any glitches in lighting.
+
+      <div style="text-align:center;">
+        <video width="640" height="360" controls>
+          <source src="pics/5V_strip.MOV" type="video/mp4">
+        </video>
+        <figcaption>Figure-6: 5V Strip Functionality</figcaption>
+      </div>
+
+      <p style="text-align: left;padding: 0px 30px;">
+        In addition, the 5V LED strip better serves the project requirements as it is waterproof, though not initially
+        part of our design proposal. This would be a suitable design for outdoor track spaces as the strip would be
+        resistant to rainy weather conditions and allow for runners to practice in wetter conditions.
+        <br><br>
+        Recalling the issues experienced with the level shifter, we decided to analyze the signal with an oscilloscope
+        to ensure that the signal is being translated from 3.3V to 5V properly. When shifting to 5V, however, we find
+        that the flatline of the raw 3.3V PWM signal is not maintained when shifted to 5V. In fact, the signal seems to
+        have a high rising edge, falls back down to near 3.3V, and then slopes upward to near 5V at the falling edge of
+        the signal. This is questionable for integrity of communication from the Pi to the LED chip, especially with the
+        strict timing protocol required of the SK6812 chip. That is,
+        <br><p style="text-align: left;padding: 0px 30px;"></p><i>V<sub>IH</sub> = 0.7 &middot; V<sub>DD</sub></i></p>
+        <p style="text-align: left;padding: 0px 30px;">
+          according to the datasheet. That means the input signal must be at least 3.5V. A 3.3V signal is thus below the
+        guaranteed
+        threshold. However, the LED seemed to work fine and no noticeable LED rendering issues could be seen physically,
+        even though the level-shifted control signal was not being generated correctly.
+        </p>
+        
+
+      </p>
+
+      <p style="text-align: left;padding: 0px 30px;">
+
+      </p>
+
+
+      </p>
+
+
+      </p>
     </div>
 
     <hr id='testing'>
