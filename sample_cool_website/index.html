@@ -1,227 +1,491 @@
-
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
-    <meta name="description" content="">
-    <meta name="author" content="">
 
-    <title>PiPacer</title>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+  <meta name="description" content="">
+  <meta name="author" content="">
 
-    <!-- Bootstrap core CSS -->
-    <link href="dist/css/bootstrap.min.css" rel="stylesheet">
+  <title>PiPacer</title>
 
-    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
-    <!-- <link href="../../assets/css/ie10-viewport-bug-workaround.css" rel="stylesheet"> -->
+  <!-- Bootstrap core CSS -->
+  <link href="dist/css/bootstrap.min.css" rel="stylesheet">
 
-    <!-- Custom styles for this template -->
-    <link href="starter-template.css" rel="stylesheet">
+  <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+  <!-- <link href="../../assets/css/ie10-viewport-bug-workaround.css" rel="stylesheet"> -->
 
-    <!-- Just for debugging purposes. Don't actually copy these 2 lines! -->
-    <!--[if lt IE 9]><script src="../../assets/js/ie8-responsive-file-warning.js"></script><![endif]-->
-    <!-- <script src="../../assets/js/ie-emulation-modes-warning.js"></script> -->
+  <!-- Custom styles for this template -->
+  <link href="starter-template.css" rel="stylesheet">
 
-    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
-    <!--[if lt IE 9]>
+  <!-- Just for debugging purposes. Don't actually copy these 2 lines! -->
+  <!--[if lt IE 9]><script src="../../assets/js/ie8-responsive-file-warning.js"></script><![endif]-->
+  <!-- <script src="../../assets/js/ie-emulation-modes-warning.js"></script> -->
+
+  <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+  <!--[if lt IE 9]>
       <script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
       <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
     <![endif]-->
-  </head>
+</head>
 
-  <body>
+<body>
 
-    <nav class="navbar navbar-inverse navbar-fixed-top">
-      <div class="container">
-        <div class="navbar-header">
-          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar" aria-expanded="false" aria-controls="navbar">
-            <span class="sr-only">Toggle navigation</span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-          </button>
-          <a class="navbar-brand" href="#">PiPacer</a>
-        </div>
-        <div id="navbar" class="collapse navbar-collapse">
-          <ul class="nav navbar-nav">
-            <li class="active"><a href="#">Home</a></li>
-            <li><a href="#intro">Introduction</a></li>
-            <li><a href="#obj">Project Objective</a></li>
-            <li><a href="#design">Design</a></li>
-            <li><a href="#drawings">Drawings</a></li>
-            <li><a href="#testing">Testing</a></li>
-            <li><a href="#results">Results</a></li>
-            <li><a href="#conclusions">Conclusions</a></li>
-            <li><a href="#futurework">Future Work</a></li>
-          </ul>
-        </div><!--/.nav-collapse -->
-      </div>
-    </nav>
-
+  <nav class="navbar navbar-inverse navbar-fixed-top">
     <div class="container">
-
-      <div class="starter-template">
-        <h1>PiPacer</h1>
-        <p class="lead">A multi-mode LED pacing system<br>By Tyler Tisinger, Rhea Desai, and Andrew Lin<br>Last updated: 05/10/2026</p>
+      <div class="navbar-header">
+        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar"
+          aria-expanded="false" aria-controls="navbar">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="#">PiPacer</a>
       </div>
+      <div id="navbar" class="collapse navbar-collapse">
+        <ul class="nav navbar-nav">
+          <li class="active"><a href="#">Home</a></li>
+          <li><a href="#intro">Introduction</a></li>
+          <li><a href="#obj">Project Objective</a></li>
+          <li><a href="#design">Design</a></li>
+          <li><a href="#drawings">Drawings</a></li>
+          <li><a href="#testing">Testing</a></li>
+          <li><a href="#results">Results</a></li>
+          <li><a href="#conclusions">Conclusions</a></li>
+          <li><a href="#futurework">Future Work</a></li>
+        </ul>
+      </div><!--/.nav-collapse -->
+    </div>
+  </nav>
 
-      <div class="center-block" style="text-align:center;">
-          <img src="pics/rainbow.JPG" alt="Rainbow Lighting Mode" width="640" height="360">
-          <h4 style="text-align:center;">Rainbow Lighting Mode</h4>
-      </div>
+  <div class="container">
 
-      
-      <hr>
-      <div class="center-block">
-          <iframe width="640" height="360" src="https://www.youtube.com/embed?v=et91Gea6CPk" frameborder="0" allowfullscreen></iframe>
-          <h4 style="text-align:center;">Demonstration Video</h4>
-      </div>
+    <div class="starter-template">
+      <h1>PiPacer</h1>
+      <p class="lead">A multi-mode LED pacing system<br>By Tyler Tisinger, Rhea Desai, and Andrew Lin<br>Last updated:
+        05/10/2026</p>
+    </div>
 
-      <hr id="intro">
+    <div class="center-block" style="text-align:center;">
+      <img src="pics/rainbow.JPG" alt="Rainbow Lighting Mode" width="640" height="360">
+      <h4 style="text-align:center;">Rainbow Lighting Mode</h4>
+    </div>
 
+
+    <hr>
+    <div class="center-block">
+      <iframe width="640" height="360" src="https://www.youtube.com/embed?v=et91Gea6CPk" frameborder="0"
+        allowfullscreen></iframe>
+      <h4 style="text-align:center;">Demonstration Video</h4>
+    </div>
+
+    <hr id="intro">
+
+    <div style="text-align:center;">
+      <h2>Introduction</h2>
+      <p style="text-align: left;padding: 0px 30px;">
+        The goal of this project is to develop a multi-use wavelight product designed for usage inside of Barton Hall.
+        There are 3 main components: Pacer mode for track practices and races, Lighting mode for dynamic visual
+        patterns, and Music mode which processes audio input to synchronize lightning with beats per minute (BPM) of a
+        song. The project initially focused on creating a scalable pacer wavelight system suitable for a large indoor
+        track meets, but the Music and Lighting modes were later incorporated to expand functionality and reflect team
+        members’ interests in music integration. Thus, the goal of the project was not just to create an application
+        that works in the lab and demo environment, but to make it robust enough to be deployed into the real world in a
+        multipurpose track/event space such as Barton Hall. Significant effort went into designing and testing to ensure
+        a seamless and intuitive user experience while maintaining high performance across all system features.
+      </p>
+    </div>
+
+    <div style="text-align:center;">
+      <h2>Project Overview</h2>
+      <p style="text-align: left;padding: 0px 30px;">
+        At a high level, the team utilized a Raspberry Pi 4 to host a web server that enables users to control an LED
+        strip across three distinct modes: Pacer, Music, and Lighting. Through multiple development iterations, the
+        project resulted in a fully functional and responsive web-based control system, with over 3,000 lines of code
+        implemented to support backend logic, hardware interfacing, and frontend interaction. Additional features such
+        as saved presets and event logging were integrated to enhance usability and provide persistent configuration and
+        system feedback.
+      </p>
+    </div>
+
+
+
+    <div id='design-testing' style="text-align:center;">
+      <h2>Design and Testing</h2>
+
+      <h3>Overall Architecture</h3>
+      <p style="text-align: left;padding: 0px 30px;">
+        To accomplish the project goals, a robust tech stack was developed to provide significant flexibility and
+        scalability. The first design decision was choosing which software library to use for hosting a web server to
+        allow a user to easily interface with the hardware. The team selected Flask since it is lightweight and easy to
+        scale effectivly for a project of our size. Flask acts as a web framework that handles incoming HTTP requests,
+        routes them to the appropriate backend logic, and returns responses to the user interface. Once the hosting
+        framework was chosen, Python was used as the primary programming language because of the team’s familiarity and
+        proficiency with it. The Python backend defines the application logic and API endpoints that Flask exposes for
+        client interaction. The team then found a software library (rpi-ws281x) that could drive the LED strip and opted
+        for a Python-based implementation to maintain consistency across the stack. For the front end, HTML and
+        Javascript were chosen as they are easily supported by Flask and offer creative freedom with the front end.
+        JavaScript communicates with the Flask backend by sending asynchronous requests via fetch to Python-defined
+        routes, allowing real-time updates and control of the system without requiring full page reloads. This
+        interaction enables seamless data exchange between the user interface and the hardware control logic.The tech
+        stack is summarized in the figure below.
+      </p>
       <div style="text-align:center;">
-              <h2>Introduction</h2>
-              <p style="text-align: left;padding: 0px 30px;">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum lorem nulla, consectetur at leo vel, pretium bibendum nisl. Cras blandit quam a enim ultrices, eu convallis enim posuere. Donec eleifend enim sed purus consectetur, vitae cursus lectus varius. Vivamus consectetur felis nec est venenatis posuere. Phasellus vitae aliquet erat. In laoreet lacinia mollis. Quisque iaculis nisl fermentum pharetra lobortis. Donec rhoncus dui sem, ac molestie leo tristique vel. Phasellus in nibh feugiat, fringilla lectus in, elementum magna. Etiam quis dui condimentum, tempus ex in, dapibus est. Cras ut congue augue. Donec ac enim ex. Ut id tristique risus, vel porttitor quam. Sed ultricies enim eu nibh porttitor, vel sodales enim feugiat. Fusce volutpat venenatis magna ac ultrices. Curabitur eget urna ut nulla mattis convallis non eu diam.</p>
+        <img src="pics/stack.png" alt="Tech Stack" width="640" height="360">
+        <figcaption style="text-align:center;">Figure 1- System Architecture Stack</figcaption>
+        <h4 style="text-align:center;">Tech Stack</h4>
+
+
+        <h3>Methodology</h3>
+        <p style="text-align: left;padding: 0px 30px;">
+          The pacer stack is organized as a full, Flask-based control pipeline that evolved significantly throughout the
+          development process. The design and test process that was utilized by the team was a Git workflow alongside
+          frequent, isolated testing of individual features. A shared Github repository was established early on and
+          used by the team to organize and share files between members, as well as streamlining deployment of the latest
+          project version onto the Raspberry Pi for testing.
+          <br><br>
+          For most of the features that were important to the project and required a more thoughtful approach - such as
+          the lighting manager, pattern classes, and the HTML and JS front end - isolated testing was done with test
+          files that could validate each component independently. This was beneficial since it allowed the team to start
+          with implementing the most basic features and understanding their interactions first, before then slowly
+          expanding the implementation toward a full feature implementation.
+          <br><br>
+          Once this testing phase was complete, full process integration began. Git branching was used during this
+          portion so that new features could be developed, while still maintaining a clean and working application on
+          the main branch. Many of the features were incrementally added through this method. After a feature was
+          implemented, it was pushed to the Github repository and then pulled onto the Pi for real world testing and
+          user validation.
+          <br><br>
+          The main regret is not looking into a better pipeline for testing frontend features. The current workflow of
+          having to sync repositories on the web and then the Pi, along with running the program, and then user
+          debugging, slowed iteration speed. Having local frontend simulation or automated testing tools would have
+          improved development efficiency, and would have increased the speed of the test pipeline
+        </p>
+
+        <h3>External Libraries</h3>
+        <p style="text-align: left;padding: 0px 30px;">
+          The rpi_ws281x library - licensed to the git user jgarff, but credit to all other contributors - was chosen to
+          drive the LED strip since it was the most capable and flexible open source LED strip library. This library
+          provides a reliable Python wrapper of the C library to generate the waveforms required to drive the wavelight
+          strip. The strip is required to be driven at 800 kHz to meet its timing requirement, and this library ensures
+          that the bit rate is precisely maintained, enabling correct color transmission while preventing flickering and
+          data corruption. Not only does this library allow precise GPIO control for the data line to the strip, it also
+          provided an API to allow easy control of specific LED indecies and brightnss. The GPIO method used to drive
+          the LED strip was chosen to be PWM as it would offload the majority of the load to a Pi hardware peripheral
+          and decrease CPU usage. This required the team to disable certain Linux features, such as onboard Pi audio,
+          that could conflict with PWM usage.
+        </p>
+
+        <h3>Pacer Implementation Details</h3>
+        <p style="text-align: left;padding: 0px 30px;">
+          The pacer implemenation started with an isolated test directory with 3 simple files - manager, pattern, test.
+          This provided a minimal framework to test the rpi_ws281x library along with exploring initial design ideas for
+          how a pacer should behave. In this first approach, each pacer pattern owned its own LED strip object and
+          independently controlled which LEDs were updated each cycle, as dictated by set pace speed. The manager was
+          made to be a basic scheduler and would determine when each activ pacer object would run.
+          <br><br>
+          However, once most features were implemented and tested for both dynamic and constant pacer classes, the
+          system was tested with multiple concurrent pacers, and a major architectural issue emerged. Allowing each
+          pattern object to own its own LED strp instance caused conflicts at the hardware interface level and led to
+          corrupted data signals and frozen strip behavior.
+          <br><br>
+          To resolve this, the architecture was redesigned around a centralized Pacer Manager, which is now the sole
+          owner of the LED strip interface object. All pacer objects register with this manager, which collects
+          positional data from each active pacer, resolves index conflicts (prioritizing faster pacers when overlap
+          occurs), and performs a single strip update after all patterns have been iterated through. This updated
+          approach ensures predictable behavior and eliminates race conditions that were apparent in the initial
+          implementation.
+          <br><br>
+          Further up in the pacer stack is the front end portion, implemented through HTML and JavaScript. Since HTML
+          and JS are unfamiliar for web app UI development along with their integration with Flask routes, a few hours
+          were spent slowly creating and testing with an isolated test directory similar to the pacer manager and
+          patterns.
+          <br><br>
+          After getting a baseline understanding of the process flow, the HTML-based user interface (pacer_v3.html) was
+          iteratively created and provides a table-driven system for configuring pacers. Each row corresponds directly
+          to a pacer object and allows the user to define parameters such as pace, lap count, color, and pacer type.
+          <br><br>
+          Over time, the UI evolved from a simple input form into a fully interactive system supporting multiple
+          simultaneous pacers, preset management, LED strip configuration, and an integrated event log. To improve
+          usability, constant pacers allow users to define a lap pace and total laps, while dynamic pacers expand the
+          interface to accept per-lap pace inputs when additional laps are added.
+          <br><br>
+          The biggest challenge was maintaining a consistent UI look and feel across the entire application, which
+          required incremental CSS, HTML, and JavaScript logic with each new feature addition. This also slowed down the
+          development process, as forgetting to change any of the above layers would require revisiting the code,
+          implementing the fix, and then rerunning the entire test pipeline for a simple frontend feature. However,
+          investing the time to refine the frontend is critical for achieving a production-level product, as was the
+          goal with this final project.
+          <br><br>
+          Now moving down a layer, the JavaScript that is integrated within the HTML handles all browser-side logic and
+          acts as the translation layer between the UI and backend system. It dynamically updates the pacer table, loads
+          saved presets, converts user inputs into structured JSON, and sends requests to backend endpoints using
+          asynchronous fetch calls. It also continuously polls the backend through Flask routes to update pacer status,
+          runtime information, and event logs, ensuring the UI reflects real-time system behavior.
+          <br><br>
+          On the backend, the Flask application (app.py) maintains system state using structured dictionary data
+          structurs. pi_state["pacers"] stores user-defined configuration and UI state, while pacer_instances holds the
+          active Python pacer objects. Flask routes update these structures when users modify pacers, start or stop
+          execution, adjust LED settings, or load presets. The backend also manages mode switching (Pacer, Lighting,
+          Music) to prevent multiple managers from attempting to control the LED strip simultaneously, as was found to
+          be detrimental during the early pacer testing.
+          <br><br>
+          To improve flexibility and reach a production-level implementation, the system transitioned from hardcoded LED
+          strip parameters (for our current 5m strip, 60 LED/m) to a shared JSON-based state model, allowing
+          user-defined LED strip configurations to be saved and loaded across sessions. Pacer presets were also added to
+          this data structure to improve usability by allowing the user to only have to define pacer configurations once
+          and then reuse infinitely. The preset functionality was redesigned to eliminate the need for external file
+          uploads, which had been initially considered in the project proposal. Instead, users can save and load
+          configurations directly within the application, allowing them to save and load as many configured pacers they
+          want and then easily load them in. Additionally, the system automatically reloads the most recent
+          configuration on startup, further streamlining the user experience and reducing setup time.
+          <br><br>
+          The final major feature implemented is an integrated event logging system to improve debugging and user
+          feedback. Events such as pacer creation, updates, errors, and mode transitions are recorded both in the UI and
+          in a rolling log file capped at the 200 most recent entries to prevent excessive storage usage. This ensures
+          that users can monitor system behavior in real time without relying on terminal output, making the system more
+          robust for demonstrations and eventual real world deployment.
+          <br><br>
+          Several smaller, quality of life features were incrementally added to improve overall system interaction. One
+          key improvement was overhauling the input table to have more intuitive and flexible user controls. For
+          example, dynamic pacers allow users to set a different pace for each lap. Now, when the user chooses how many
+          laps the dynamic pacer will make, the interface will automatically genreate input fields for each of the laps.
+          This makes it clearer how data should be entered while reducing user error and hiding unnecessary fields.
+          <br><br>
+          Another important enhancement was the introduction of an “active pacer” table to only allow the user to
+          control pacers that are actively loaded onto the Pi and currently controlled by the pacer manager. Rather than
+          immediately treating all input table enterprise as active, the user must first send their configured pacers to
+          the Raspberry Pi, at which point the system validates and registers them as active pacers. This is returned as
+          feedback to the user through the event log along with an HTML banner display that will pop up with a success
+          or error message. Only these validated entries are then displayed on the active pacer table, ensuring that
+          outdated pacers or non-existent objects are not executed or displayed.
+          <br><br>
+          This design improves system robustness as needed for a production level application by separating
+          configuration from execution which reduces the chances of runtime errors. Once pacers are active, the user is
+          given fine tuned control over execution, with the ability to start of stop individual pacers independently or
+          launch all active pacers simultaneously. All these above features, along with many smaller but equally
+          important improvements to the user experience, were driven by extensive hands-on testing. Backend features
+          could validated using performance testing tools, but frontend functionality required direct, manual
+          interaction to discover bugs and come up with UI optimizations. Approaching the countless hours of system
+          testing from a consumer perspective allowed the application to be developed into a more complete and cohesive
+          package that can be deployed into Barton Hall and other real-world environments.
+        </p>
+
+        <h3>Lighting Implementation Details</h3>
+        <p style="text-align: left;padding: 0px 30px;">
+          The implementation of the Lighting mode aimed to extend the pacer system into a multimodal wavelight platform,
+          as was the goal to have this be used in Barton Hall. This flexible lighting system would reuse the core
+          architecture developed for the pacer mode while supporting a wide range of visual effect options.
+          <br><br>
+          At a high level, the lighting system was implemented using the same software class architecture as the pacer
+          system, consisting of a centralized manager and modular pattern classes. The lighting manager is responsible
+          for owning the LED strip object and polling updates from the active pattern classe, while each individual
+          lighting pattern defines how the LEDs should be updated at each time step and returns this data to the
+          manager.
+          <br><br>
+          However, since only a single lighting pattern is active at any given time, the data structures required for
+          lighting were a lot simpler than used in the pacer system. Rather than maintaining a dictionary of multiple
+          active pattern instance, which reduces complexity and inherently prevents race conditions between overlapping
+          patterns.
+          <br><br>
+          Despite the structural similarities, several challenges rose during implementation. One major issue involved
+          inconsistent behavior when starting and stopping lighting patterns. Through debugging, it was found that even
+          though each mode (Pacer, Lighting, Music) had its own manager which controlled its own LED strip object,
+          conflicts still occured at the hardware level. This was caused by multiple strip instances attempting to
+          interface and control the same hardware, even if they were not actively driving updates.
+          <br><br>
+          To resolve this, the architecture was refactored so that all managers share a single, global LED strip object.
+          This ensures that only one interface to the hardware exists at any time, reducing any funkiness with the
+          software handling of active pacer managers and strip object control.
+          <br><br>
+          Another issue was more subtle but involved color ordering. Although the LED strip is labeled as RGBx, it seems
+          to expect color data in GRB order, which was not clearly documented. This mismatch caused green to turn into
+          red and vice versa and required a system-wide adjustment to how color data is formatted for transmission to
+          the strip.
+          <br><br>
+          Additional features were also introduced to enhance the lighting mode’s usability and flexibility. These
+          included dynamic lighting patterns, adjustable speed and brightness controls, and consistent integration into
+          the frontend interface. The lighting mode was designed to match the production-level quality of the pacer
+          system, so a lot of thought went into system flow.
+          <br><br>
+          For example, mode transitions are handled cleanly, such that the LED strip is automatically cleared and the
+          previous manager is deactivated when switching modes. Within lighting mode, users can switch between patterns
+          without needing to manually stop the current pattern, as the system automatically updates the active pattern
+          instance. Similarly, parameter updates are applied dynamically when new settings are sent to the Raspberry Pi,
+          without requiring a full restart of the pattern.
+          <br><br>
+          Additionally, an event log is maintained and displayed to the user as was done in both the pacer and music
+          modes. The buffer and log files are shared between modes so all log messages are saved to a centralized
+          location.
+        </p>
+
       </div>
 
-    <hr id='obj'>
-
-      <div class="row">
-          <div class="col-md-4" style="text-align:center;">
-          <img class="img-rounded" src="pics/1.jpg" alt="Generic placeholder image" width="240" height="240">
-          </div>
-          <div class="col-md-8" style="font-size:18px;">
-          <h2>Project Objective:</h2>
-          <ul>
-              <li>some important objectives.some important objectives.some important objectives.some important objectives.</li>
-                <li>some other important objectives.</li>
-            <li>some not-that-important objectives.</li>
-          </ul>
-          </div>
-      </div>
-
-    <hr id='design'>
-
-      <div style="text-align:center;">
-              <h2>Design</h2>
-              <p style="text-align: left;padding: 0px 30px;">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum lorem nulla, consectetur at leo vel, pretium bibendum nisl. Cras blandit quam a enim ultrices, eu convallis enim posuere. Donec eleifend enim sed purus consectetur, vitae cursus lectus varius. Vivamus consectetur felis nec est venenatis posuere. Phasellus vitae aliquet erat. In laoreet lacinia mollis. Quisque iaculis nisl fermentum pharetra lobortis. Donec rhoncus dui sem, ac molestie leo tristique vel. Phasellus in nibh feugiat, fringilla lectus in, elementum magna. Etiam quis dui condimentum, tempus ex in, dapibus est. Cras ut congue augue. Donec ac enim ex. Ut id tristique risus, vel porttitor quam. Sed ultricies enim eu nibh porttitor, vel sodales enim feugiat. Fusce volutpat venenatis magna ac ultrices. Curabitur eget urna ut nulla mattis convallis non eu diam.</p>
-      </div>
+    </div>
 
     <hr id='drawings'>
 
-      <div style="text-align:center;">
-              <h2>Drawings</h2>
-              <p style="text-align: left;padding: 0px 30px;">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum lorem nulla, consectetur at leo vel, pretium bibendum nisl. Cras blandit quam a enim ultrices, eu convallis enim posuere. Donec eleifend enim sed purus consectetur, vitae cursus lectus varius. Vivamus consectetur felis nec est venenatis posuere. Phasellus vitae aliquet erat. In laoreet lacinia mollis. Quisque iaculis nisl fermentum pharetra lobortis. Donec rhoncus dui sem, ac molestie leo tristique vel. Phasellus in nibh feugiat, fringilla lectus in, elementum magna. Etiam quis dui condimentum, tempus ex in, dapibus est. Cras ut congue augue. Donec ac enim ex. Ut id tristique risus, vel porttitor quam. Sed ultricies enim eu nibh porttitor, vel sodales enim feugiat. Fusce volutpat venenatis magna ac ultrices. Curabitur eget urna ut nulla mattis convallis non eu diam.</p>
-      </div>
+    <div style="text-align:center;">
+      <h2>Drawings</h2>
+      <p style="text-align: left;padding: 0px 30px;">Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+        Vestibulum lorem nulla, consectetur at leo vel, pretium bibendum nisl. Cras blandit quam a enim ultrices, eu
+        convallis enim posuere. Donec eleifend enim sed purus consectetur, vitae cursus lectus varius. Vivamus
+        consectetur felis nec est venenatis posuere. Phasellus vitae aliquet erat. In laoreet lacinia mollis. Quisque
+        iaculis nisl fermentum pharetra lobortis. Donec rhoncus dui sem, ac molestie leo tristique vel. Phasellus in
+        nibh feugiat, fringilla lectus in, elementum magna. Etiam quis dui condimentum, tempus ex in, dapibus est.
+        Cras ut congue augue. Donec ac enim ex. Ut id tristique risus, vel porttitor quam. Sed ultricies enim eu nibh
+        porttitor, vel sodales enim feugiat. Fusce volutpat venenatis magna ac ultrices. Curabitur eget urna ut nulla
+        mattis convallis non eu diam.</p>
+    </div>
 
     <hr id='testing'>
 
-      <div style="text-align:center;">
-              <h2>Testing</h2>
-              <p style="text-align: left;padding: 0px 30px;">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum lorem nulla, consectetur at leo vel, pretium bibendum nisl. Cras blandit quam a enim ultrices, eu convallis enim posuere. Donec eleifend enim sed purus consectetur, vitae cursus lectus varius. Vivamus consectetur felis nec est venenatis posuere. Phasellus vitae aliquet erat. In laoreet lacinia mollis. Quisque iaculis nisl fermentum pharetra lobortis. Donec rhoncus dui sem, ac molestie leo tristique vel. Phasellus in nibh feugiat, fringilla lectus in, elementum magna. Etiam quis dui condimentum, tempus ex in, dapibus est. Cras ut congue augue. Donec ac enim ex. Ut id tristique risus, vel porttitor quam. Sed ultricies enim eu nibh porttitor, vel sodales enim feugiat. Fusce volutpat venenatis magna ac ultrices. Curabitur eget urna ut nulla mattis convallis non eu diam.</p>
-      </div>
+    <div style="text-align:center;">
+      <h2>Testing</h2>
+      <p style="text-align: left;padding: 0px 30px;">Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+        Vestibulum lorem nulla, consectetur at leo vel, pretium bibendum nisl. Cras blandit quam a enim ultrices, eu
+        convallis enim posuere. Donec eleifend enim sed purus consectetur, vitae cursus lectus varius. Vivamus
+        consectetur felis nec est venenatis posuere. Phasellus vitae aliquet erat. In laoreet lacinia mollis. Quisque
+        iaculis nisl fermentum pharetra lobortis. Donec rhoncus dui sem, ac molestie leo tristique vel. Phasellus in
+        nibh feugiat, fringilla lectus in, elementum magna. Etiam quis dui condimentum, tempus ex in, dapibus est.
+        Cras ut congue augue. Donec ac enim ex. Ut id tristique risus, vel porttitor quam. Sed ultricies enim eu nibh
+        porttitor, vel sodales enim feugiat. Fusce volutpat venenatis magna ac ultrices. Curabitur eget urna ut nulla
+        mattis convallis non eu diam.</p>
+    </div>
 
     <hr id='results'>
 
-      <div style="text-align:center;">
-              <h2>Results</h2>
-              <p style="text-align: left;padding: 0px 30px;">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum lorem nulla, consectetur at leo vel, pretium bibendum nisl. Cras blandit quam a enim ultrices, eu convallis enim posuere. Donec eleifend enim sed purus consectetur, vitae cursus lectus varius. Vivamus consectetur felis nec est venenatis posuere. Phasellus vitae aliquet erat. In laoreet lacinia mollis. Quisque iaculis nisl fermentum pharetra lobortis. Donec rhoncus dui sem, ac molestie leo tristique vel. Phasellus in nibh feugiat, fringilla lectus in, elementum magna. Etiam quis dui condimentum, tempus ex in, dapibus est. Cras ut congue augue. Donec ac enim ex. Ut id tristique risus, vel porttitor quam. Sed ultricies enim eu nibh porttitor, vel sodales enim feugiat. Fusce volutpat venenatis magna ac ultrices. Curabitur eget urna ut nulla mattis convallis non eu diam.</p>
-      </div>
+    <div style="text-align:center;">
+      <h2>Results</h2>
+      <p style="text-align: left;padding: 0px 30px;">Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+        Vestibulum lorem nulla, consectetur at leo vel, pretium bibendum nisl. Cras blandit quam a enim ultrices, eu
+        convallis enim posuere. Donec eleifend enim sed purus consectetur, vitae cursus lectus varius. Vivamus
+        consectetur felis nec est venenatis posuere. Phasellus vitae aliquet erat. In laoreet lacinia mollis. Quisque
+        iaculis nisl fermentum pharetra lobortis. Donec rhoncus dui sem, ac molestie leo tristique vel. Phasellus in
+        nibh feugiat, fringilla lectus in, elementum magna. Etiam quis dui condimentum, tempus ex in, dapibus est.
+        Cras ut congue augue. Donec ac enim ex. Ut id tristique risus, vel porttitor quam. Sed ultricies enim eu nibh
+        porttitor, vel sodales enim feugiat. Fusce volutpat venenatis magna ac ultrices. Curabitur eget urna ut nulla
+        mattis convallis non eu diam.</p>
+    </div>
 
     <hr id='conlcusions'>
 
-      <div style="text-align:center;">
-              <h2>Conclusions</h2>
-              <p style="text-align: left;padding: 0px 30px;">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum lorem nulla, consectetur at leo vel, pretium bibendum nisl. Cras blandit quam a enim ultrices, eu convallis enim posuere. Donec eleifend enim sed purus consectetur, vitae cursus lectus varius. Vivamus consectetur felis nec est venenatis posuere. Phasellus vitae aliquet erat. In laoreet lacinia mollis. Quisque iaculis nisl fermentum pharetra lobortis. Donec rhoncus dui sem, ac molestie leo tristique vel. Phasellus in nibh feugiat, fringilla lectus in, elementum magna. Etiam quis dui condimentum, tempus ex in, dapibus est. Cras ut congue augue. Donec ac enim ex. Ut id tristique risus, vel porttitor quam. Sed ultricies enim eu nibh porttitor, vel sodales enim feugiat. Fusce volutpat venenatis magna ac ultrices. Curabitur eget urna ut nulla mattis convallis non eu diam.</p>
-      </div>
+    <div style="text-align:center;">
+      <h2>Conclusions</h2>
+      <p style="text-align: left;padding: 0px 30px;">Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+        Vestibulum lorem nulla, consectetur at leo vel, pretium bibendum nisl. Cras blandit quam a enim ultrices, eu
+        convallis enim posuere. Donec eleifend enim sed purus consectetur, vitae cursus lectus varius. Vivamus
+        consectetur felis nec est venenatis posuere. Phasellus vitae aliquet erat. In laoreet lacinia mollis. Quisque
+        iaculis nisl fermentum pharetra lobortis. Donec rhoncus dui sem, ac molestie leo tristique vel. Phasellus in
+        nibh feugiat, fringilla lectus in, elementum magna. Etiam quis dui condimentum, tempus ex in, dapibus est.
+        Cras ut congue augue. Donec ac enim ex. Ut id tristique risus, vel porttitor quam. Sed ultricies enim eu nibh
+        porttitor, vel sodales enim feugiat. Fusce volutpat venenatis magna ac ultrices. Curabitur eget urna ut nulla
+        mattis convallis non eu diam.</p>
+    </div>
 
     <hr id='futurework'>
 
-      <div style="text-align:center;">
-              <h2>Future Work</h2>
-              <p style="text-align: left;padding: 0px 30px;">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum lorem nulla, consectetur at leo vel, pretium bibendum nisl. Cras blandit quam a enim ultrices, eu convallis enim posuere. Donec eleifend enim sed purus consectetur, vitae cursus lectus varius. Vivamus consectetur felis nec est venenatis posuere. Phasellus vitae aliquet erat. In laoreet lacinia mollis. Quisque iaculis nisl fermentum pharetra lobortis. Donec rhoncus dui sem, ac molestie leo tristique vel. Phasellus in nibh feugiat, fringilla lectus in, elementum magna. Etiam quis dui condimentum, tempus ex in, dapibus est. Cras ut congue augue. Donec ac enim ex. Ut id tristique risus, vel porttitor quam. Sed ultricies enim eu nibh porttitor, vel sodales enim feugiat. Fusce volutpat venenatis magna ac ultrices. Curabitur eget urna ut nulla mattis convallis non eu diam.</p>
-      </div>
-    
+    <div style="text-align:center;">
+      <h2>Future Work</h2>
+      <p style="text-align: left;padding: 0px 30px;">Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+        Vestibulum lorem nulla, consectetur at leo vel, pretium bibendum nisl. Cras blandit quam a enim ultrices, eu
+        convallis enim posuere. Donec eleifend enim sed purus consectetur, vitae cursus lectus varius. Vivamus
+        consectetur felis nec est venenatis posuere. Phasellus vitae aliquet erat. In laoreet lacinia mollis. Quisque
+        iaculis nisl fermentum pharetra lobortis. Donec rhoncus dui sem, ac molestie leo tristique vel. Phasellus in
+        nibh feugiat, fringilla lectus in, elementum magna. Etiam quis dui condimentum, tempus ex in, dapibus est.
+        Cras ut congue augue. Donec ac enim ex. Ut id tristique risus, vel porttitor quam. Sed ultricies enim eu nibh
+        porttitor, vel sodales enim feugiat. Fusce volutpat venenatis magna ac ultrices. Curabitur eget urna ut nulla
+        mattis convallis non eu diam.</p>
+    </div>
+
     <hr>
 
     <div class="row" style="text-align:center;">
-          <h2>Work Distribution</h2>
-          <div style="text-align:center;">
-              <img class="img-rounded" src="pics/group.jpg" alt="Generic placeholder image" style="width:80%;">
-              <h4>Project group picture</h4>
-          </div>
-          <div class="col-md-4" style="font-size:16px">
-              <img class="img-rounded" src="pics/a.png" alt="Generic placeholder image" width="240" height="240">
-              <h3>Tyler Tisinger</h3>
-              <p class="lead">tt549@cornell.edu</p>
-              <p>Designed the overall web interface, pacer, and lighting systems. <!--@Tyler-->
-          </div>
-          <div class="col-md-4" style="font-size:16px">
-              <img class="img-rounded" src="pics/b.png" alt="Generic placeholder image" width="240" height="240">
-              <h3>Rhea Desai</h3>
-              <p class="lead">rd535@cornell.edu</p>
-              <p>Implemented the music mode. <!--@Rhea-->
-          </div>
-          <div class="col-md-4" style="font-size:16px">
-              <img class="img-rounded" src="pics/Andrew.JPG" alt="Generic placeholder image" width="240" height="240">
-              <h3>Andrew Lin</h3>
-              <p class="lead">ahl92@cornell.edu</p>
-              <p>Provided baseline backend architecture and tested the performance and reliability of the system. <!--@Andrew-->
-          </div>
+      <h2>Work Distribution</h2>
+      <div style="text-align:center;">
+        <img class="img-rounded" src="pics/group.jpg" alt="Generic placeholder image" style="width:80%;">
+        <h4>Project group picture</h4>
       </div>
+      <div class="col-md-4" style="font-size:16px">
+        <img class="img-rounded" src="pics/a.png" alt="Generic placeholder image" width="240" height="240">
+        <h3>Tyler Tisinger</h3>
+        <p class="lead">tt549@cornell.edu</p>
+        <p>Designed the overall web interface, pacer, and lighting systems. <!--@Tyler-->
+      </div>
+      <div class="col-md-4" style="font-size:16px">
+        <img class="img-rounded" src="pics/b.png" alt="Generic placeholder image" width="240" height="240">
+        <h3>Rhea Desai</h3>
+        <p class="lead">rd535@cornell.edu</p>
+        <p>Implemented the music mode. <!--@Rhea-->
+      </div>
+      <div class="col-md-4" style="font-size:16px">
+        <img class="img-rounded" src="pics/Andrew.JPG" alt="Generic placeholder image" width="240" height="240">
+        <h3>Andrew Lin</h3>
+        <p class="lead">ahl92@cornell.edu</p>
+        <p>Provided baseline backend architecture and tested the performance and reliability of the system.
+          <!--@Andrew-->
+      </div>
+    </div>
 
     <hr>
-      <div style="font-size:18px">
-          <h2>Parts List</h2>
-          <ul>
-              <li>Raspberry Pi 4 $35.00</li> <!--unknown prices for standard parts-->
-              <li>piTFT</li>
-              <li>piCobbler expansion</li>
-              <a href="https://www.sparkfun.com/sparkfun-logic-level-converter-bi-directional.html"><li>Level Shifter $3.95</li></a>
-              <a href="https://www.btf-lighting.com/products/1-sk6812-rgbw-4-in-1-pixels-individual-addressable-led-strip-dc5v?variant=46031799189730"><li>LED Strip $58.65</li></a> <!--include link and price-->
-              <li>USB Microphone</li> <!--Rhea, please include link-->
-              <li>Wires - Provided in lab</li>
-          </ul>
-          <h3>Total: TBD</h3>
-      </div>
-      <hr>
-      <div style="font-size:18px">
-          <h2>References</h2>
-          <a href="https://github.com/jgarff/rpi_ws281x/">rpi_ws821x LED Driver Library for Python</a><br>
-          <a href="https://flask.palletsprojects.com/en/stable/">Flask Web Framework</a><br>
-          <a href="https://aubio.org/">Aubio Beat Detection Library</a><br>
-          <a href="http://getbootstrap.com/">Bootstrap</a><br>
-          <a href="https://sourceforge.net/p/raspberry-gpio-python/wiki/Home/">R-Pi GPIO Document</a><br>
-          <a href="https://cdn.sparkfun.com/datasheets/BreakoutBoards/BSS138.pdf">BSS138 Level Shifter Datasheet</a><br>
+    <div style="font-size:18px">
+      <h2>Parts List</h2>
+      <ul>
+        <li>Raspberry Pi 4 $35.00</li> <!--unknown prices for standard parts-->
+        <li>piTFT</li>
+        <li>piCobbler expansion</li>
+        <a href="https://www.sparkfun.com/sparkfun-logic-level-converter-bi-directional.html">
+          <li>Level Shifter $3.95</li>
+        </a>
+        <a
+          href="https://www.btf-lighting.com/products/1-sk6812-rgbw-4-in-1-pixels-individual-addressable-led-strip-dc5v?variant=46031799189730">
+          <li>LED Strip $58.65</li>
+        </a> <!--include link and price-->
+        <li>USB Microphone</li> <!--Rhea, please include link-->
+        <li>Wires - Provided in lab</li>
+      </ul>
+      <h3>Total: TBD</h3>
+    </div>
+    <hr>
+    <div style="font-size:18px">
+      <h2>References</h2>
+      <a href="https://github.com/jgarff/rpi_ws281x/">rpi_ws821x LED Driver Library for Python</a><br>
+      <a href="https://flask.palletsprojects.com/en/stable/">Flask Web Framework</a><br>
+      <a href="https://aubio.org/">Aubio Beat Detection Library</a><br>
+      <a href="http://getbootstrap.com/">Bootstrap</a><br>
+      <a href="https://sourceforge.net/p/raspberry-gpio-python/wiki/Home/">R-Pi GPIO Document</a><br>
+      <a href="https://cdn.sparkfun.com/datasheets/BreakoutBoards/BSS138.pdf">BSS138 Level Shifter Datasheet</a><br>
 
-      </div>
+    </div>
 
     <hr>
 
-      <div class="row">
-              <h2>Code Appendix</h2>
-              <pre><code>
+    <div class="row">
+      <h2>Code Appendix</h2>
+      <pre><code>
 // Hello World.c
 int main(){
   printf("Hello World.\n");
 }
               </code></pre>
-      </div>
+    </div>
 
-    </div><!-- /.container -->
-
-
+  </div><!-- /.container -->
 
 
-    <!-- Bootstrap core JavaScript
+
+
+  <!-- Bootstrap core JavaScript
     ================================================== -->
-    <!-- Placed at the end of the document so the pages load faster -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-    <script>window.jQuery || document.write('<script src="../../assets/js/vendor/jquery.min.js"><\/script>')</script>
-    <script src="dist/js/bootstrap.min.js"></script>
-    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
-    <!-- <script src="../../assets/js/ie10-viewport-bug-workaround.js"></script> -->
-  </body>
+  <!-- Placed at the end of the document so the pages load faster -->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+  <script>window.jQuery || document.write('<script src="../../assets/js/vendor/jquery.min.js"><\/script>')</script>
+  <script src="dist/js/bootstrap.min.js"></script>
+  <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+  <!-- <script src="../../assets/js/ie10-viewport-bug-workaround.js"></script> -->
+</body>
+
 </html>
