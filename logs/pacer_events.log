@@ -1,0 +1,200 @@
+[2026-05-07T14:23:25] [INFO] [music] USB music controller stopped
+[2026-04-28T13:21:54] [INFO] [hardware] Using simulated LED strip count=300 pin=12
+[2026-04-28T13:21:54] [INFO] [settings] Legacy pacer settings updated pace=[60] color=(0, 255, 0)
+[2026-04-28T13:21:54] [INFO] [hardware] Using simulated LED strip count=30 pin=12
+[2026-04-28T13:21:54] [INFO] [manager] Pacer added to manager pace=[0.2] total=1
+[2026-04-28T13:21:54] [INFO] [manager] Pacer manager update loop started
+[2026-04-28T13:21:54] [INFO] [manager] Pacer manager started pacers=1
+[2026-04-28T13:21:54] [INFO] [pacer] Starting pacer pace=[0.2] color=(1, 2, 3)
+[2026-04-28T13:21:55] [INFO] [pacer] Pacer finished pace=[0.2] laps=1
+[2026-04-28T13:21:55] [INFO] [pacer] Stopping pacer pace=[0.2]
+[2026-04-28T13:21:55] [INFO] [manager] Pacer manager stop requested
+[2026-04-28T13:21:55] [INFO] [manager] Pacer manager update loop stopped
+[2026-04-28T13:25:52] [INFO] [hardware] Using simulated LED strip count=300 pin=12
+[2026-04-28T13:25:52] [INFO] [settings] Legacy pacer settings updated pace=[60] color=(0, 255, 0)
+[2026-04-28T13:25:52] [INFO] [hardware] Using simulated LED strip count=30 pin=12
+[2026-04-28T13:25:52] [INFO] [manager] Pacer added to manager pace=[0.2] total=1
+[2026-04-28T13:25:52] [INFO] [manager] Pacer manager update loop started
+[2026-04-28T13:25:52] [INFO] [manager] Pacer manager started pacers=1
+[2026-04-28T13:25:52] [INFO] [pacer] Starting pacer pace=[0.2] color=(1, 2, 3)
+[2026-04-28T13:25:52] [INFO] [pacer] Pacer finished pace=[0.2] laps=1
+[2026-04-28T13:25:52] [INFO] [pacer] Stopping pacer pace=[0.2]
+[2026-04-28T13:25:52] [INFO] [manager] Pacer manager stop requested
+[2026-04-28T13:25:52] [INFO] [manager] Pacer manager update loop stopped
+[2026-04-28T13:26:42] [INFO] [hardware] Using simulated LED strip count=30 pin=12
+[2026-04-28T13:26:42] [INFO] [manager] Pacer added to manager pace=[0.2] total=1
+[2026-04-28T13:26:42] [INFO] [manager] Pacer manager update loop started
+[2026-04-28T13:26:42] [INFO] [manager] Pacer manager started pacers=1
+[2026-04-28T13:26:42] [INFO] [pacer] Starting pacer pace=[0.2] color=(1, 2, 3)
+[2026-04-28T13:26:42] [INFO] [pacer] Pacer finished pace=[0.2] laps=1
+[2026-04-28T13:26:43] [INFO] [pacer] Stopping pacer pace=[0.2]
+[2026-04-28T13:26:43] [INFO] [manager] Pacer manager update loop stopped
+[2026-04-28T13:26:43] [INFO] [manager] Pacer manager stop requested
+[2026-04-28T15:31:56] [INFO] [hardware] Using simulated LED strip count=30 pin=12
+[2026-04-28T15:31:56] [INFO] [manager] Flashing startup LED test width=12
+[2026-04-28T15:31:56] [INFO] [manager] Pacer added to manager pace=[0.2] total=1
+[2026-04-28T15:31:56] [INFO] [manager] Pacer manager update loop started
+[2026-04-28T15:31:56] [INFO] [manager] Pacer manager started pacers=1
+[2026-04-28T15:31:56] [INFO] [pacer] Starting pacer pace=[0.2] color=(1, 2, 3)
+[2026-04-28T15:31:56] [INFO] [pacer] Pacer finished pace=[0.2] laps=1
+[2026-04-28T15:31:56] [INFO] [pacer] Stopping pacer pace=[0.2]
+[2026-04-28T15:31:56] [INFO] [manager] Pacer manager update loop stopped
+[2026-04-28T15:31:56] [INFO] [manager] Pacer manager stop requested
+[2026-04-28T15:32:19] [INFO] [hardware] Using simulated LED strip count=300 pin=12
+[2026-04-28T15:32:19] [INFO] [run_pacer] Adding pacers to manager
+[2026-04-28T15:32:19] [INFO] [manager] Pacer added to manager pace=[10] total=1
+[2026-04-28T15:32:19] [INFO] [manager] Pacer added to manager pace=[5] total=2
+[2026-04-28T15:32:19] [INFO] [manager] Flashing startup LED test width=12
+[2026-04-28T15:32:19] [INFO] [run_pacer] Starting pacer manager
+[2026-04-28T15:32:19] [INFO] [manager] Pacer manager update loop started
+[2026-04-28T15:32:19] [INFO] [manager] Pacer manager started pacers=2
+[2026-04-28T15:32:22] [INFO] [run_pacer] Starting first pacer
+[2026-04-28T15:32:22] [INFO] [pacer] Starting pacer pace=[10] color=(255, 0, 0)
+[2026-04-28T15:32:22] [INFO] [run_pacer] First pacer active state active=True position=0.0
+[2026-04-28T15:32:22] [INFO] [manager] Rendered LED frame updates=1 first_position=0.77 first_type=constant
+[2026-04-28T15:32:23] [INFO] [manager] Rendered LED frame updates=1 first_position=31.48 first_type=constant
+[2026-04-28T15:32:24] [INFO] [manager] Rendered LED frame updates=1 first_position=61.58 first_type=constant
+[2026-04-28T15:32:25] [INFO] [run_pacer] Starting second pacer
+[2026-04-28T15:32:25] [INFO] [pacer] Starting pacer pace=[5] color=(0, 255, 0)
+[2026-04-28T15:32:25] [INFO] [run_pacer] Second pacer active state active=True position=0.0
+[2026-04-28T15:32:25] [INFO] [manager] Rendered LED frame updates=2 first_position=91.59 first_type=constant
+[2026-04-28T15:32:26] [INFO] [manager] Rendered LED frame updates=2 first_position=122.54 first_type=constant
+[2026-04-28T15:32:27] [INFO] [manager] Rendered LED frame updates=2 first_position=153.35 first_type=constant
+[2026-04-28T15:32:28] [INFO] [manager] Rendered LED frame updates=2 first_position=183.74 first_type=constant
+[2026-04-28T15:32:29] [INFO] [manager] Rendered LED frame updates=2 first_position=213.93 first_type=constant
+[2026-04-28T15:53:33] [INFO] [hardware] Using simulated LED strip count=30 pin=12
+[2026-04-28T15:53:33] [INFO] [manager] Pacer added to manager pace=[0.6] total=1
+[2026-04-28T15:53:33] [INFO] [manager] Pacer added to manager pace=[0.4, 0.4] total=2
+[2026-04-28T15:53:33] [INFO] [manager] Pacer manager update loop started
+[2026-04-28T15:53:33] [INFO] [manager] Pacer manager started pacers=2
+[2026-04-28T15:53:33] [INFO] [pacer] Starting pacer pace=[0.6] color=(255, 0, 0)
+[2026-04-28T15:53:33] [INFO] [pacer] Starting pacer pace=[0.4, 0.4] color=(0, 255, 0)
+[2026-04-28T15:53:33] [INFO] [pacer] Stopping pacer pace=[0.6]
+[2026-04-28T15:53:33] [INFO] [manager] Pacer removed from manager pace=[0.6] total=1
+[2026-04-28T15:53:33] [INFO] [pacer] Stopping pacer pace=[0.4, 0.4]
+[2026-04-28T15:53:33] [INFO] [manager] Pacer manager stop requested
+[2026-04-28T15:53:33] [INFO] [manager] Pacer manager update loop stopped
+[2026-04-28T15:54:45] [INFO] [hardware] Using simulated LED strip count=30 pin=12
+[2026-04-28T15:54:45] [INFO] [manager] Pacer added to manager pace=[0.6] total=1
+[2026-04-28T15:54:45] [INFO] [manager] Pacer added to manager pace=[0.4, 0.4] total=2
+[2026-04-28T15:54:45] [INFO] [manager] Pacer manager update loop started
+[2026-04-28T15:54:45] [INFO] [manager] Pacer manager started pacers=2
+[2026-04-28T15:54:45] [INFO] [pacer] Starting pacer pace=[0.6] color=(255, 0, 0)
+[2026-04-28T15:54:45] [INFO] [pacer] Starting pacer pace=[0.4, 0.4] color=(0, 255, 0)
+[2026-04-28T15:54:45] [INFO] [pacer] Stopping pacer pace=[0.6]
+[2026-04-28T15:54:45] [INFO] [manager] Pacer removed from manager pace=[0.6] total=1
+[2026-04-28T15:54:46] [INFO] [pacer] Stopping pacer pace=[0.4, 0.4]
+[2026-04-28T15:54:46] [INFO] [manager] Pacer manager stop requested
+[2026-04-28T15:54:46] [INFO] [manager] Pacer manager update loop stopped
+[2026-04-28T15:55:56] [INFO] [hardware] Using simulated LED strip count=30 pin=12
+[2026-04-28T15:55:56] [INFO] [manager] Pacer added to manager pace=[0.6] total=1
+[2026-04-28T15:55:56] [INFO] [manager] Pacer added to manager pace=[0.4, 0.4] total=2
+[2026-04-28T15:55:56] [INFO] [manager] Pacer manager update loop started
+[2026-04-28T15:55:56] [INFO] [manager] Pacer manager started pacers=2
+[2026-04-28T15:55:56] [INFO] [pacer] Starting pacer pace=[0.6] color=(255, 0, 0)
+[2026-04-28T15:55:56] [INFO] [pacer] Starting pacer pace=[0.4, 0.4] color=(0, 255, 0)
+[2026-04-28T15:55:56] [INFO] [pacer] Stopping pacer pace=[0.6]
+[2026-04-28T15:55:56] [INFO] [manager] Pacer removed from manager pace=[0.6] total=1
+[2026-04-28T15:55:56] [INFO] [pacer] Stopping pacer pace=[0.4, 0.4]
+[2026-04-28T15:55:56] [INFO] [manager] Pacer manager stop requested
+[2026-04-28T15:55:56] [INFO] [manager] Pacer manager update loop stopped
+[2026-04-29T12:43:49] [INFO] [hardware] Using simulated LED strip count=300 pin=12
+[2026-04-29T12:43:49] [INFO] [manager] Pacer added to manager pace=[0.2] total=1
+[2026-04-29T12:43:49] [INFO] [manager] Pacer manager update loop started
+[2026-04-29T12:43:49] [INFO] [manager] Pacer manager started pacers=1
+[2026-04-29T12:43:49] [INFO] [pacer] Starting pacer pace=[0.2] color=(1, 2, 3)
+[2026-04-29T12:43:49] [INFO] [pacer] Pacer finished pace=[0.2] laps=1
+[2026-04-29T12:43:49] [INFO] [pacer] Stopping pacer pace=[0.2]
+[2026-04-29T12:43:49] [INFO] [manager] Pacer manager stop requested
+[2026-04-29T12:43:49] [INFO] [manager] Pacer manager update loop stopped
+[2026-04-29T18:53:14] [INFO] [lighting] Lighting pattern started pattern=static_color colors=1 speed=1.0
+[2026-04-29T18:53:14] [INFO] [lighting] Lighting stopped pattern=static_color
+[2026-04-29T18:53:42] [INFO] [lighting] Lighting pattern started pattern=sparkle colors=2 speed=1.5
+[2026-04-29T18:53:42] [INFO] [lighting] Lighting stopped pattern=sparkle
+[2026-05-06T20:34:27] [INFO] [lighting] Lighting pattern started pattern=static_color colors=1 speed=1
+[2026-05-06T20:34:27] [INFO] [lighting] Lighting stopped pattern=static_color
+[2026-05-06T20:34:27] [INFO] [lighting] Lighting manager update loop stopped
+[2026-05-06T20:34:27] [INFO] [lighting] Lighting pattern started pattern=color_fade colors=2 speed=1
+[2026-05-06T20:34:27] [INFO] [lighting] Lighting stopped pattern=color_fade
+[2026-05-06T20:34:27] [INFO] [lighting] Lighting pattern started pattern=theater_lighting colors=1 speed=1
+[2026-05-06T20:34:27] [INFO] [lighting] Lighting stopped pattern=theater_lighting
+[2026-05-06T20:34:27] [INFO] [lighting] Lighting manager update loop stopped
+[2026-05-06T20:34:27] [INFO] [lighting] Lighting pattern started pattern=pulse colors=1 speed=1
+[2026-05-06T20:34:27] [INFO] [lighting] Lighting stopped pattern=pulse
+[2026-05-06T20:34:27] [INFO] [lighting] Lighting pattern started pattern=comet colors=1 speed=1
+[2026-05-06T20:34:27] [INFO] [lighting] Lighting stopped pattern=comet
+[2026-05-06T20:34:27] [INFO] [lighting] Lighting manager update loop stopped
+[2026-05-06T20:34:27] [INFO] [lighting] Lighting pattern started pattern=sparkle colors=2 speed=1
+[2026-05-06T20:34:27] [INFO] [lighting] Lighting stopped pattern=sparkle
+[2026-05-06T20:34:27] [INFO] [lighting] Lighting pattern started pattern=scanner colors=1 speed=1
+[2026-05-06T20:34:27] [INFO] [lighting] Lighting stopped pattern=scanner
+[2026-05-06T20:34:27] [INFO] [lighting] Lighting manager update loop stopped
+[2026-05-06T20:34:27] [INFO] [lighting] Lighting pattern started pattern=rainbow colors=1 speed=1
+[2026-05-06T20:34:27] [INFO] [lighting] Lighting stopped pattern=rainbow
+[2026-05-06T20:41:36] [INFO] [lighting] Lighting pattern started pattern=static_color colors=1 speed=1
+[2026-05-06T20:41:36] [INFO] [lighting] Lighting stopped pattern=static_color
+[2026-05-06T20:41:36] [INFO] [lighting] Lighting pattern started pattern=color_fade colors=2 speed=1
+[2026-05-06T20:41:36] [INFO] [lighting] Lighting stopped pattern=color_fade
+[2026-05-06T20:41:36] [INFO] [lighting] Lighting pattern started pattern=theater_lighting colors=1 speed=1
+[2026-05-06T20:41:36] [INFO] [lighting] Lighting stopped pattern=theater_lighting
+[2026-05-06T20:41:36] [INFO] [lighting] Lighting pattern started pattern=rainbow colors=1 speed=1
+[2026-05-06T20:41:36] [INFO] [lighting] Lighting stopped pattern=rainbow
+[2026-05-06T20:41:36] [INFO] [lighting] Lighting pattern started pattern=pulse colors=1 speed=1
+[2026-05-06T20:41:36] [INFO] [lighting] Lighting stopped pattern=pulse
+[2026-05-06T20:41:36] [INFO] [lighting] Lighting pattern started pattern=comet colors=1 speed=1
+[2026-05-06T20:41:36] [INFO] [lighting] Lighting stopped pattern=comet
+[2026-05-06T20:41:36] [INFO] [lighting] Lighting pattern started pattern=sparkle colors=2 speed=1
+[2026-05-06T20:41:36] [INFO] [lighting] Lighting stopped pattern=sparkle
+[2026-05-06T20:41:36] [INFO] [lighting] Lighting pattern started pattern=scanner colors=1 speed=1
+[2026-05-06T20:41:36] [INFO] [lighting] Lighting stopped pattern=scanner
+[2026-05-07T11:24:18] [INFO] [lighting] Lighting pattern started pattern=static_color colors=1 speed=1
+[2026-05-07T11:24:20] [INFO] [lighting] Lighting pattern started pattern=static_color colors=1 speed=1
+[2026-05-07T11:24:22] [INFO] [lighting] Lighting stopped pattern=static_color
+[2026-05-07T11:24:24] [INFO] [lighting] Lighting pattern started pattern=color_fade colors=2 speed=1
+[2026-05-07T11:24:26] [INFO] [lighting] Lighting pattern started pattern=static_color colors=1 speed=1
+[2026-05-07T11:24:28] [INFO] [lighting] Lighting stopped pattern=static_color
+[2026-05-07T11:24:30] [INFO] [lighting] Lighting pattern started pattern=theater_lighting colors=1 speed=1
+[2026-05-07T11:24:32] [INFO] [lighting] Lighting pattern started pattern=static_color colors=1 speed=1
+[2026-05-07T11:24:34] [INFO] [lighting] Lighting stopped pattern=static_color
+[2026-05-07T11:24:36] [INFO] [lighting] Lighting pattern started pattern=rainbow colors=1 speed=1
+[2026-05-07T11:24:38] [INFO] [lighting] Lighting pattern started pattern=static_color colors=1 speed=1
+[2026-05-07T11:24:40] [INFO] [lighting] Lighting stopped pattern=static_color
+[2026-05-07T11:24:42] [INFO] [lighting] Lighting pattern started pattern=pulse colors=1 speed=1
+[2026-05-07T11:24:44] [INFO] [lighting] Lighting pattern started pattern=static_color colors=1 speed=1
+[2026-05-07T11:24:46] [INFO] [lighting] Lighting stopped pattern=static_color
+[2026-05-07T11:25:06] [INFO] [lighting] Lighting pattern started pattern=static_color colors=1 speed=1
+[2026-05-07T11:25:06] [INFO] [lighting] Lighting pattern started pattern=static_color colors=1 speed=1
+[2026-05-07T11:25:06] [INFO] [lighting] Lighting stopped pattern=static_color
+[2026-05-07T11:25:06] [INFO] [lighting] Lighting pattern started pattern=color_fade colors=2 speed=1
+[2026-05-07T11:25:06] [INFO] [lighting] Lighting pattern started pattern=static_color colors=1 speed=1
+[2026-05-07T11:25:06] [INFO] [lighting] Lighting stopped pattern=static_color
+[2026-05-07T11:25:06] [INFO] [lighting] Lighting pattern started pattern=theater_lighting colors=1 speed=1
+[2026-05-07T11:25:06] [INFO] [lighting] Lighting pattern started pattern=static_color colors=1 speed=1
+[2026-05-07T11:25:06] [INFO] [lighting] Lighting stopped pattern=static_color
+[2026-05-07T11:25:06] [INFO] [lighting] Lighting pattern started pattern=rainbow colors=1 speed=1
+[2026-05-07T11:25:06] [INFO] [lighting] Lighting pattern started pattern=static_color colors=1 speed=1
+[2026-05-07T11:25:06] [INFO] [lighting] Lighting stopped pattern=static_color
+[2026-05-07T11:25:06] [INFO] [lighting] Lighting pattern started pattern=pulse colors=1 speed=1
+[2026-05-07T11:25:06] [INFO] [lighting] Lighting pattern started pattern=static_color colors=1 speed=1
+[2026-05-07T11:25:06] [INFO] [lighting] Lighting stopped pattern=static_color
+[2026-05-07T11:25:06] [INFO] [lighting] Lighting pattern started pattern=comet colors=1 speed=1
+[2026-05-07T11:25:06] [INFO] [lighting] Lighting pattern started pattern=static_color colors=1 speed=1
+[2026-05-07T11:25:06] [INFO] [lighting] Lighting stopped pattern=static_color
+[2026-05-07T11:25:06] [INFO] [lighting] Lighting pattern started pattern=sparkle colors=2 speed=1
+[2026-05-07T11:25:06] [INFO] [lighting] Lighting pattern started pattern=static_color colors=1 speed=1
+[2026-05-07T11:25:06] [INFO] [lighting] Lighting stopped pattern=static_color
+[2026-05-07T11:25:06] [INFO] [lighting] Lighting pattern started pattern=scanner colors=1 speed=1
+[2026-05-07T11:25:06] [INFO] [lighting] Lighting pattern started pattern=static_color colors=1 speed=1
+[2026-05-07T11:25:06] [INFO] [lighting] Lighting stopped pattern=static_color
+[2026-05-07T11:38:27] [INFO] [lighting] Lighting pattern started pattern=static_color colors=1 speed=1
+[2026-05-07T11:38:27] [INFO] [lighting] Lighting pattern started pattern=static_color colors=1 speed=1
+[2026-05-07T11:38:27] [INFO] [lighting] Lighting stopped pattern=static_color
+[2026-05-07T11:38:27] [INFO] [lighting] Lighting pattern started pattern=color_fade colors=2 speed=1
+[2026-05-07T11:38:27] [INFO] [lighting] Lighting pattern started pattern=static_color colors=1 speed=1
+[2026-05-07T11:38:27] [INFO] [lighting] Lighting stopped pattern=static_color
+[2026-05-07T11:38:27] [INFO] [lighting] Lighting pattern started pattern=theater_lighting colors=1 speed=1
+[2026-05-07T11:38:27] [INFO] [lighting] Lighting pattern started pattern=static_color colors=1 speed=1
+[2026-05-07T11:38:27] [INFO] [lighting] Lighting stopped pattern=static_color
+[2026-05-07T11:38:27] [INFO] [lighting] Lighting pattern started pattern=rainbow colors=1 speed=1
+[2026-05-07T11:38:27] [INFO] [lighting] Lighting pattern started pattern=static_color colors=1 speed=1
+[2026-05-07T11:38:27] [INFO] [lighting] Lighting stopped pattern=static_color
