@@ -157,9 +157,8 @@ class BeatGridTracker:
     def _choose_music_interval(self, interval, prefer_current=True):
         raw_bpm = 60.0 / interval
 
-        # If already locked, preserve plausible normal/fast song BPMs.
-        # During initial lock, avoid grabbing a fast subdivision before the
-        # slower main pulse has had a chance to appear.
+        # If already locked, preserve posible normal/fast song BPMs.
+        # During initial lock, avoid grabbing a fast subdivision before slower main pulse has had chance to appear.
         if self.bpm is not None and self.min_bpm <= raw_bpm <= 155:
             return interval
 
@@ -183,9 +182,8 @@ class BeatGridTracker:
                 return min(slower_candidates, key=lambda item: abs(item[0] - 90.0))[1]
             return min(candidates, key=lambda item: abs(item[0] - current_bpm))[1]
 
-        # For initial music lock, only force the slower pulse when the raw
-        # candidate is a very dense subdivision. Otherwise choose a normal
-        # music pulse near 110 so real 105-125 BPM songs do not fold too low.
+        # For initial music lock, only force the slower pulse when the raw candidate is a very dense subdivision. Otherwise choose a normal
+        # music pulse near 110 so real 105-125 BPM songs do not fold too low
         if raw_bpm >= 200:
             slow_candidates = [item for item in candidates if 70 <= item[0] <= 115]
             if slow_candidates:
@@ -287,7 +285,7 @@ class MusicController:
         )
 
     def stop(self):
-        """Stop audio capture and turn the LEDs off."""
+        """Stop audio capture and turn LEDs off"""
         self.active = False
 
         current_thread = threading.current_thread()
@@ -308,7 +306,7 @@ class MusicController:
         self.strip.show()
 
     def _track_audio(self):
-        """Read USB mic audio once, correcting the beat grid from strong onsets."""
+        """Read USB mic audio once, and keep correcting beat grid from strong onsets"""
         onset = aubio.onset("default", self.chunk_size * 2, self.chunk_size, self.sample_rate)
         onset.set_silence(-70)
         onset.set_threshold(0.12)
