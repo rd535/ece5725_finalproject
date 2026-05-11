@@ -230,7 +230,12 @@
           saved presets, converts user inputs into structured JSON, and sends requests to backend endpoints using
           asynchronous fetch calls. It also continuously polls the backend through Flask routes to update pacer status,
           runtime information, and event logs, ensuring the UI reflects real-time system behavior.
-          <br><br>
+          <br></p>
+          <div style="text-align:center;">
+            <img src="pics/pacer_table_control.png" alt="Tech Stack" width="640" height="360">
+            <figcaption style="text-align:center;">Figure x- Pacer Control Table</figcaption>
+          </div>
+          <br><p style="text-align: left;padding: 0px 30px;">
           On the backend, the Flask application (app.py) maintains system state using structured dictionary data
           structurs. pi_state["pacers"] stores user-defined configuration and UI state, while pacer_instances holds the
           active Python pacer objects. Flask routes update these structures when users modify pacers, start or stop
@@ -247,13 +252,23 @@
           configurations directly within the application, allowing them to save and load as many configured pacers they
           want and then easily load them in. Additionally, the system automatically reloads the most recent
           configuration on startup, further streamlining the user experience and reducing setup time.
-          <br><br>
+          <br></p>
+          <div style="text-align:center;">
+            <img src="pics/app_settings_dict.png" alt="Tech Stack" width="640" height="360">
+            <figcaption style="text-align:center;">Figure x- Application Settings Dictionary</figcaption>
+          </div>
+          <br><p style="text-align: left;padding: 0px 30px;">
           The final major feature implemented is an integrated event logging system to improve debugging and user
           feedback. Events such as pacer creation, updates, errors, and mode transitions are recorded both in the UI and
           in a rolling log file capped at the 200 most recent entries to prevent excessive storage usage. This ensures
           that users can monitor system behavior in real time without relying on terminal output, making the system more
           robust for demonstrations and eventual real world deployment.
-          <br><br>
+          <br></p>
+          <div style="text-align:center;">
+            <img src="pics/pacer_log_file.png" alt="Tech Stack" width="640" height="360">
+            <figcaption style="text-align:center;">Figure x- Event Log .log</figcaption>
+          </div>
+          <br><p style="text-align: left;padding: 0px 30px;">
           Several smaller, quality of life features were incrementally added to improve overall system interaction. One
           key improvement was overhauling the input table to have more intuitive and flexible user controls. For
           example, dynamic pacers allow users to set a different pace for each lap. Now, when the user chooses how many
@@ -267,7 +282,12 @@
           feedback to the user through the event log along with an HTML banner display that will pop up with a success
           or error message. Only these validated entries are then displayed on the active pacer table, ensuring that
           outdated pacers or non-existent objects are not executed or displayed.
-          <br><br>
+          <br></p>
+          <div style="text-align:center;">
+            <img src="pics/pacer_log_file.png" alt="Tech Stack" width="640" height="360">
+            <figcaption style="text-align:center;">Figure x- Event Log .log</figcaption>
+          </div>
+          <br><p style="text-align: left;padding: 0px 30px;">
           This design improves system robustness as needed for a production level application by separating
           configuration from execution which reduces the chances of runtime errors. Once pacers are active, the user is
           given fine tuned control over execution, with the ability to start of stop individual pacers independently or
@@ -290,7 +310,12 @@
           for owning the LED strip object and polling updates from the active pattern classe, while each individual
           lighting pattern defines how the LEDs should be updated at each time step and returns this data to the
           manager.
-          <br><br>
+          <br>
+          <div style="text-align:center;">
+            <img src="pics/lighting_mode.png" alt="Tech Stack" width="640" height="360">
+            <figcaption style="text-align:center;">Figure x- Lighting Mode UI</figcaption>
+          </div>
+          <br>
           However, since only a single lighting pattern is active at any given time, the data structures required for
           lighting were a lot simpler than used in the pacer system. Rather than maintaining a dictionary of multiple
           active pattern instance, which reduces complexity and inherently prevents race conditions between overlapping
